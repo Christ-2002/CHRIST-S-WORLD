@@ -85,7 +85,8 @@ var SiteMedals = {
       snake: { bronze: false, silver: false, gold: false },
       tictactoe: { bronze: false, silver: false, gold: false },
       mario: { bronze: false, silver: false, gold: false },
-      battlematch: { bronze: false, silver: false, gold: false }
+      battlematch: { bronze: false, silver: false, gold: false },
+      run: { bronze: false, silver: false, gold: false }
     };
   },
 
@@ -156,7 +157,7 @@ var SiteMedals = {
       var el = document.getElementById('cnt' + cap);
       if (el) { el.textContent = c[cap.toLowerCase()]; }
     });
-    var cardMap = { snake: 'cardMedalSnake', tictactoe: 'cardMedalTictactoe', mario: 'cardMedalMario', battlematch: 'cardMedalBattlematch' };
+    var cardMap = { snake: 'cardMedalSnake', tictactoe: 'cardMedalTictactoe', mario: 'cardMedalMario', battlematch: 'cardMedalBattlematch', run: 'cardMedalRun' };
     for (var game in cardMap) {
       var el = document.getElementById(cardMap[game]);
       if (el) {

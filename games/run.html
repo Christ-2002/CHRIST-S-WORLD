@@ -130,7 +130,7 @@
         <div class="hud-scores">
           <div class="score-box"><span class="label">SCORE</span><span class="value" id="score">0</span></div>
           <div class="score-box"><span class="label">雪糕</span><span class="value" id="iceCount">0</span></div>
-          <div class="score-box"><span class="label">TIME</span><span class="value" id="timeVal">0.0</span></div>
+          <div class="score-box"><span class="label">剩余</span><span class="value" id="timeVal">70.0</span></div>
           <div class="score-box"><span class="label">BEST</span><span class="value" id="bestVal">0</span></div>
         </div>
         <div class="stamina-box">
@@ -171,6 +171,7 @@
         <span>跳跃：<span class="key">SPACE</span> / <span class="key">W</span>（短按小跳、长按大跳）</span>
         <span>加速跑：<span class="key">SHIFT</span>（耗体力）</span>
         <span>暂停：<span class="key">P</span> · 重开：<span class="key">R</span></span>
+        <span>奖牌：2400 铜牌 · 2700 银牌 · 3000 金牌</span>
         <span>手机：使用屏幕按键</span>
       </div>
 
@@ -205,6 +206,7 @@
     </div>
   </footer>
 
+<script src="../js/common.js"></script>
 <script>
 /* ============================================================
    张雪峰快跑 · 第一关（大空间 / 心脏狂暴版）
@@ -222,25 +224,30 @@
   /* ---------- 可调数值（后台编辑器改这里） ---------- */
   var CFG = {
       stamMax: 100,
-      runDrain: 8,
+      runDrain: 8.5,
       jumpCost: 6,
       walkRegen: 12,
-      idleRegen: 15,
-      walk: 210,
-      run: 345,
-      jumpV: 880,
+      idleRegen: 16,
+      walk: 200,
+      run: 350,
+      jumpV: 800,
       grav: 2150,
-      iceStam: 30,
-      iceSpeed: 5,
+      iceStam: 35,
+      iceSpeed: 6,
       iceScore: 100,
-      speedCap: 125,
+      speedCap: 100,
       heartSpeed: 300,
       heartJumpV: 940,
       heartStart: 240,
       rageAt: 0.5,
-      rageBoost: 0.42,
+      rageBoost: 0.45,
       startDelay: 3,
-      winBonus: 500
+      winBonus: 500,
+      timeLimit: 70,        // 通关时限（秒）：剩余时间 = 70 - 已用时间
+      timeScore: 80,        // 剩余时间每秒折算分数
+      goldScore: 3000,      // 金牌分数线
+      silverScore: 2700,    // 银牌分数线
+      bronzeScore: 2400     // 铜牌分数线
     };
 
   /* ---------- 关卡数据 ---------- */
@@ -334,7 +341,7 @@
       stamina: CFG.stamMax, speedBonus: 0,
       hx: -CFG.heartStart, hy: GROUND_Y, hvy: 0, hground: true, hvx: 0,
       rage: false, rageP: 0, rageBanner: 0,
-      cam: 0, t: 0, countdown: CFG.startDelay, goShow: 0,
+      cam: 0, t: 0, pt: 0, countdown: CFG.startDelay, goShow: 0,
       score: 0, ice: 0, finished: false, loseReason: '',
       ices: iceDefs.map(function (d) { return { x: d[0], y: d[1], got: false, bob: Math.random() * 6.28 }; }),
       popups: []
@@ -451,6 +458,10 @@
       G.countdown -= dt;
       if (G.countdown <= 0) { state = 'play'; G.goShow = 0.9; }
     }
+    if (state === 'play') {
+      G.pt += dt;
+      if (G.pt >= CFG.timeLimit) { endGame(false, 'time'); return; }
+    }
 
     var canMove = state === 'play';
     var dir = canMove ? ((keys.right ? 1 : 0) - (keys.left ? 1 : 0)) : 0;
@@ -530,7 +541,7 @@
 
     elScore.textContent = G.score;
     elIce.textContent = G.ice;
-    elTime.textContent = G.t.toFixed(1);
+    elTime.textContent = Math.max(0, CFG.timeLimit - G.pt).toFixed(1);
     var pct = Math.round(G.stamina / CFG.stamMax * 100);
     elStam.style.width = pct + '%';
     elStam.classList.toggle('low', G.stamina < CFG.stamMax * 0.25);
@@ -609,20 +620,36 @@
     if (state === 'win' || state === 'lose') return;
     if (win) {
       state = 'win';
-      var timeBonus = Math.max(0, Math.round(2000 - G.t * 18));
-      var stamBonus = Math.round(G.stamina * 2);
-      G.score += CFG.winBonus + timeBonus + stamBonus;
+      var remain = Math.round(Math.max(0, CFG.timeLimit - G.pt) * 10) / 10;
+      var timeBonus = Math.round(remain * CFG.timeScore);
+      G.score += CFG.winBonus + timeBonus;
+      var newMedal = SiteMedals.unlock('run', {
+        bronze: G.score >= CFG.bronzeScore,
+        silver: G.score >= CFG.silverScore,
+        gold: G.score >= CFG.goldScore
+      });
       if (G.score > best) { best = G.score; localStorage.setItem('run-best', best); }
       elBest.textContent = best;
+      var medalTxt = G.score >= CFG.goldScore ? '金牌'
+        : (G.score >= CFG.silverScore ? '银牌'
+        : (G.score >= CFG.bronzeScore ? '铜牌' : '未得奖牌'));
       elTitle.textContent = '追上杨幂了！';
-      elText.innerHTML = '通关用时 ' + G.t.toFixed(1) + ' 秒 · 巧乐兹 ' + G.ice + ' 个<br>' +
-        '通关 ' + CFG.winBonus + ' + 时间 ' + timeBonus + ' + 体力 ' + stamBonus + '<br>总分 <b>' + G.score + '</b>';
+      elText.innerHTML = '通关用时 ' + G.pt.toFixed(1) + ' 秒 · 巧乐兹 ' + G.ice + ' 个 · 剩余 ' + remain.toFixed(1) + ' 秒<br>' +
+        '雪糕 ' + G.ice + '×100=' + (G.ice * 100) +
+        ' + 剩余 ' + remain.toFixed(1) + '×' + CFG.timeScore + '=' + timeBonus +
+        ' + 通关 ' + CFG.winBonus +
+        '<br>总分 <b>' + G.score + '</b> · ' + medalTxt;
       elBtn.textContent = '再玩一次';
+      if (newMedal) setTimeout(function () { showMedalDialog(newMedal, '张雪峰快跑'); }, 400);
     } else {
       state = 'lose';
-      elTitle.textContent = reason === 'pit' ? '掉进坑里了！' : (G.rage ? '被狂暴的心脏撕碎了！' : '被心脏抓住了！');
-      elText.innerHTML = (reason === 'pit' ? '身法失误，掉入深渊。' : '跑快点！巧乐兹要多吃、别撞箱子，台子上也躲不住。') +
-        '<br>本次得分 <b>' + G.score + '</b> · 用时 ' + G.t.toFixed(1) + ' 秒';
+      elTitle.textContent = reason === 'pit' ? '掉进坑里了！'
+        : (reason === 'time' ? '70 秒到了，心脏追上来了！'
+        : (G.rage ? '被狂暴的心脏撕碎了！' : '被心脏抓住了！'));
+      elText.innerHTML = reason === 'pit' ? '身法失误，掉入深渊。'
+        : (reason === 'time' ? '超时没到终点。跑快点、多吃巧乐兹、别撞箱子！'
+        : '跑快点！巧乐兹要多吃、别撞箱子，台子上也躲不住。') +
+        '<br>本次得分 <b>' + G.score + '</b> · 用时 ' + G.pt.toFixed(1) + ' 秒';
       elBtn.textContent = '再来一次';
     }
     elOverlay.style.display = 'flex';
