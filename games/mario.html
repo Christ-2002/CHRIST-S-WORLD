@@ -341,12 +341,15 @@
 
     function resolveX(e) {
       var r = tileRange(e);
+      // 水平碰撞只检测身体所在的行，排除脚底正踩着的那个格子，
+      // 否则站在地面上会被地面当成“墙”卡住，导致无法连续移动。
+      var y1 = Math.floor((e.y + e.h - 1) / TILE);
       if (e.vx > 0) {
-        for (var ty = r.y0; ty <= r.y1; ty++) {
+        for (var ty = r.y0; ty <= y1; ty++) {
           if (isSolid(r.x1, ty)) { e.x = r.x1*TILE - e.w; e.vx = 0; e.hitWall = 1; return; }
         }
       } else if (e.vx < 0) {
-        for (var ty = r.y0; ty <= r.y1; ty++) {
+        for (var ty = r.y0; ty <= y1; ty++) {
           if (isSolid(r.x0, ty)) { e.x = (r.x0+1)*TILE; e.vx = 0; e.hitWall = -1; return; }
         }
       }
