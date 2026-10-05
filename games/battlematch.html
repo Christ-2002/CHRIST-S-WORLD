@@ -906,8 +906,8 @@
     // 敌方兵种随时间变强
     function enemyPick() {
       var r = Math.random();
-      if (G.time >= 110 && r < 0.08) { return 'catapult'; }
-      if (G.time >= 80 && r < 0.18) { return 'mage'; }
+      if (G.time >= 110 && r < 0.05) { return 'catapult'; }
+      if (G.time >= 80 && r < 0.13) { return 'mage'; }
       if (G.time >= 55 && r < 0.33) { return 'archer'; }
       if (G.time >= 30 && r < 0.55) { return 'spearman'; }
       return 'swordsman';
@@ -997,7 +997,7 @@
       // 敌方按时间间隔出兵
       G.enemyTimer -= dt;
       if (G.enemyTimer <= 0) {
-        G.enemyTimer = Math.max(3.2, 6.5 - G.time * 0.03) / DIFFS[difficulty].mult;
+        G.enemyTimer = Math.max(4, 6.5 - G.time * 0.03) / DIFFS[difficulty].mult;
         spawnUnit('enemy', enemyPick());
       }
 
