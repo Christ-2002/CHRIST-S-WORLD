@@ -18,6 +18,7 @@
     .battle-hud .score-box { min-width: 96px; }
     .battle-hud .hud-spacer { flex: 1; }
     .battle-wrap {
+      position: relative;
       display: flex; gap: 16px; align-items: flex-start; justify-content: center;
     }
     .field-col { flex: 0 0 auto; }
@@ -61,10 +62,32 @@
       content: ""; width: 9px; height: 9px; border-radius: 50%;
       background: var(--gold); border: 1.5px solid var(--ink);
     }
-    .battle-tip {
-      margin-top: 12px; font-size: 13px; color: var(--muted);
-      text-align: center; line-height: 1.8;
+    /* 能量条 */
+    .energy-bar {
+      position: relative; margin-top: 12px; height: 30px;
+      border: var(--border); border-radius: 6px; background: #dde5cf;
+      box-shadow: 3px 3px 0 var(--ink); overflow: hidden;
+      display: flex; align-items: center;
     }
+    .energy-fill {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+      background: #9bca4b;
+      box-shadow: inset 0 3px 0 rgba(255,255,255,.35);
+      transition: width .15s ease-out;
+    }
+    .energy-tag, .energy-num { position: relative; z-index: 1; color: var(--ink); }
+    .energy-tag { padding-left: 12px; font-family: var(--font-pixel); font-size: 9px; letter-spacing: .5px; }
+    .energy-num { margin-left: auto; padding-right: 12px; font-weight: 900; font-size: 14px; }
+    /* 暂停遮罩 */
+    .pause-mask {
+      position: absolute; inset: 0; z-index: 20; border-radius: 6px;
+      background: rgba(31,45,32,.72); color: #fbfcf4;
+      display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+      text-align: center;
+    }
+    .pause-mask.show { display: flex; }
+    .pause-mask .pm-title { font-family: var(--font-pixel); font-size: 20px; }
+    .pause-mask .pm-sub { font-size: 14px; opacity: .85; }
     @media (max-width: 860px) {
       .battle-wrap { gap: 10px; }
       .field-col { flex: 0 0 25vw; }
@@ -72,6 +95,8 @@
       .match-col { flex: 1 1 auto; max-width: none; }
       .shop { grid-template-columns: repeat(2, 1fr); }
       .battle-hud .score-box { min-width: 78px; padding: 8px 10px; }
+      .energy-bar { height: 26px; }
+      .energy-num { font-size: 12px; }
     }
   </style>
 </head>
@@ -106,7 +131,7 @@
         返回游戏列表
       </a>
       <h1 class="page-title">对战消消乐</h1>
-      <p class="page-sub">右边消除攒分、自动出兵，左边战场上蓝方士兵会一路打上红色敌方基地。</p>
+      <p class="page-sub">右边消除攒能量、自动出兵，左边战场上蓝方士兵会一路打上红色敌方基地。按空格键可暂停。</p>
     </div>
 
     <!-- 计分板 -->
@@ -115,10 +140,6 @@
         <div class="score-box">
           <span class="label">SCORE</span>
           <span class="value" id="hudScore">0</span>
-        </div>
-        <div class="score-box">
-          <span class="label">COINS</span>
-          <span class="value" id="hudCoins">0</span>
         </div>
       </div>
       <div class="hud-spacer"></div>
@@ -175,10 +196,15 @@
             <span class="shop-cost">90</span>
           </button>
         </div>
-        <p class="battle-tip">
-          三连 10 分 · 四连 25 分 · 五连 40 分；连锁消除逐波 +50% 倍率。<br>
-          每累计 20 分自动派出 1 名刀兵，也可花积分在上方购买其他兵种。
-        </p>
+        <div class="energy-bar" id="energyBar" title="1 分 = 1 能量，上限 500；每累计 20 分自动派出 1 名刀兵，购买兵种消耗能量">
+          <div class="energy-fill" id="energyFill"></div>
+          <span class="energy-tag">ENERGY</span>
+          <span class="energy-num" id="hudEnergy">0 / 500</span>
+        </div>
+      </div>
+      <div class="pause-mask" id="pauseMask">
+        <div class="pm-title">已暂停</div>
+        <div class="pm-sub">按空格键继续</div>
       </div>
     </div>
   </main>
@@ -215,7 +241,9 @@
     var MS = 480, N = 8, CELL = MS / N;  // 消消乐 8×8
 
     var hudScore = document.getElementById('hudScore');
-    var hudCoins = document.getElementById('hudCoins');
+    var energyFill = document.getElementById('energyFill');
+    var hudEnergy = document.getElementById('hudEnergy');
+    var pauseMask = document.getElementById('pauseMask');
     var shopBtns = document.querySelectorAll('.shop-btn');
 
     /* ---------- 消消乐方块颜色（内嵌不同符号，色弱也能区分） ---------- */
@@ -237,12 +265,33 @@
       catapult:  { hp: 150, dmg: 42, range: 235, gap: 3.0,  speed: 13, r: 13, cost: 90, ranged: true,  projSpeed: 170, projColor: '#9a9a92', aoe: 42 }
     };
 
+    /* ---------- 能量与哨兵塔参数（想改数字在这里） ---------- */
+    var ENERGY_MAX = 500;        // 能量条上限
+    var TOWER_INSET = FH / 6;    // 塔距基地的纵向距离（半场的 1/3）
+    var TOWER_X = 26;            // 左右两座塔的 x 坐标（离边线距离）
+    var TOWER = { hp: 220, dmg: 7, range: 150, gap: 1.0, projSpeed: 300, r: 13 };
+
+    function makeTowers() {
+      var arr = [];
+      var ty = { enemy: 30 + TOWER_INSET, ally: FH - 30 - TOWER_INSET };
+      ['enemy', 'ally'].forEach(function (side) {
+        [TOWER_X, FW - TOWER_X].forEach(function (x) {
+          arr.push({
+            side: side, x: x, y: ty[side],
+            hp: TOWER.hp, maxHp: TOWER.hp, cd: Math.random() * 0.5,
+            isTower: true, rad: TOWER.r
+          });
+        });
+      });
+      return arr;
+    }
+
     /* ---------- 全局状态 ---------- */
     var G = null;
     function newState() {
       return {
-        time: 0, over: false,
-        score: 0, coins: 0, freeGiven: 0,
+        time: 0, over: false, paused: false,
+        score: 0, energy: 0, freeGiven: 0,
         /* 消消乐 */
         grid: [],            // grid[r][c] = {t:类型, y:浮点行}
         selected: null,
@@ -252,7 +301,7 @@
         phaseT: 0,
         fxs: [],             // 浮动得分/特效
         /* 战场 */
-        units: [], projectiles: [], hits: [],
+        units: [], projectiles: [], hits: [], towers: makeTowers(),
         bases: {
           ally:  { hp: 600, maxHp: 600, y: FH - 30, side: 'ally' },
           enemy: { hp: 600, maxHp: 600, y: 30,       side: 'enemy' }
@@ -312,7 +361,7 @@
     }
 
     function tapCell(r, c) {
-      if (G.over || G.phase !== 'idle') { return; }
+      if (G.over || G.paused || G.phase !== 'idle') { return; }
       if (!G.selected) { G.selected = { r: r, c: c }; return; }
       var s = G.selected;
       if (s.r === r && s.c === c) { G.selected = null; return; }
@@ -422,7 +471,7 @@
 
     function addScore(gain, x, y, wave) {
       G.score += gain;
-      G.coins += gain;
+      G.energy = Math.min(ENERGY_MAX, G.energy + gain);
       G.fxs.push({ x: x, y: y, text: '+' + gain + (wave > 1 ? ' 连锁x' + wave : ''), t: 0, big: wave > 1 });
       updateHud();
       spawnFreeSoldiers();
@@ -593,13 +642,18 @@
     function acquireTarget(u) {
       var dir = u.side === 'ally' ? -1 : 1;
       var best = null, bestScore = 1e9;
+      function consider(o, rad) {
+        var forward = (o.y - u.y) * dir;
+        if (forward < -14 || Math.abs(o.x - u.x) > 26 + rad * 0.55) { return; }
+        var sc = forward + Math.abs(o.x - u.x) * 0.5;
+        if (sc < bestScore) { bestScore = sc; best = o; }
+      }
       for (var i = 0; i < G.units.length; i++) {
         var o = G.units[i];
-        if (o.side === u.side) { continue; }
-        var forward = (o.y - u.y) * dir;
-        if (forward < -14 || Math.abs(o.x - u.x) > 26) { continue; }
-        var score = forward + Math.abs(o.x - u.x) * 0.5;
-        if (score < bestScore) { bestScore = score; best = o; }
+        if (o.side !== u.side) { consider(o, UNITS[o.type].r); }
+      }
+      for (var t = 0; t < G.towers.length; t++) {
+        if (G.towers[t].side !== u.side) { consider(G.towers[t], TOWER.r); }
       }
       return best;
     }
@@ -617,6 +671,16 @@
       });
     }
 
+    function towerFire(t, target) {
+      G.projectiles.push({
+        x: t.x, y: t.y + (t.side === 'enemy' ? 16 : -16),
+        side: t.side, tx: target.x, ty: target.y,
+        target: target, base: false,
+        speed: TOWER.projSpeed, dmg: TOWER.dmg, aoe: 0,
+        color: '#f4e9b8', kind: 'archer'
+      });
+    }
+
     function addHit(x, y, size, color) {
       G.hits.push({ x: x, y: y, t: 0, size: size, color: color });
     }
@@ -630,6 +694,13 @@
           if (o.side !== foeSide) { continue; }
           if (Math.hypot(o.x - p.tx, o.y - p.ty) <= p.aoe + UNITS[o.type].r) {
             o.hp -= p.dmg * (p.base ? 0.6 : 1);
+          }
+        }
+        for (var ti2 = 0; ti2 < G.towers.length; ti2++) {
+          var tw2 = G.towers[ti2];
+          if (tw2.side !== foeSide) { continue; }
+          if (Math.hypot(tw2.x - p.tx, tw2.y - p.ty) <= p.aoe + TOWER.r) {
+            tw2.hp -= p.dmg * (p.base ? 0.6 : 1);
           }
         }
         if (p.base) { G.bases[foeSide].hp -= p.dmg; }
@@ -683,7 +754,8 @@
         var inRange = false;
         if (target) {
           var forward = (target.y - u.y) * dir;
-          inRange = forward <= def.range + UNITS[target.type].r - 2;
+          var trad = target.isTower ? TOWER.r : UNITS[target.type].r;
+          inRange = forward <= def.range + trad - 2;
         }
 
         if (target && inRange) {
@@ -705,6 +777,20 @@
           // 前进
           u.y += dir * def.speed * dt;
         }
+      }
+
+      // 哨兵塔攻击射程内的敌方小兵
+      for (var ti = 0; ti < G.towers.length; ti++) {
+        var tw = G.towers[ti];
+        tw.cd -= dt;
+        var tgt = null, td = 1e9;
+        for (var ei = 0; ei < G.units.length; ei++) {
+          var eu = G.units[ei];
+          if (eu.side === tw.side) { continue; }
+          var dd = Math.hypot(eu.x - tw.x, eu.y - tw.y);
+          if (dd <= TOWER.range && dd < td) { td = dd; tgt = eu; }
+        }
+        if (tgt && tw.cd <= 0) { tw.cd = TOWER.gap; towerFire(tw, tgt); }
       }
 
       // 投射物
@@ -732,6 +818,15 @@
         }
       }
 
+      // 被摧毁的哨兵塔
+      for (i = G.towers.length - 1; i >= 0; i--) {
+        if (G.towers[i].hp <= 0) {
+          var lost = G.towers[i];
+          addHit(lost.x, lost.y, 22, 'rgba(60,60,50,.6)');
+          G.towers.splice(i, 1);
+        }
+      }
+
       // 胜负
       if (G.bases.enemy.hp <= 0) { G.bases.enemy.hp = 0; endGame(true); }
       else if (G.bases.ally.hp <= 0) { G.bases.ally.hp = 0; endGame(false); }
@@ -754,6 +849,7 @@
 
       drawBase(G.bases.enemy);
       drawBase(G.bases.ally);
+      for (var ti3 = 0; ti3 < G.towers.length; ti3++) { drawTower(G.towers[ti3]); }
 
       var i;
       for (i = 0; i < G.units.length; i++) { drawUnit(G.units[i]); }
@@ -809,7 +905,7 @@
     function drawUnit(u) {
       var def = UNITS[u.type];
       var ally = u.side === 'ally';
-      var dir = ally ? -1 : 1;
+      var fy = ally ? 1 : -1;   // 武器朝向：蓝方朝上、红方朝下，身体一律直立
       var body = ally ? '#3a78c2' : '#d05040';
       var bodyDark = ally ? '#274c72' : '#8e2f24';
       var big = u.type === 'catapult';
@@ -824,56 +920,57 @@
       fctx.ellipse(0, big ? 11 : 9, big ? 13 : 8, 3.5, 0, 0, Math.PI * 2);
       fctx.fill();
 
-      fctx.scale(1, dir);   // 敌方上下翻转，武器统一朝“前方”绘制
-
       if (u.type === 'catapult') {
-        // 投石车：车身 + 两轮 + 投掷臂
+        // 投石车：车身 + 两轮 + 投掷臂（车身对称，臂朝向对方半场）
         fctx.fillStyle = '#7a5230'; fctx.strokeStyle = '#4a3018'; fctx.lineWidth = 2;
         roundRect(fctx, -11, -4, 22, 10, 2); fctx.fill(); fctx.stroke();
         fctx.strokeStyle = '#5a3e20'; fctx.lineWidth = 3;
         var armA = -0.5 + (u.atkAnim > 0 ? 0.5 : 0);
-        fctx.beginPath(); fctx.moveTo(-6, -2); fctx.lineTo(-6 + Math.cos(armA) * 14, -2 + Math.sin(armA) * 14); fctx.stroke();
+        fctx.beginPath();
+        fctx.moveTo(-6, -2);
+        fctx.lineTo(-6 + Math.cos(armA) * 14, fy * Math.sin(armA) * 14);
+        fctx.stroke();
         fctx.fillStyle = '#3a3a34';
         fctx.beginPath(); fctx.arc(-6, 8, 3.6, 0, Math.PI * 2); fctx.arc(7, 8, 3.6, 0, Math.PI * 2); fctx.fill();
       } else {
-        // 身体
+        // 身体（直立）
         fctx.fillStyle = body; fctx.strokeStyle = bodyDark; fctx.lineWidth = 2;
-        roundRect(fctx, -6, -3, 12, big ? 12 : 10, 3); fctx.fill(); fctx.stroke();
-        // 头
+        roundRect(fctx, -6, -3, 12, 10, 3); fctx.fill(); fctx.stroke();
+        // 头（直立）
         fctx.fillStyle = '#f0c8a0'; fctx.strokeStyle = '#a9784a';
         fctx.beginPath(); fctx.arc(0, -8, 4.6, 0, Math.PI * 2); fctx.fill(); fctx.stroke();
-
+        // 法师尖帽（对称）
+        if (u.type === 'mage') {
+          fctx.fillStyle = '#6a427a'; fctx.strokeStyle = '#472c54'; fctx.lineWidth = 1.6;
+          fctx.beginPath(); fctx.moveTo(-5, -10); fctx.lineTo(0, -17); fctx.lineTo(5, -10); fctx.closePath(); fctx.fill(); fctx.stroke();
+        }
+        // 武器：仅武器随阵营上下镜像，人不倒立
+        fctx.save(); fctx.scale(1, fy);
         var swing = u.atkAnim > 0 ? 4 : 0;
         if (u.type === 'swordsman') {
-          // 刀
           fctx.strokeStyle = '#d8d8d0'; fctx.lineWidth = 2.4;
           fctx.beginPath(); fctx.moveTo(5, -1); fctx.lineTo(11 + swing, -5 - swing); fctx.stroke();
         } else if (u.type === 'spearman') {
-          // 长矛
           fctx.strokeStyle = '#8a6a3a'; fctx.lineWidth = 2;
           fctx.beginPath(); fctx.moveTo(-2, 6); fctx.lineTo(10 + swing, -12 - swing); fctx.stroke();
           fctx.fillStyle = '#e8e8e0';
           fctx.beginPath(); fctx.moveTo(10 + swing, -12 - swing); fctx.lineTo(13 + swing, -15 - swing); fctx.lineTo(11 + swing, -9 - swing); fctx.closePath(); fctx.fill();
         } else if (u.type === 'archer') {
-          // 弓
           fctx.strokeStyle = '#6a4a28'; fctx.lineWidth = 2;
           fctx.beginPath(); fctx.arc(7, -1, 6, -1.1, 1.1); fctx.stroke();
           fctx.strokeStyle = '#e8e8e0'; fctx.lineWidth = 1.4;
           fctx.beginPath(); fctx.moveTo(2, -6); fctx.lineTo(2, 4); fctx.stroke();
         } else if (u.type === 'mage') {
-          // 尖帽
-          fctx.fillStyle = '#6a427a'; fctx.strokeStyle = '#472c54'; fctx.lineWidth = 1.6;
-          fctx.beginPath(); fctx.moveTo(-5, -10); fctx.lineTo(0, -17); fctx.lineTo(5, -10); fctx.closePath(); fctx.fill(); fctx.stroke();
-          // 法杖
           fctx.strokeStyle = '#8a6a3a'; fctx.lineWidth = 2;
           fctx.beginPath(); fctx.moveTo(6, 6); fctx.lineTo(10 + swing, -8 - swing); fctx.stroke();
           fctx.fillStyle = '#c79ae0';
           fctx.beginPath(); fctx.arc(10 + swing, -9 - swing, 2.8, 0, Math.PI * 2); fctx.fill();
         }
+        fctx.restore();
       }
       fctx.restore();
 
-      // 血条（不翻转）
+      // 血条（头顶）
       if (!big && u.hp < u.maxHp) {
         var w2 = 16;
         fctx.fillStyle = '#1f2d20';
@@ -881,6 +978,43 @@
         fctx.fillStyle = u.hp / u.maxHp > 0.4 ? '#5a8f3c' : '#e2503d';
         fctx.fillRect(u.x - w2 / 2, u.y - 16, w2 * Math.max(0, u.hp / u.maxHp), 2);
       }
+    }
+
+    function drawTower(t) {
+      var ally = t.side === 'ally';
+      var fill = ally ? '#3a78c2' : '#d05040';
+      var dark = ally ? '#274c72' : '#8e2f24';
+      var x = t.x, y = t.y;
+      // 阴影
+      fctx.fillStyle = 'rgba(31,45,32,.22)';
+      fctx.beginPath(); fctx.ellipse(x, y + 18, 15, 4, 0, 0, Math.PI * 2); fctx.fill();
+      // 石底座
+      fctx.fillStyle = '#8d949c'; fctx.strokeStyle = '#565c64'; fctx.lineWidth = 2.5;
+      fctx.fillRect(x - 13, y + 10, 26, 7); fctx.strokeRect(x - 13, y + 10, 26, 7);
+      // 塔身
+      fctx.fillStyle = fill; fctx.strokeStyle = dark; fctx.lineWidth = 2.5;
+      fctx.fillRect(x - 9, y - 12, 18, 22); fctx.strokeRect(x - 9, y - 12, 18, 22);
+      // 顶部垛口
+      fctx.lineWidth = 2;
+      fctx.fillRect(x - 9, y - 17, 6, 5); fctx.strokeRect(x - 9, y - 17, 6, 5);
+      fctx.fillRect(x - 3, y - 17, 6, 5); fctx.strokeRect(x - 3, y - 17, 6, 5);
+      fctx.fillRect(x + 3, y - 17, 6, 5); fctx.strokeRect(x + 3, y - 17, 6, 5);
+      // 小窗
+      fctx.fillStyle = dark;
+      fctx.fillRect(x - 2.5, y - 4, 5, 8);
+      // 旗杆与旗
+      fctx.strokeStyle = '#1f2d20'; fctx.lineWidth = 1.6;
+      fctx.beginPath(); fctx.moveTo(x, y - 17); fctx.lineTo(x, y - 27); fctx.stroke();
+      fctx.fillStyle = fill; fctx.strokeStyle = dark; fctx.lineWidth = 1.2;
+      fctx.beginPath();
+      fctx.moveTo(x, y - 27); fctx.lineTo(x + 9, y - 24); fctx.lineTo(x, y - 21);
+      fctx.closePath(); fctx.fill(); fctx.stroke();
+      // 血条（底座下方）
+      var bw = 24;
+      fctx.fillStyle = '#1f2d20';
+      fctx.fillRect(x - bw / 2 - 1, y + 19, bw + 2, 5);
+      fctx.fillStyle = t.hp / t.maxHp > 0.4 ? fill : '#e2503d';
+      fctx.fillRect(x - bw / 2, y + 20, bw * Math.max(0, t.hp / t.maxHp), 3);
     }
 
     function drawProjectile(p) {
@@ -935,10 +1069,12 @@
     /* ---------- HUD 与购买条 ---------- */
     function updateHud() {
       hudScore.textContent = G.score;
-      hudCoins.textContent = G.coins;
+      var pct = Math.max(0, Math.min(100, G.energy / ENERGY_MAX * 100));
+      energyFill.style.width = pct + '%';
+      hudEnergy.textContent = G.energy + ' / ' + ENERGY_MAX;
       for (var i = 0; i < shopBtns.length; i++) {
         var type = shopBtns[i].getAttribute('data-unit');
-        shopBtns[i].classList.toggle('poor', G.coins < UNITS[type].cost);
+        shopBtns[i].classList.toggle('poor', G.energy < UNITS[type].cost);
       }
     }
 
@@ -947,13 +1083,15 @@
         if (!G || G.over) { return; }
         var type = this.getAttribute('data-unit');
         var cost = UNITS[type].cost;
-        if (G.coins < cost) {
-          showToast('积分不足，还差 ' + (cost - G.coins) + ' 分');
+        if (G.energy < cost) {
+          showToast('能量不足，还差 ' + (cost - G.energy));
+          this.blur();
           return;
         }
-        G.coins -= cost;
+        G.energy -= cost;
         spawnUnit('ally', type);
         updateHud();
+        this.blur();
       });
     }
 
@@ -969,6 +1107,16 @@
       e.preventDefault();
       matchPoint(e);
     });
+
+    /* ---------- 空格键暂停 / 继续 ---------- */
+    document.addEventListener('keydown', function (e) {
+      if (e.code === 'Space' && !e.repeat) {
+        if (!G || G.over) { return; }
+        e.preventDefault();
+        G.paused = !G.paused;
+        pauseMask.classList.toggle('show', G.paused);
+      }
+    });
     /* ===MAIN_END=== */
 
     /* ---------- 重新开始 ---------- */
@@ -976,6 +1124,7 @@
       G = newState();
       buildBoard();
       updateHud();
+      pauseMask.classList.remove('show');
       var mask = document.querySelector('.modal-mask');
       if (mask) { mask.remove(); }
     }
@@ -986,7 +1135,7 @@
     function frame(ts) {
       var dt = Math.min(0.05, (ts - lastTs) / 1000 || 0);
       lastTs = ts;
-      if (G && !G.over) {
+      if (G && !G.over && !G.paused) {
         G.time += dt;
         updateMatch3(dt);
         updateField(dt);
