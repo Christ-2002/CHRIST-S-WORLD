@@ -294,8 +294,8 @@
     }
     /* ---------- 难度：普通=敌方出兵量 x1.1，困难=x1.65（普通基础上再 x1.5） ---------- */
     var DIFFS = {
-      normal: { mult: 1.1, label: '普通', name: '普通难度', desc: '在当前基础上，敌方出兵量 +10%' },
-      hard:   { mult: 1.65, label: '困难', name: '困难难度', desc: '在普通难度基础上再 +50%（总计约 +65%）' }
+      normal: { mult: 1.1, label: '普通', name: '普通难度', desc: '傻子都能通关' },
+      hard:   { mult: 1.65, label: '困难', name: '困难难度', desc: '在普通难度基础上 +50%' }
     };
     var difficulty = 'normal';
     try {
@@ -1348,8 +1348,7 @@
       fctx.restore();
     }
 
-    function endGame(win) {
-      G.over = true;
+    function showResult(win) {
       var mask = document.createElement('div');
       mask.className = 'modal-mask';
       mask.innerHTML =
@@ -1362,6 +1361,31 @@
         '</div>';
       document.body.appendChild(mask);
       mask.querySelector('#battleAgain').addEventListener('click', restart);
+    }
+    // 奖牌：普通难度通关=铜牌；困难难度通关=银牌；困难累计通关 3 次=金牌
+    function earnBattleMedal() {
+      var earned = { bronze: false, silver: false, gold: false };
+      if (difficulty === 'hard') {
+        var hardWins = 0;
+        try { hardWins = parseInt(localStorage.getItem('battlematch-hard-wins') || '0', 10) || 0; } catch (e) {}
+        hardWins += 1;
+        try { localStorage.setItem('battlematch-hard-wins', String(hardWins)); } catch (e) {}
+        earned.silver = true;
+        if (hardWins >= 3) { earned.gold = true; }
+      } else {
+        earned.bronze = true;
+      }
+      return SiteMedals.unlock('battlematch', earned);
+    }
+    function endGame(win) {
+      G.over = true;
+      if (!win) { showResult(false); return; }
+      var newMedal = earnBattleMedal();
+      if (newMedal) {
+        showMedalDialog(newMedal, '对战消消乐', function () { showResult(true); });
+      } else {
+        showResult(true);
+      }
     }
     /* ===FIELD_END=== */
 

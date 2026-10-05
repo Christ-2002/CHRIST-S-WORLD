@@ -84,7 +84,8 @@ var SiteMedals = {
     return {
       snake: { bronze: false, silver: false, gold: false },
       tictactoe: { bronze: false, silver: false, gold: false },
-      mario: { bronze: false, silver: false, gold: false }
+      mario: { bronze: false, silver: false, gold: false },
+      battlematch: { bronze: false, silver: false, gold: false }
     };
   },
 
@@ -155,7 +156,7 @@ var SiteMedals = {
       var el = document.getElementById('cnt' + cap);
       if (el) { el.textContent = c[cap.toLowerCase()]; }
     });
-    var cardMap = { snake: 'cardMedalSnake', tictactoe: 'cardMedalTictactoe', mario: 'cardMedalMario' };
+    var cardMap = { snake: 'cardMedalSnake', tictactoe: 'cardMedalTictactoe', mario: 'cardMedalMario', battlematch: 'cardMedalBattlematch' };
     for (var game in cardMap) {
       var el = document.getElementById(cardMap[game]);
       if (el) {
@@ -181,7 +182,7 @@ function medalSvg(level) {
 }
 
 /* ---------------- 系统提示弹窗（点击“确认”关闭） ---------------- */
-function showMedalDialog(level, gameName) {
+function showMedalDialog(level, gameName, onClose) {
   // 同一时间只保留一个弹窗
   var old = document.querySelector('.modal-mask');
   if (old) { old.remove(); }
@@ -201,6 +202,7 @@ function showMedalDialog(level, gameName) {
   function close() {
     mask.remove();
     document.removeEventListener('keydown', onKey);
+    if (typeof onClose === 'function') { onClose(); }
   }
   function onKey(e) {
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
