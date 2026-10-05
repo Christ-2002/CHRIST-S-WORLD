@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>你爹的网站</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='2' fill='%232f5d3a'/%3E%3Crect x='4.2' y='6.6' width='1.5' height='3.4' fill='%239bca4b'/%3E%3Crect x='3.2' y='7.6' width='3.5' height='1.4' fill='%239bca4b'/%3E%3Ccircle cx='10.6' cy='8' r='0.85' fill='%23e2503d'/%3E%3Ccircle cx='12.2' cy='9.8' r='0.85' fill='%23f0b429'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* ===== 张雪峰快跑 页面专属样式（大空间版） ===== */
+    main.run-main { width: min(1240px, 96vw); }
+    .game-shell.run-shell { max-width: none; }
+    .canvas-wrap.run-wrap { width: 100%; padding: 0; }
+    .run-head { max-width: 1200px; margin-left: auto; margin-right: auto; }
+    .run-hud {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; flex-wrap: wrap;
+    }
+    .stamina-box { flex: 1 1 220px; min-width: 200px; }
+    .stamina-label {
+      font-family: 'Press Start 2P', monospace; font-size: 9px;
+      color: var(--ink); letter-spacing: .5px; margin-bottom: 5px;
+      display: flex; justify-content: space-between;
+    }
+    .stamina-track {
+      height: 16px; background: #dfe4d2; border: 3px solid var(--ink);
+      box-shadow: 3px 3px 0 rgba(31,45,32,.18); position: relative; overflow: hidden;
+    }
+    .stamina-fill {
+      height: 100%; width: 100%;
+      background: repeating-linear-gradient(90deg,#5a8f3c 0 8px,#4d7e34 8px 12px);
+      transition: width .08s linear;
+    }
+    .stamina-fill.low {
+      background: repeating-linear-gradient(90deg,#e2503d 0 8px,#c43e2d 8px 12px);
+      animation: stamBlink .5s steps(2) infinite;
+    }
+    @keyframes stamBlink { 50% { opacity: .45; } }
+    .speed-badge {
+      display: inline-block; margin-top: 6px;
+      font-family: 'Press Start 2P', monospace; font-size: 9px;
+      color: var(--gb-dark);
+    }
+    .run-progbar {
+      margin: 12px 0 0; position: relative; height: 26px;
+      background: #eef1e2; border: 3px solid var(--ink);
+      box-shadow: 3px 3px 0 rgba(31,45,32,.18);
+    }
+    .run-progbar .trk-ground {
+      position: absolute; left: 0; right: 0; top: 50%; height: 4px;
+      margin-top: -2px; background: #b9c4a3;
+    }
+    .run-progbar .trk-mid {
+      position: absolute; left: 50%; top: 2px; bottom: 2px; width: 2px;
+      background: rgba(192,30,92,.55);
+    }
+    .run-dot {
+      position: absolute; top: 50%; transform: translate(-50%,-50%);
+      font-size: 15px; line-height: 1; z-index: 2;
+      filter: drop-shadow(1px 1px 0 rgba(31,45,32,.35));
+    }
+    .run-dot.heart { color: #e23b3b; }
+    .run-dot.heart.rage { color: #c81e5c; animation: rageDot .32s steps(2) infinite; }
+    @keyframes rageDot {
+      50% { transform: translate(-50%,-50%) scale(1.4); }
+    }
+    .run-dot.player { color: #2f5d3a; }
+    .run-dot.goal { color: #e85d75; }
+    #runCanvas {
+      width: 100%; display: block; image-rendering: pixelated;
+      background: #cfe6ef; border-bottom: none;
+    }
+    .touch-run {
+      display: none; margin-top: 14px;
+      justify-content: space-between; align-items: flex-end; gap: 10px;
+      user-select: none; -webkit-user-select: none;
+    }
+    .touch-run .tr-group { display: flex; gap: 10px; }
+    .tr-btn {
+      width: 64px; height: 56px; font-family: 'Press Start 2P', monospace;
+      font-size: 11px; background: var(--paper); color: var(--ink);
+      border: 3px solid var(--ink); box-shadow: 3px 3px 0 rgba(31,45,32,.25);
+      border-radius: 0; touch-action: none; cursor: pointer;
+    }
+    .tr-btn:active, .tr-btn.held { background: var(--gb-light); transform: translate(2px,2px); box-shadow: 1px 1px 0 rgba(31,45,32,.25); }
+    .tr-btn.wide { width: 84px; background: #f6d9d4; }
+    @media (max-width: 768px) {
+      .touch-run { display: flex; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================= 顶部导航 ================= -->
+  <header class="topnav">
+    <div class="container topnav-inner">
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        <span>CHRIST'S WORLD</span>
+      </a>
+      <nav class="nav-links">
+        <a class="nav-link" href="../index.html">首页</a>
+        <a class="nav-link current" href="../categories/games.html">游戏</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ================= 游戏主体 ================= -->
+  <main class="container run-main">
+    <div class="page-head run-head">
+      <a class="back-link" href="../categories/games.html">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 8H3M7 4L3 8l4 4"/></svg>
+        返回游戏列表
+      </a>
+      <h1 class="page-title">张雪峰快跑 · 第一关</h1>
+      <p class="page-sub">身后的心脏穷追不舍，跑到地图一半它会狂暴——一路吃巧乐兹、跨坑越障，终点的杨幂在等你。</p>
+    </div>
+
+    <div class="game-shell run-shell">
+      <!-- HUD -->
+      <div class="hud run-hud">
+        <div class="hud-scores">
+          <div class="score-box"><span class="label">SCORE</span><span class="value" id="score">0</span></div>
+          <div class="score-box"><span class="label">雪糕</span><span class="value" id="iceCount">0</span></div>
+          <div class="score-box"><span class="label">TIME</span><span class="value" id="timeVal">0.0</span></div>
+          <div class="score-box"><span class="label">BEST</span><span class="value" id="bestVal">0</span></div>
+        </div>
+        <div class="stamina-box">
+          <div class="stamina-label"><span>STAMINA 体力</span><span id="speedLvl">SPEED x1.0</span></div>
+          <div class="stamina-track"><div class="stamina-fill" id="stamFill"></div></div>
+          <span class="speed-badge">走路不耗体力 · 跑步 / 跳跃消耗 · 巧乐兹回体力并永久微提速 · 长按跳更高</span>
+        </div>
+        <div class="hud-actions">
+          <button class="pixel-btn" id="pauseBtn">暂停</button>
+          <button class="pixel-btn secondary" id="restartBtn">重新开始</button>
+        </div>
+      </div>
+
+      <!-- 追击进度条 -->
+      <div class="run-progbar" id="progBar" title="绿点是你，红点是心脏，粉点是终点，紫线是心脏狂暴点">
+        <span class="trk-ground"></span>
+        <span class="trk-mid"></span>
+        <span class="run-dot heart" id="dotHeart" style="left:0%">&#10084;</span>
+        <span class="run-dot player" id="dotPlayer" style="left:2%">&#9650;</span>
+        <span class="run-dot goal" id="dotGoal" style="left:100%">&#9733;</span>
+      </div>
+
+      <!-- 画布 + 覆盖层 -->
+      <div class="canvas-wrap run-wrap" style="margin-top:12px;">
+        <canvas id="runCanvas" width="1280" height="470"></canvas>
+        <div class="canvas-overlay" id="overlay">
+          <div class="overlay-box">
+            <p class="overlay-title" id="overlayTitle">张雪峰快跑</p>
+            <p class="overlay-text" id="overlayText">A/D 移动 · 空格跳跃（长按跳更高）· 按住 Shift 奔跑<br>心脏追到地图一半会狂暴加速，别停下！</p>
+            <button class="pixel-btn" id="overlayBtn">开始游戏</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作说明 -->
+      <div class="help-row">
+        <span class="desktop-only">移动：<span class="key">A</span><span class="key">D</span>（或方向键）</span>
+        <span>跳跃：<span class="key">SPACE</span> / <span class="key">W</span>（短按小跳、长按大跳）</span>
+        <span>加速跑：<span class="key">SHIFT</span>（耗体力）</span>
+        <span>暂停：<span class="key">P</span> · 重开：<span class="key">R</span></span>
+        <span>手机：使用屏幕按键</span>
+      </div>
+
+      <!-- 手机触控 -->
+      <div class="touch-run">
+        <div class="tr-group">
+          <button class="tr-btn" data-hold="left" aria-label="左">&#9664;</button>
+          <button class="tr-btn" data-hold="right" aria-label="右">&#9654;</button>
+        </div>
+        <div class="tr-group">
+          <button class="tr-btn" data-hold="run">RUN</button>
+          <button class="tr-btn wide" data-jump aria-label="跳">JUMP</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= 页脚 ================= -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-brand">
+        <span class="brand-mark" style="width:22px;height:22px;box-shadow:none;">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        CHRIST'S WORLD
+      </span>
+    </div>
+  </footer>
+
+<script>
+/* ============================================================
+   张雪峰快跑 · 第一关（大空间 / 心脏狂暴版）
+   所有可调数值集中在 CFG，可用 tools/run_editor.py 后台修改
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var cv = document.getElementById('runCanvas');
+  var ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  var VW = 1280, VH = 470, GROUND_Y = 386;
+  var LEVEL_LEN = 21200, FINISH_X = 20820;
+
+  /* ---------- 可调数值（后台编辑器改这里） ---------- */
+  var CFG = {
+      stamMax: 100,
+      runDrain: 9.5,
+      jumpCost: 6,
+      walkRegen: 14,
+      idleRegen: 14,
+      walk: 210,
+      run: 345,
+      jumpV: 880,
+      grav: 2150,
+      iceStam: 30,
+      iceSpeed: 5,
+      iceScore: 100,
+      speedCap: 35,
+      heartSpeed: 300,
+      heartJumpV: 940,
+      heartStart: 240,
+      rageAt: 0.5,
+      rageBoost: 0.42,
+      startDelay: 3,
+      winBonus: 500
+    };
+
+  /* ---------- 关卡数据 ---------- */
+  var platforms = [
+    { x: 0,     w: 900 },
+    { x: 1040,  w: 1160 },  // 坑 900-1040 (140)
+    { x: 2360,  w: 1240 },  // 坑 2200-2360 (160)
+    { x: 3820,  w: 1280 },  // 坑 3600-3820 (220)
+    { x: 5260,  w: 1340 },  // 坑 5100-5260 (160)
+    { x: 6760,  w: 1440 },  // 坑 6600-6760 (160)
+    { x: 8500,  w: 1500 },  // 坑 8200-8500 (300，中间浮板)
+    { x: 10200, w: 1600 },  // 坑 10000-10200 (200)
+    { x: 12120, w: 1580 },  // 坑 11800-12120 (320，中间浮板)
+    { x: 13900, w: 1700 },  // 坑 13700-13900 (200)
+    { x: 15960, w: 1640 },  // 坑 15600-15960 (360，两块浮板)
+    { x: 17820, w: 1580 },  // 坑 17600-17820 (220)
+    { x: 19600, w: 1600 }   // 坑 19400-19600 (200)，终点在本段
+  ];
+  /* 木箱障碍（可跳过、可踩顶；心脏也会跳上） */
+  var crates = [
+    { x: 1350, w: 44, h: 44, y: GROUND_Y - 44 },
+    { x: 1700, w: 44, h: 58, y: GROUND_Y - 58 },
+    { x: 4250, w: 44, h: 44, y: GROUND_Y - 44 },
+    { x: 4380, w: 44, h: 44, y: GROUND_Y - 44 },
+    { x: 7100, w: 44, h: 44, y: GROUND_Y - 44 },
+    { x: 7240, w: 44, h: 58, y: GROUND_Y - 58 },
+    { x: 10800, w: 44, h: 58, y: GROUND_Y - 58 },
+    { x: 14400, w: 44, h: 44, y: GROUND_Y - 44 },
+    { x: 14540, w: 44, h: 44, y: GROUND_Y - 44 },
+    { x: 14680, w: 44, h: 58, y: GROUND_Y - 58 },
+    { x: 18500, w: 44, h: 58, y: GROUND_Y - 58 },
+    { x: 19000, w: 44, h: 44, y: GROUND_Y - 44 }
+  ];
+  /* 浮空木板（单向平台） */
+  var floats = [
+    /* 宽坑落脚点（必须） */
+    { x: 8300,  w: 170, y: GROUND_Y - 95 },
+    { x: 11920, w: 150, y: GROUND_Y - 100 },
+    { x: 15700, w: 130, y: GROUND_Y - 110 },
+    { x: 15850, w: 120, y: GROUND_Y - 95 },
+    /* 奖励 / 技巧高台 */
+    { x: 1500,  w: 150, y: GROUND_Y - 120 },
+    { x: 2900,  w: 140, y: GROUND_Y - 150 },
+    { x: 5600,  w: 150, y: GROUND_Y - 130 },
+    { x: 7450,  w: 140, y: GROUND_Y - 150 },
+    { x: 9100,  w: 160, y: GROUND_Y - 120 },
+    { x: 10900, w: 150, y: GROUND_Y - 140 },
+    { x: 12700, w: 150, y: GROUND_Y - 120 },
+    { x: 14900, w: 160, y: GROUND_Y - 150 },
+    { x: 16600, w: 150, y: GROUND_Y - 120 },
+    { x: 18200, w: 150, y: GROUND_Y - 130 },
+    { x: 19900, w: 160, y: GROUND_Y - 120 }
+  ];
+  /* 巧乐兹雪糕（15 个） */
+  var iceDefs = [
+    [ 420,  GROUND_Y - 30], [ 700,  GROUND_Y - 30],
+    [ 970,  GROUND_Y - 118],
+    [ 1575, GROUND_Y - 150],
+    [ 2280, GROUND_Y - 118],
+    [ 3100, GROUND_Y - 30],
+    [ 5350, GROUND_Y - 118],
+    [ 5900, GROUND_Y - 30],
+    [ 8385, GROUND_Y - 125],
+    [ 9400, GROUND_Y - 30],
+    [ 11995,GROUND_Y - 130],
+    [ 13200,GROUND_Y - 30],
+    [ 15905,GROUND_Y - 125],
+    [ 18275,GROUND_Y - 160],
+    [ 20300,GROUND_Y - 30]
+  ];
+
+  /* ---------- 状态 ---------- */
+  var keys = { left: false, right: false, run: false };
+  var state = 'ready';
+  var G = null;
+  var best = parseInt(localStorage.getItem('run-best') || '0', 10);
+
+  var $ = function (id) { return document.getElementById(id); };
+  var elScore = $('score'), elIce = $('iceCount'), elTime = $('timeVal'),
+      elBest = $('bestVal'), elStam = $('stamFill'), elSpeed = $('speedLvl'),
+      elOverlay = $('overlay'), elTitle = $('overlayTitle'),
+      elText = $('overlayText'), elBtn = $('overlayBtn'),
+      elPause = $('pauseBtn'),
+      dotH = $('dotHeart'), dotP = $('dotPlayer');
+  elBest.textContent = best;
+
+  function newGame() {
+    G = {
+      px: 140, py: GROUND_Y, vx: 0, vy: 0,
+      onGround: true, runPhase: 0, bodyBob: 0,
+      stamina: CFG.stamMax, speedBonus: 0,
+      hx: -CFG.heartStart, hy: GROUND_Y, hvy: 0, hground: true, hvx: 0,
+      rage: false, rageP: 0, rageBanner: 0,
+      cam: 0, t: 0, countdown: CFG.startDelay, goShow: 0,
+      score: 0, ice: 0, finished: false, loseReason: '',
+      ices: iceDefs.map(function (d) { return { x: d[0], y: d[1], got: false, bob: Math.random() * 6.28 }; }),
+      popups: []
+    };
+    state = 'countdown';
+    elOverlay.style.display = 'none';
+    elPause.textContent = '暂停';
+    dotH.classList.remove('rage');
+  }
+
+  /* ---------- 输入 ---------- */
+  function tryJump() {
+    if (state !== 'play' || !G) return;
+    if (!G.onGround) return;
+    if (G.stamina >= CFG.jumpCost) {
+      G.vy = -CFG.jumpV;
+      G.stamina -= CFG.jumpCost;
+    } else {
+      G.vy = -CFG.jumpV * 0.62;
+      G.stamina = 0;
+      G.popups.push({ x: G.px, y: G.py - 64, text: '体力不足·小跳', life: 0.7, c: '#e2503d' });
+    }
+    G.onGround = false;
+  }
+  function cutJump() {
+    if (G && state === 'play' && G.vy < -280) G.vy *= 0.42;
+  }
+  function togglePause() {
+    if (state === 'play' || state === 'countdown') {
+      G._pauseFrom = state;
+      state = 'pause';
+      elTitle.textContent = '已暂停';
+      elText.innerHTML = '休息一下，心脏也在休息';
+      elBtn.textContent = '继续游戏';
+      elOverlay.style.display = 'flex';
+      elPause.textContent = '继续';
+    } else if (state === 'pause') {
+      state = G._pauseFrom || 'play';
+      elOverlay.style.display = 'none';
+      elPause.textContent = '暂停';
+    }
+  }
+  window.addEventListener('keydown', function (e) {
+    var c = e.code;
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].indexOf(c) >= 0) e.preventDefault();
+    if (c === 'KeyA' || c === 'ArrowLeft') keys.left = true;
+    if (c === 'KeyD' || c === 'ArrowRight') keys.right = true;
+    if (c === 'ShiftLeft' || c === 'ShiftRight') keys.run = true;
+    if (c === 'Space' || c === 'KeyW' || c === 'ArrowUp') { if (!e.repeat) tryJump(); }
+    if (c === 'KeyS' || c === 'ArrowDown') { if (G && !G.onGround) G.vy += 1600 * (1 / 60); }
+    if (c === 'KeyP' || c === 'Escape') togglePause();
+    if (c === 'KeyR' && state !== 'ready') newGame();
+    if (c === 'Enter' && (state === 'ready' || state === 'win' || state === 'lose')) newGame();
+  });
+  window.addEventListener('keyup', function (e) {
+    var c = e.code;
+    if (c === 'KeyA' || c === 'ArrowLeft') keys.left = false;
+    if (c === 'KeyD' || c === 'ArrowRight') keys.right = false;
+    if (c === 'ShiftLeft' || c === 'ShiftRight') keys.run = false;
+    if (c === 'Space' || c === 'KeyW' || c === 'ArrowUp') cutJump();
+  });
+  document.querySelectorAll('.touch-run [data-hold]').forEach(function (b) {
+    var k = b.getAttribute('data-hold');
+    var on = function (e) { e.preventDefault(); keys[k] = true; b.classList.add('held'); };
+    var off = function (e) { e.preventDefault(); keys[k] = false; b.classList.remove('held'); };
+    b.addEventListener('touchstart', on, { passive: false });
+    b.addEventListener('touchend', off); b.addEventListener('touchcancel', off);
+    b.addEventListener('mousedown', on);
+    b.addEventListener('mouseup', off); b.addEventListener('mouseleave', off);
+  });
+  var jumpBtn = document.querySelector('[data-jump]');
+  function jDown(e) { e.preventDefault(); tryJump(); jumpBtn.classList.add('held'); }
+  function jUp(e) { e.preventDefault(); jumpBtn.classList.remove('held'); cutJump(); }
+  jumpBtn.addEventListener('touchstart', jDown, { passive: false });
+  jumpBtn.addEventListener('touchend', jUp); jumpBtn.addEventListener('touchcancel', jUp);
+  jumpBtn.addEventListener('mousedown', jDown);
+  jumpBtn.addEventListener('mouseup', jUp); jumpBtn.addEventListener('mouseleave', jUp);
+  elBtn.addEventListener('click', newGame);
+  elPause.addEventListener('click', togglePause);
+  $('restartBtn').addEventListener('click', function () { if (state !== 'ready') newGame(); });
+
+  /* ---------- 地形 / 碰撞 ---------- */
+  var PW = 13, PH = 60;            // 玩家碰撞盒半宽 / 高度
+  var HW = 21, HH = 37;            // 心脏碰撞盒半宽 / 高度
+  function overlap(ax, ay, aw, ah, bx, by, bw, bh) {
+    return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+  }
+  function supportAt(x, oldBottom) {
+    var best = null;
+    for (var i = 0; i < platforms.length; i++) {
+      var p = platforms[i];
+      if (x >= p.x && x <= p.x + p.w) { best = GROUND_Y; break; }
+    }
+    for (var j = 0; j < floats.length; j++) {
+      var f = floats[j];
+      if (x >= f.x && x <= f.x + f.w && oldBottom <= f.y + 2) {
+        if (best === null || f.y < best) best = f.y;
+      }
+    }
+    for (var k = 0; k < crates.length; k++) {
+      var cr = crates[k];
+      if (x >= cr.x && x <= cr.x + cr.w && oldBottom <= cr.y + 2) {
+        if (best === null || cr.y < best) best = cr.y;
+      }
+    }
+    return best;
+  }
+
+  /* ---------- 更新 ---------- */
+  function update(dt) {
+    G.t += dt;
+    if (G.rageBanner > 0) G.rageBanner -= dt;
+    if (state === 'countdown') {
+      G.countdown -= dt;
+      if (G.countdown <= 0) { state = 'play'; G.goShow = 0.9; }
+    }
+
+    var canMove = state === 'play';
+    var dir = canMove ? ((keys.right ? 1 : 0) - (keys.left ? 1 : 0)) : 0;
+    var wantRun = canMove && keys.run && dir !== 0 && G.stamina > 0;
+    var maxSpd = (wantRun ? CFG.run : CFG.walk) + G.speedBonus;
+    var tvx = dir * maxSpd;
+    G.vx += (tvx - G.vx) * Math.min(1, dt * 12);
+    if (dir === 0) G.vx *= Math.pow(0.0001, dt);
+    G.px += G.vx * dt;
+    if (G.px < 40) G.px = 40;
+    if (G.px > FINISH_X + 18) G.px = FINISH_X + 18;
+
+    /* 体力 */
+    if (wantRun) {
+      G.stamina -= CFG.runDrain * dt;
+      if (G.stamina < 0) G.stamina = 0;
+    } else if (G.onGround) {
+      G.stamina += (dir === 0 ? CFG.idleRegen : CFG.walkRegen) * dt;
+      if (G.stamina > CFG.stamMax) G.stamina = CFG.stamMax;
+    }
+
+    /* 木箱侧面阻挡 */
+    for (var i = 0; i < crates.length; i++) {
+      var c = crates[i];
+      if (Math.abs(G.px - (c.x + c.w / 2)) > 130) continue;
+      if (overlap(G.px - PW, G.py - PH, PW * 2, PH, c.x, c.y, c.w, c.h) && G.py > c.y + 10) {
+        if (G.vx > 0) G.px = c.x - PW - 0.5;
+        else if (G.vx < 0) G.px = c.x + c.w + PW + 0.5;
+        G.vx = 0;
+      }
+    }
+
+    /* 垂直运动 */
+    G.vy += CFG.grav * dt;
+    if (G.vy > 1150) G.vy = 1150;
+    var oldBottom = G.py;
+    G.py += G.vy * dt;
+    G.onGround = false;
+    if (G.vy >= 0) {
+      var landY = supportAt(G.px, oldBottom);
+      if (landY !== null && G.py >= landY) { G.py = landY; G.vy = 0; G.onGround = true; }
+    }
+
+    if (G.onGround && Math.abs(G.vx) > 12) {
+      G.runPhase += dt * (wantRun ? 15 : 9.5);
+      G.bodyBob = Math.abs(Math.sin(G.runPhase)) * (wantRun ? 2.4 : 1.4);
+    } else { G.bodyBob = 0; }
+
+    if (state === 'play') updateHeart(dt);
+
+    if (G.py > VH + 90) { endGame(false, 'pit'); return; }
+
+    /* 雪糕拾取 */
+    for (var n = 0; n < G.ices.length; n++) {
+      var ic = G.ices[n];
+      if (ic.got) continue;
+      var iy = ic.y + Math.sin(G.t * 3 + ic.bob) * 5;
+      if (Math.abs(ic.x - G.px) < 32 && Math.abs(iy - (G.py - 30)) < 52) {
+        ic.got = true;
+        G.ice += 1;
+        G.score += CFG.iceScore;
+        G.stamina = Math.min(CFG.stamMax, G.stamina + CFG.iceStam);
+        G.speedBonus = Math.min(CFG.speedCap, G.speedBonus + CFG.iceSpeed);
+        G.popups.push({ x: ic.x, y: iy - 12, text: '+' + CFG.iceScore, life: 0.9, c: '#2f6ed0' });
+      }
+    }
+    for (var q = G.popups.length - 1; q >= 0; q--) {
+      G.popups[q].y -= 34 * dt;
+      G.popups[q].life -= dt;
+      if (G.popups[q].life <= 0) G.popups.splice(q, 1);
+    }
+
+    if (G.px >= FINISH_X) { endGame(true); return; }
+
+    var targetCam = Math.max(0, Math.min(LEVEL_LEN - VW, G.px - VW * 0.36));
+    G.cam += (targetCam - G.cam) * Math.min(1, dt * 8);
+
+    elScore.textContent = G.score;
+    elIce.textContent = G.ice;
+    elTime.textContent = G.t.toFixed(1);
+    var pct = Math.round(G.stamina / CFG.stamMax * 100);
+    elStam.style.width = pct + '%';
+    elStam.classList.toggle('low', G.stamina < CFG.stamMax * 0.25);
+    elSpeed.textContent = 'SPEED x' + (1 + G.speedBonus / CFG.walk).toFixed(2);
+    dotH.style.left = Math.max(0, G.hx / LEVEL_LEN * 100) + '%';
+    dotP.style.left = Math.min(100, G.px / LEVEL_LEN * 100) + '%';
+  }
+
+  /* ---------- 心脏：重力追击 + 半程狂暴 ---------- */
+  function updateHeart(dt) {
+    /* 狂暴触发 */
+    if (!G.rage && G.hx >= LEVEL_LEN * CFG.rageAt) {
+      G.rage = true;
+      G.rageBanner = 2.6;
+      dotH.classList.add('rage');
+    }
+    if (G.rage) {
+      G.rageP = Math.min(1, (G.hx - LEVEL_LEN * CFG.rageAt) / (LEVEL_LEN * (1 - CFG.rageAt)));
+    }
+    var hspd = CFG.heartSpeed * (1 + (G.rage ? CFG.rageBoost * G.rageP : 0));
+
+    if (G.hx < 60) {
+      G.hx += hspd * dt;
+      G.hy = GROUND_Y; G.hvy = 0; G.hground = true;
+    } else {
+      var hdx = G.px - G.hx;
+      var hvx = hdx > 6 ? hspd : (hdx < -6 ? -hspd : 0);
+      G.hvx = hvx;
+      G.hx += hvx * dt;
+      if (G.hx < 30) G.hx = 30;
+
+      G.hvy += CFG.grav * dt;
+      if (G.hvy > 1150) G.hvy = 1150;
+      var hOld = G.hy;
+      G.hy += G.hvy * dt;
+      G.hground = false;
+      if (G.hvy >= 0) {
+        var hs = supportAt(G.hx, hOld);
+        if (hs !== null && G.hy >= hs) { G.hy = hs; G.hvy = 0; G.hground = true; }
+      }
+
+      if (G.hground) {
+        var dirS = hvx >= 0 ? 1 : -1;
+        var needV = 0;
+        if (hvx !== 0) {
+          var sA = supportAt(G.hx + dirS * 38, G.hy);
+          if (sA === null) {
+            needV = CFG.heartJumpV;
+          } else if (sA < G.hy - 22) {
+            needV = Math.sqrt(2 * CFG.grav * ((G.hy - sA) + 18));
+          }
+          for (var ci = 0; ci < crates.length; ci++) {
+            var cc = crates[ci];
+            if (Math.abs((cc.x + cc.w / 2) - G.hx) < 46 && cc.y < G.hy - 6) {
+              var vBox = Math.sqrt(2 * CFG.grav * ((G.hy - cc.y) + 16));
+              if (vBox > needV) needV = vBox;
+            }
+          }
+        }
+        if (G.py < G.hy - 40 && Math.abs(hdx) < 170) {
+          needV = Math.max(needV, Math.sqrt(2 * CFG.grav * ((G.hy - G.py) + 26)));
+        }
+        if (needV > 0) { G.hvy = -Math.min(needV, 1080); G.hground = false; }
+      }
+
+      if (G.hy > VH + 120) { G.hx = G.px - 280; G.hy = GROUND_Y; G.hvy = 0; }
+    }
+
+    if (overlap(G.px - PW, G.py - PH, PW * 2, PH, G.hx - HW, G.hy - HH, HW * 2, HH)) {
+      endGame(false, 'heart');
+    }
+  }
+
+  /* ---------- 结算 ---------- */
+  function endGame(win, reason) {
+    if (state === 'win' || state === 'lose') return;
+    if (win) {
+      state = 'win';
+      var timeBonus = Math.max(0, Math.round(2000 - G.t * 18));
+      var stamBonus = Math.round(G.stamina * 2);
+      G.score += CFG.winBonus + timeBonus + stamBonus;
+      if (G.score > best) { best = G.score; localStorage.setItem('run-best', best); }
+      elBest.textContent = best;
+      elTitle.textContent = '追上杨幂了！';
+      elText.innerHTML = '通关用时 ' + G.t.toFixed(1) + ' 秒 · 巧乐兹 ' + G.ice + ' 个<br>' +
+        '通关 ' + CFG.winBonus + ' + 时间 ' + timeBonus + ' + 体力 ' + stamBonus + '<br>总分 <b>' + G.score + '</b>';
+      elBtn.textContent = '再玩一次';
+    } else {
+      state = 'lose';
+      elTitle.textContent = reason === 'pit' ? '掉进坑里了！' : (G.rage ? '被狂暴的心脏撕碎了！' : '被心脏抓住了！');
+      elText.innerHTML = (reason === 'pit' ? '身法失误，掉入深渊。' : '跑快点！巧乐兹要多吃、别撞箱子，台子上也躲不住。') +
+        '<br>本次得分 <b>' + G.score + '</b> · 用时 ' + G.t.toFixed(1) + ' 秒';
+      elBtn.textContent = '再来一次';
+    }
+    elOverlay.style.display = 'flex';
+    elPause.textContent = '暂停';
+  }
+
+  /* ============================================================
+     渲染
+     ============================================================ */
+  function R(x, y, w, h, c) {
+    ctx.fillStyle = c;
+    ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+  }
+  var COL = {
+    hair: '#1d1b1a', skin: '#e9bb91', skinD: '#d9a87e', glass: '#141414',
+    suit: '#33425c', suitD: '#27334a', shirt: '#f2efe6', tie: '#c0392b',
+    pants: '#2e3440', shoe: '#191c22'
+  };
+
+  /* ---------- 背景 ---------- */
+  var clouds = [[180, 96, 1.2], [760, 160, .9], [1320, 86, 1.4], [1900, 128, 1], [2500, 90, 1.15]];
+  function drawBackground(cam) {
+    R(0, 0, VW, VH, '#cfe6ef');
+    ctx.fillStyle = '#ffe9a8';
+    ctx.beginPath(); ctx.arc(1100 - cam * 0.04, 106, 34, 0, 7); ctx.fill();
+    ctx.fillStyle = '#fff3c8';
+    ctx.beginPath(); ctx.arc(1100 - cam * 0.04, 106, 22, 0, 7); ctx.fill();
+    ctx.fillStyle = '#a9d487';
+    for (var i = -1; i < 12; i++) {
+      var bx = i * 620 - (cam * 0.42) % 620;
+      ctx.beginPath();
+      ctx.moveTo(bx, GROUND_Y); ctx.lineTo(bx + 290, GROUND_Y - 215); ctx.lineTo(bx + 580, GROUND_Y);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#88bf58';
+    for (var j = -1; j < 14; j++) {
+      var cx2 = j * 480 - (cam * 0.68) % 480;
+      ctx.beginPath();
+      ctx.arc(cx2 + 240, GROUND_Y + 74, 250, Math.PI, 0);
+      ctx.fill();
+    }
+    for (var c = 0; c < clouds.length; c++) {
+      var cl = clouds[c];
+      var x = ((cl[0] - cam * 0.25) % (VW + 460) + VW + 460) % (VW + 460) - 230;
+      var y = cl[1], s = cl[2];
+      R(x, y, 52 * s, 14 * s, '#fff');
+      R(x + 9 * s, y - 9 * s, 30 * s, 11 * s, '#fff');
+      R(x + 30 * s, y - 6 * s, 25 * s, 9 * s, '#fff');
+    }
+  }
+
+  /* ---------- 地面 / 坑 ---------- */
+  function drawGround() {
+    for (var i = 0; i < platforms.length; i++) {
+      var p = platforms[i];
+      R(p.x, GROUND_Y, p.w, VH - GROUND_Y, '#a9743f');
+      R(p.x, GROUND_Y, p.w, 10, '#5a8f3c');
+      R(p.x, GROUND_Y, p.w, 3, '#6ea347');
+      for (var x = p.x + 28; x < p.x + p.w; x += 60) {
+        R(x, GROUND_Y + 30, 9, 9, '#946636');
+        R(x + 30, GROUND_Y + 60, 7, 7, '#946636');
+      }
+      R(p.x, GROUND_Y, 3, VH - GROUND_Y, '#7d5530');
+      R(p.x + p.w - 3, GROUND_Y, 3, VH - GROUND_Y, '#7d5530');
+    }
+    for (var g = 0; g < platforms.length - 1; g++) {
+      var gx0 = platforms[g].x + platforms[g].w, gx1 = platforms[g + 1].x;
+      R(gx0, GROUND_Y, gx1 - gx0, VH - GROUND_Y, '#93bcc8');
+      for (var gx = gx0 + 12; gx < gx1; gx += 26) R(gx, GROUND_Y + 12, 3, VH - GROUND_Y - 12, 'rgba(47,93,58,.18)');
+    }
+  }
+
+  /* ---------- 木箱 / 浮板 ---------- */
+  function drawProps() {
+    for (var i = 0; i < floats.length; i++) {
+      var f = floats[i];
+      R(f.x, f.y, f.w, 12, '#8a5a2b');
+      R(f.x, f.y, f.w, 4, '#c98e4d');
+      R(f.x + 7, f.y + 5, 3, 5, '#a06a34');
+      R(f.x + f.w - 11, f.y + 5, 3, 5, '#a06a34');
+    }
+    for (var j = 0; j < crates.length; j++) {
+      var c = crates[j];
+      R(c.x, c.y, c.w, c.h, '#c98e4d');
+      ctx.strokeStyle = '#8a5a2b'; ctx.lineWidth = 3;
+      ctx.strokeRect(c.x + 1.5, c.y + 1.5, c.w - 3, c.h - 3);
+      ctx.beginPath();
+      ctx.moveTo(c.x + 3, c.y + 3); ctx.lineTo(c.x + c.w - 3, c.y + c.h - 3);
+      ctx.moveTo(c.x + c.w - 3, c.y + 3); ctx.lineTo(c.x + 3, c.y + c.h - 3);
+      ctx.stroke();
+      R(c.x + 3, c.y + 3, c.w - 6, 3, '#dca768');
+    }
+  }
+
+  /* ---------- 终点 ---------- */
+  function drawFinish(t) {
+    var x = FINISH_X;
+    for (var i = 0; i < 8; i++) {
+      R(x - 24 + i * 14, GROUND_Y - 5, 14, 5, i % 2 ? '#fbfcf4' : '#1f2d20');
+    }
+    for (var r0 = 0; r0 < 17; r0++) {
+      R(x - 7, GROUND_Y - 168 + r0 * 10, 7, 10, r0 % 2 ? '#fbfcf4' : '#1f2d20');
+    }
+    R(x - 8, GROUND_Y - 176, 14, 9, '#f0b429');
+    R(x + 8, GROUND_Y - 168, 108, 32, '#2f5d3a');
+    R(x + 8, GROUND_Y - 168, 108, 5, '#4a7d52');
+    ctx.fillStyle = '#fbfcf4';
+    ctx.font = "11px 'Press Start 2P', monospace";
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('FINISH', x + 20, GROUND_Y - 151);
+    drawYang(x + 92, GROUND_Y, t);
+  }
+
+  function drawYang(cx, gy, t) {
+    var bob = Math.sin(t * 2.2) * 2;
+    var wave = Math.sin(t * 5) * 5;
+    ctx.save(); ctx.translate(Math.round(cx), Math.round(gy + bob));
+    ctx.scale(1.5, 1.5);
+    R(-8, -4, 7, 3, '#c0392b'); R(2, -4, 7, 3, '#c0392b');
+    R(-8, -1, 3, 2, '#a02a1e'); R(6, -1, 3, 2, '#a02a1e');
+    R(-5, -16, 4, 13, '#f2c49f'); R(1, -16, 4, 13, '#f2c49f');
+    R(-10, -27, 20, 11, '#e85d75');
+    R(-6, -36, 12, 10, '#e85d75');
+    R(-6, -28, 12, 2.5, '#b23a52');
+    R(-3, -36, 6, 4, '#f7dfe4');
+    R(6, -35, 4, 11, '#f6cba6'); R(6, -25, 4, 4, '#f6cba6');
+    R(-10, -38 + wave * 0.4, 4, 10, '#f6cba6'); R(-10, -42 + wave * 0.4, 4, 4, '#f6cba6');
+    R(-9, -49, 18, 6, '#221a1a');
+    R(-9, -46, 3, 24, '#221a1a');
+    R(6, -46, 3, 21, '#221a1a');
+    R(-6, -45, 12, 2, '#221a1a');
+    R(-6, -44, 12, 12, '#f6cba6');
+    R(-4.5, -40, 3, 1.6, '#3a2620'); R(1.5, -40, 3, 1.6, '#3a2620');
+    R(-5, -37.5, 2, 1.5, '#f09090'); R(3, -37.5, 2, 1.5, '#f09090');
+    R(-2.5, -35, 5, 1.8, '#d23b58');
+    ctx.restore();
+    var bw = 60, bh = 22, bx = cx - bw / 2, by = gy - 108 + bob;
+    R(bx, by, bw, bh, '#fbfcf4');
+    ctx.strokeStyle = '#1f2d20'; ctx.lineWidth = 3; ctx.strokeRect(bx + 1.5, by + 1.5, bw - 3, bh - 3);
+    ctx.fillStyle = '#e2503d';
+    ctx.font = "900 13px 'Noto Sans SC', sans-serif";
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('杨幂', cx, by + bh / 2 + 1);
+  }
+
+  /* ---------- 巧乐兹 ---------- */
+  function drawIce(x, y, t, bob0) {
+    var bob = Math.sin(t * 3 + bob0) * 5;
+    var rot = Math.sin(t * 1.8 + bob0) * 0.06;
+    ctx.save();
+    ctx.translate(Math.round(x), Math.round(y + bob));
+    ctx.rotate(rot);
+    ctx.scale(1.5, 1.5);
+    R(-1.6, 9, 3.2, 11, '#b07a3a');
+    R(-7, -3, 14, 14, '#2f6ed0');
+    R(-7, -3, 14, 3, '#f4f6f8');
+    R(-7, 0, 14, 1.4, '#1d56ad');
+    R(-4, 4, 2.5, 2.5, '#f4f6f8'); R(2, 6, 2.5, 2.5, '#f4f6f8');
+    R(-7, -3, 2, 3, '#e8edf2'); R(5, -3, 2, 3, '#e8edf2');
+    R(-3, -23, 6, 3, '#f3e7d3');
+    R(-6, -20, 12, 18, '#6b4226');
+    R(-6, -20, 12, 3, '#7d502e');
+    R(-4.5, -17, 2, 9, '#8a5a35');
+    R(2.8, -15, 1.6, 5, '#8a5a35');
+    var tw = (Math.sin(t * 5 + bob0) + 1) / 2;
+    ctx.globalAlpha = tw;
+    R(6, -22, 2, 2, '#ffffff'); R(9, -18, 1.4, 1.4, '#ffffff');
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  /* ---------- 张雪峰 ---------- */
+  function drawXuefeng(cx, footY, phase, spd, onGround, jumping) {
+    var moving = Math.abs(spd) > 12;
+    var intensity = (Math.abs(spd) > CFG.walk + 30) ? 1 : 0.62;
+    var sw = moving ? Math.sin(phase) * intensity : 0;
+    var bob = onGround ? Math.abs(Math.sin(phase)) * (intensity > 0.9 ? 2.2 : 1.2) : 0;
+    ctx.save();
+    ctx.translate(Math.round(cx), Math.round(footY - bob));
+    if (spd < -10) ctx.scale(-1, 1);
+    ctx.scale(1.35, 1.35);
+
+    if (jumping || !onGround) {
+      R(-6, -12, 5, 8, COL.pants); R(-7, -5, 7, 3, COL.shoe);
+      R(0, -15, 9, 5, COL.pants); R(6, -13, 4, 8, COL.pants);
+      R(5, -6, 8, 3, COL.shoe);
+      R(-10, -32, 4, 10, COL.suitD); R(-10, -23, 4, 4, COL.skin);
+      R(7, -40, 4, 9, COL.suit); R(8, -44, 4, 4, COL.skin);
+    } else {
+      var lx = sw * 5, lx2 = -sw * 5;
+      R(-3.5 + lx2, -16, 5, 13, COL.pants);
+      R(-6 + lx2, -4, 8, 4, COL.shoe);
+      R(-1.5 + lx, -16, 5, 13, COL.pants);
+      R(-1 + lx, -4, 8, 4, COL.shoe);
+      R(-10 - sw * 4, -33, 4, 12, COL.suitD); R(-10 - sw * 4, -22, 4, 4, COL.skin);
+      R(6 + sw * 4, -33, 4, 12, COL.suit); R(6 + sw * 4, -22, 4, 4, COL.skin);
+    }
+
+    R(-8, -34, 16, 19, COL.suit);
+    R(-8, -34, 4, 19, COL.suitD); R(4, -34, 4, 19, COL.suitD);
+    R(-3, -34, 6, 6, COL.shirt);
+    R(-2, -35, 4, 3, COL.tie); R(-1.4, -31, 2.8, 12, COL.tie);
+    R(-3, -36, 6, 3, COL.skinD);
+    R(-6.5, -48, 13, 14, COL.skin);
+    R(-8, -43, 1.6, 3.4, COL.skin);
+    R(-7, -50, 14, 5, COL.hair);
+    R(-7, -46, 2.5, 4, COL.hair); R(4.5, -46, 2.5, 4, COL.hair);
+    R(-4.5, -46, 9, 1.4, COL.hair);
+    R(-6, -44, 5.4, 4.2, COL.glass); R(-5, -43.2, 2.6, 1.7, '#e8f1f4'); R(-3.5, -43.2, 1.5, 1.7, COL.glass);
+    R(0.8, -44, 5.4, 4.2, COL.glass); R(1.8, -43.2, 2.6, 1.7, '#e8f1f4'); R(3.7, -43.2, 1.5, 1.7, COL.glass);
+    R(-0.8, -42.6, 1.8, 1.2, COL.glass);
+    R(5.6, -41.5, 1.5, 2.2, COL.skinD);
+    R(1.5, -37.4, 4, 1.3, '#a05f4d');
+    ctx.restore();
+  }
+
+  /* ---------- 心脏（普通 / 狂暴心脏病形态） ---------- */
+  var HEART_MAP = [
+    '.##.##.',
+    '#######',
+    '#######',
+    '.#####.',
+    '..###..',
+    '...#...'
+  ];
+  function drawHeart(cx, footY, t, dist, rage, rageP) {
+    var vRange = rage ? 560 : 380;
+    var danger = Math.max(0, Math.min(1, (vRange - dist) / vRange));
+    var cell, main, dark, hi;
+    var jx = 0, jy = 0, rot = 0;
+    if (rage) {
+      /* 心脏病发作：不规则剧烈怦怦跳 */
+      var pulse = 1 + Math.sin(t * (9 + rageP * 7)) * (0.09 + rageP * 0.08)
+                      + Math.sin(t * 22.7) * 0.03 * rageP;
+      cell = 6.0 * pulse;
+      main = '#c81e5c'; dark = '#6e1238'; hi = '#ff8fb8';
+      jx = Math.sin(t * 31.3) * 2.6 * rageP;
+      jy = Math.sin(t * 26.9) * 2.2 * rageP;
+      rot = Math.sin(t * 12.7) * 0.07 * rageP;
+    } else {
+      var rate = 5 + danger * 7;
+      cell = (1 + Math.sin(t * rate) * (0.05 + danger * 0.07)) * 6.0;
+      main = '#e23b3b'; dark = '#b52828'; hi = '#ff9b9b';
+    }
+    var w = 7 * cell;
+    ctx.save();
+    ctx.translate(Math.round(cx + jx), Math.round(footY + jy));
+    ctx.rotate(rot);
+    for (var r0 = 0; r0 < HEART_MAP.length; r0++) {
+      for (var c0 = 0; c0 < 7; c0++) {
+        var ch = HEART_MAP[r0][c0];
+        if (ch !== '#') continue;
+        var isDark = (c0 >= 5) || (r0 >= 4);
+        R(c0 * cell - w / 2, r0 * cell - 6 * cell, cell + 0.6, cell + 0.6, isDark ? dark : main);
+      }
+    }
+    R(cell * 1 - w / 2, cell * 1 - 6 * cell, cell * 0.9, cell * 1.7, hi);
+
+    if (rage) {
+      /* 暴起的血管 */
+      ctx.strokeStyle = '#4a0c26'; ctx.lineWidth = Math.max(2, cell * 0.34);
+      ctx.beginPath();
+      ctx.moveTo(-2.2 * cell, -4.6 * cell); ctx.lineTo(-1.2 * cell, -3.4 * cell); ctx.lineTo(-1.8 * cell, -2.4 * cell);
+      ctx.moveTo(2.4 * cell, -4.8 * cell); ctx.lineTo(1.6 * cell, -3.6 * cell); ctx.lineTo(2.2 * cell, -2.6 * cell);
+      ctx.stroke();
+      /* 充血眼：黄眼白 + 红瞳，上下错开 */
+      var ey2 = -3.7 * cell;
+      R(-2.8 * cell, ey2, 2 * cell, 2 * cell, '#ffe9a8');
+      R(0.8 * cell, ey2 + 0.5 * cell, 2 * cell, 2 * cell, '#ffe9a8');
+      R(-2 * cell, ey2 + 0.3 * cell, 1 * cell, 1 * cell, '#ff2a2a');
+      R(1.5 * cell, ey2 + 0.8 * cell, 1 * cell, 1 * cell, '#ff2a2a');
+      /* 倒竖怒眉 */
+      ctx.strokeStyle = '#3a081d'; ctx.lineWidth = Math.max(2, cell * 0.46);
+      ctx.beginPath();
+      ctx.moveTo(-3 * cell, ey2 - 1.4 * cell); ctx.lineTo(-0.8 * cell, ey2 - 0.3 * cell);
+      ctx.moveTo(2.9 * cell, ey2 - 0.9 * cell); ctx.lineTo(0.7 * cell, ey2 - 0.2 * cell);
+      ctx.stroke();
+      /* 张嘴惨叫 */
+      R(-1.6 * cell, -1.7 * cell, 3.2 * cell, 2 * cell, '#2a0614');
+      R(-1.6 * cell, -1.7 * cell, 3.2 * cell, 0.5 * cell, '#fff');
+    } else {
+      var ey = -3.6 * cell;
+      R(-2.6 * cell, ey, 1.7 * cell, 1.7 * cell, '#fff');
+      R(0.9 * cell, ey, 1.7 * cell, 1.7 * cell, '#fff');
+      R(-1.5 * cell, ey + 0.2 * cell, 0.8 * cell, 0.8 * cell, '#1a0a0a');
+      R(1.7 * cell, ey + 0.2 * cell, 0.8 * cell, 0.8 * cell, '#1a0a0a');
+      ctx.strokeStyle = '#7a1414'; ctx.lineWidth = Math.max(2, cell * 0.42);
+      ctx.beginPath();
+      ctx.moveTo(-2.8 * cell, ey - 1.1 * cell); ctx.lineTo(-1.0 * cell, ey - 0.4 * cell);
+      ctx.moveTo(2.7 * cell, ey - 1.1 * cell); ctx.lineTo(0.9 * cell, ey - 0.4 * cell);
+      ctx.stroke();
+      R(-1.5 * cell, -1.5 * cell, 3 * cell, 1.1 * cell, '#7a1414');
+      R(-1.5 * cell, -1.5 * cell, 3 * cell, 0.5 * cell, '#fff');
+    }
+    ctx.restore();
+  }
+
+  /* ---------- 飘字 ---------- */
+  function drawPopups() {
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = "900 16px 'Noto Sans SC', sans-serif";
+    for (var i = 0; i < G.popups.length; i++) {
+      var p = G.popups[i];
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2));
+      ctx.strokeStyle = '#1f2d20'; ctx.lineWidth = 3;
+      ctx.strokeText(p.text, p.x, p.y);
+      ctx.fillStyle = p.c || '#fff';
+      ctx.fillText(p.text, p.x, p.y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* ---------- 主渲染 ---------- */
+  function render() {
+    R(0, 0, VW, VH, '#cfe6ef');
+    if (!G) return;
+    drawBackground(G.cam);
+    ctx.save();
+    ctx.translate(-Math.round(G.cam), 0);
+    drawGround();
+    drawProps();
+    drawFinish(G.t);
+    for (var i = 0; i < G.ices.length; i++) {
+      if (!G.ices[i].got) drawIce(G.ices[i].x, G.ices[i].y, G.t, G.ices[i].bob);
+    }
+    var dist = G.px - G.hx;
+    drawHeart(G.hx, G.hy, G.t, dist, G.rage, G.rageP);
+    drawXuefeng(G.px, G.py, G.runPhase, G.vx, G.onGround, !G.onGround);
+    drawPopups();
+    ctx.restore();
+
+    /* 逼近 / 狂暴的压迫红（紫）边 */
+    var vRange = G.rage ? 560 : 380;
+    if (state === 'play' && dist < vRange) {
+      var a = (vRange - dist) / vRange * (0.3 + 0.22 * Math.abs(Math.sin(G.t * (5 + (vRange - dist) / vRange * 8))));
+      var edge = G.rage ? 'rgba(200,30,92,' : 'rgba(226,59,59,';
+      var g1 = ctx.createLinearGradient(0, 0, 120, 0);
+      g1.addColorStop(0, edge + a.toFixed(3) + ')');
+      g1.addColorStop(1, edge + '0)');
+      ctx.fillStyle = g1; R(0, 0, 120, VH, g1);
+      var g2 = ctx.createLinearGradient(VW, 0, VW - 120, 0);
+      g2.addColorStop(0, edge + (a * 0.55).toFixed(3) + ')');
+      g2.addColorStop(1, edge + '0)');
+      ctx.fillStyle = g2; R(VW - 120, 0, 120, VH, g2);
+    }
+
+    /* 倒计时 / GO */
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (state === 'countdown' && G.countdown > 0) {
+      var n = Math.ceil(G.countdown);
+      ctx.font = "54px 'Press Start 2P', monospace";
+      ctx.fillStyle = '#1f2d20'; ctx.fillText(String(n), VW / 2 + 4, VH / 2 - 34);
+      ctx.fillStyle = '#f0b429'; ctx.fillText(String(n), VW / 2, VH / 2 - 38);
+    }
+    if (G.goShow > 0) {
+      ctx.font = "46px 'Press Start 2P', monospace";
+      ctx.fillStyle = '#1f2d20'; ctx.fillText('GO!', VW / 2 + 4, VH / 2 - 34);
+      ctx.fillStyle = '#e2503d'; ctx.fillText('GO!', VW / 2, VH / 2 - 38);
+    }
+    /* 狂暴横幅 */
+    if (G.rageBanner > 0) {
+      var bw2 = 620, bh2 = 92, bx2 = VW / 2 - bw2 / 2, by2 = VH / 2 - bh2 / 2 - 20;
+      var blink = Math.sin(G.t * 14) > -0.3;
+      R(bx2, by2, bw2, bh2, 'rgba(31,10,24,.92)');
+      ctx.strokeStyle = '#c81e5c'; ctx.lineWidth = 5; ctx.strokeRect(bx2 + 3, by2 + 3, bw2 - 6, bh2 - 6);
+      ctx.font = "900 30px 'Noto Sans SC', sans-serif";
+      ctx.fillStyle = blink ? '#ff3d86' : '#c81e5c';
+      ctx.fillText('心脏狂暴了！！', VW / 2, by2 + 34);
+      ctx.font = "700 16px 'Noto Sans SC', sans-serif";
+      ctx.fillStyle = '#f7d6e4';
+      ctx.fillText('心脏病发作，移速越来越快——别停下！', VW / 2, by2 + 66);
+    }
+    if (state === 'play' && G.t < CFG.startDelay + 3.2) {
+      ctx.font = "700 16px 'Noto Sans SC', sans-serif";
+      ctx.fillStyle = '#1f2d20';
+      ctx.fillText('按住 D + SHIFT 向右跑！长按空格大跳，巧乐兹回体力', VW / 2, 72);
+    }
+  }
+
+  /* ---------- 主循环 ---------- */
+  var lastTs = 0;
+  function frame(ts) {
+    var dt = Math.min(0.033, (ts - lastTs) / 1000 || 0);
+    lastTs = ts;
+    if (state === 'play' || state === 'countdown') { update(dt); }
+    render();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
