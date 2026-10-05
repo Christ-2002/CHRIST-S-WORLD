@@ -241,6 +241,7 @@ a.pixel-card:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--in
 .card-cover.mario { background: #8fc7e8; }
 .card-cover.cat-games { background: var(--gb-light); }
 .card-cover.battle { background: #cfe0f2; }
+.card-cover.run { background: #f4c3b8; }
 
 .card-body { padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .card-title { font-size: 19px; font-weight: 900; letter-spacing: .5px; }
