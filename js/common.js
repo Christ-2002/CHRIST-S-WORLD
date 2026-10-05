@@ -83,7 +83,8 @@ var SiteMedals = {
   _default: function () {
     return {
       snake: { bronze: false, silver: false, gold: false },
-      tictactoe: { bronze: false, silver: false, gold: false }
+      tictactoe: { bronze: false, silver: false, gold: false },
+      mario: { bronze: false, silver: false, gold: false }
     };
   },
 
@@ -154,7 +155,7 @@ var SiteMedals = {
       var el = document.getElementById('cnt' + cap);
       if (el) { el.textContent = c[cap.toLowerCase()]; }
     });
-    var cardMap = { snake: 'cardMedalSnake', tictactoe: 'cardMedalTictactoe' };
+    var cardMap = { snake: 'cardMedalSnake', tictactoe: 'cardMedalTictactoe', mario: 'cardMedalMario' };
     for (var game in cardMap) {
       var el = document.getElementById(cardMap[game]);
       if (el) {

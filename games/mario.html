@@ -31,68 +31,78 @@
     </div>
   </header>
 
-  <!-- ================= 开发中占位 ================= -->
+  <!-- ================= 游戏主体 ================= -->
   <main class="container">
-    <div class="page-head">
+    <div class="page-head" style="max-width:860px;margin-left:auto;margin-right:auto;">
       <a class="back-link" href="../categories/games.html">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 8H3M7 4L3 8l4 4"/></svg>
         返回游戏列表
       </a>
+      <h1 class="page-title">仿马里奥</h1>
+      <p class="page-sub">跑到终点旗杆通关：顶砖吃金币、吃蘑菇变大、踩扁敌人、别掉进坑里。一共 3 关。</p>
     </div>
 
-    <div class="soon-shell">
-      <!-- 像素场景插画 -->
-      <svg class="soon-art" viewBox="0 0 160 110" shape-rendering="crispEdges">
-        <!-- 天空 -->
-        <rect width="160" height="110" fill="#8fc7e8"/>
-        <!-- 云 -->
-        <g fill="#ffffff">
-          <rect x="18" y="20" width="34" height="8"/>
-          <rect x="24" y="14" width="14" height="6"/>
-          <rect x="36" y="16" width="12" height="4"/>
-          <rect x="116" y="26" width="28" height="7"/>
-          <rect x="121" y="21" width="12" height="5"/>
-        </g>
-        <!-- 远山 -->
-        <path d="M10 84 L34 56 L58 84 Z" fill="#6fa352"/>
-        <path d="M44 84 L72 48 L100 84 Z" fill="#5a8f3c"/>
-        <!-- 浮空问号砖 -->
-        <rect x="68" y="38" width="24" height="24" fill="#f0b429" stroke="#1f2d20" stroke-width="2"/>
-        <path d="M76.5 45.5 q0-4 5.5-4 t5.5 4 q0 3-4 4.6 l-1 2.2 v2" stroke="#ffffff" stroke-width="3.2" fill="none" stroke-linecap="square"/>
-        <rect x="80.4" y="55.6" width="3.4" height="3.4" fill="#ffffff"/>
-        <!-- 小砖块 -->
-        <rect x="30" y="52" width="14" height="14" fill="#d98b46" stroke="#1f2d20" stroke-width="2"/>
-        <rect x="116" y="52" width="14" height="14" fill="#d98b46" stroke="#1f2d20" stroke-width="2"/>
-        <!-- 地面 -->
-        <rect x="0" y="84" width="160" height="26" fill="#d98b46"/>
-        <g stroke="#1f2d20" stroke-width="1.6">
-          <line x1="0" y1="97" x2="160" y2="97"/>
-          <line x1="0" y1="84" x2="160" y2="84"/>
-        </g>
-        <g stroke="#1f2d20" stroke-width="1.4">
-          <line x1="20" y1="84" x2="20" y2="97"/><line x1="60" y1="84" x2="60" y2="97"/>
-          <line x1="100" y1="84" x2="100" y2="97"/><line x1="140" y1="84" x2="140" y2="97"/>
-          <line x1="40" y1="97" x2="40" y2="110"/><line x1="80" y1="97" x2="80" y2="110"/>
-          <line x1="120" y1="97" x2="120" y2="110"/>
-        </g>
-        <!-- 施工小旗 -->
-        <rect x="118" y="62" width="2.5" height="22" fill="#1f2d20"/>
-        <path d="M120.5 62 h14 l-4 5 l4 5 h-14 Z" fill="#e2503d"/>
-      </svg>
+    <div class="game-shell mario">
+      <!-- 计分板 -->
+      <div class="hud">
+        <div class="hud-scores">
+          <div class="score-box">
+            <span class="label">SCORE</span>
+            <span class="value" id="score">0</span>
+          </div>
+          <div class="score-box">
+            <span class="label">COINS</span>
+            <span class="value" id="coins">0</span>
+          </div>
+          <div class="score-box">
+            <span class="label">LIVES</span>
+            <span class="value" id="lives">3</span>
+          </div>
+          <div class="score-box">
+            <span class="label">LEVEL</span>
+            <span class="value" id="level">1</span>
+          </div>
+          <div class="score-box">
+            <span class="label">BEST</span>
+            <span class="value" id="best">0</span>
+          </div>
+        </div>
+        <div class="hud-actions">
+          <button class="pixel-btn" id="pauseBtn">开始游戏</button>
+          <button class="pixel-btn secondary" id="restartBtn">重新开始</button>
+        </div>
+      </div>
 
-      <h1 class="soon-title">仿马里奥 · 正在开发中</h1>
-      <p class="soon-text">
-        这是第二个游戏的位置，计划做成横版平台跳跃：移动、奔跑、跳跃、踩敌人、顶金币、通关旗杆。
-        具体玩法和关卡设计确定后，就会把这页替换成真正的游戏，这张卡片无需改动。
-      </p>
+      <!-- 画布 + 覆盖层 -->
+      <div class="canvas-wrap mario">
+        <canvas id="marioCanvas" width="800" height="320"></canvas>
+        <div class="canvas-overlay" id="overlay">
+          <div class="overlay-box">
+            <p class="overlay-title" id="overlayTitle">仿马里奥</p>
+            <p class="overlay-text" id="overlayText">方向键 / WASD 移动，空格或上键跳跃，Shift 奔跑</p>
+            <button class="pixel-btn" id="overlayBtn">开始游戏</button>
+          </div>
+        </div>
+      </div>
 
-      <!-- 进度条（宽度在 css/style.css 的 .soon-progress i 里改） -->
-      <div class="soon-progress" aria-label="开发进度"><i></i></div>
-      <p style="font-family:var(--font-pixel);font-size:10px;color:var(--gb-dark);">LOADING... 12%</p>
+      <!-- 操作说明 -->
+      <div class="help-row">
+        <span class="desktop-only">移动：<span class="key">←</span><span class="key">→</span> 或 <span class="key">A</span><span class="key">D</span></span>
+        <span class="desktop-only">跳：<span class="key">SPACE</span> / <span class="key">↑</span> · 跑：<span class="key">SHIFT</span></span>
+        <span>暂停 / 继续：<span class="key">P</span></span>
+        <span>手机：左侧移动，右侧跳 / 跑</span>
+      </div>
 
-      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
-        <a class="pixel-btn" href="../categories/games.html">先去玩贪吃蛇</a>
-        <a class="pixel-btn secondary" href="../index.html">返回首页</a>
+      <!-- 手机按键（窄屏自动显示） -->
+      <div class="mario-pad">
+        <div class="mario-pad-cluster">
+          <button class="mario-pad-btn" data-key="left" aria-label="左">◀</button>
+          <button class="mario-pad-btn" data-key="right" aria-label="右">▶</button>
+        </div>
+        <div class="mario-pad-cluster">
+          <button class="mario-pad-btn run" data-key="run" aria-label="跑">B</button>
+          <button class="mario-pad-btn jump" data-key="jump" aria-label="跳">A</button>
+        </div>
       </div>
     </div>
   </main>
@@ -115,5 +125,810 @@
   </footer>
 
   <script src="../js/common.js"></script>
+  <script>
+  /* ============================================================
+     仿马里奥 · 横版平台跳跃
+     想改手感：调下面「物理常量」里的 GRAVITY / JUMP_V / WALK / RUN
+     想改关卡：改 LEVELS 数组（图例见 loadLevel 上方注释）
+     ============================================================ */
+  (function () {
+    var canvas = document.getElementById('marioCanvas');
+    var ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    /* ---------------- 常量 ---------------- */
+    var TILE = 32;            // 每个格子像素
+    var VIEW_W = 800, VIEW_H = 320;   // 画布逻辑尺寸
+    var ROWS = 10;            // 世界高度（行数，10 行 = 320px）
+
+    // 物理常量（想调手感改这里）
+    var GRAVITY = 2000;       // 重力，像素/秒²
+    var MAX_FALL = 700;       // 最大下落速度
+    var WALK = 190, RUN = 330;   // 走路 / 奔跑速度
+    var JUMP_V = 660;         // 起跳初速度
+    var JUMP_CUT = 0.4;       // 松键时上升速度乘以这个（跳得更矮）
+    var COYOTE = 0.09;        // 土狼时间：离开地面后仍可起跳的宽限
+    var JUMP_BUFFER = 0.12;   // 跳跃缓冲：落地前提前按键也能起跳
+    var BOUNCE = 380, BOUNCE_HOLD = 480;  // 踩敌人反弹速度（按住跳更高）
+    var ENEMY_SPEED = 45;     // 敌人移动速度
+    var INVULN_TIME = 1.5;    // 受伤后的无敌时间
+    var START_LIVES = 3;      // 初始生命
+
+    var SMALL_H = 32, BIG_H = 48, W = 24;  // 玩家两种形态的尺寸
+
+    var MEDALS = { bronze: 2000, silver: 4000, gold: 6000 };
+
+    /* ---------------- 颜色 ---------------- */
+    var SKY = '#8fc7e8';
+    var C_GROUND = '#d98b46', C_GROUND_DARK = '#b5703a';
+    var C_BRICK = '#c97f3f', C_STONE = '#c3cad2';
+    var C_BLOCK = '#f0b429', C_USED = '#b08b4a', C_PIPE = '#3f9b4f';
+    var C_COIN = '#f7c948', C_COIN_DARK = '#d99a20';
+    var C_ENEMY = '#a85a38';
+
+    /* ---------------- 玩家像素画（R 帽子 S 皮肤 E 眼睛 B 背带裤 D 鞋） ---------------- */
+    var PALETTE = { R:'#e2503d', S:'#f5c99a', E:'#1f2d20', B:'#3a6ea5', D:'#6b4a2f' };
+    var HERO_SMALL = [
+      '....RRRR....',
+      '..RRRRRRRR..',
+      '..RRRRRRRR..',
+      '..SSSSSSSS..',
+      '..SESSSSSS..',
+      '..SSSSSSSS..',
+      '...SSSSSS...',
+      '...BBBBBB...',
+      '..SSBBBBSS..',
+      '..SSBBBBSS..',
+      '....BBBB....',
+      '....BBBB....',
+      '....SSSS....',
+      '...SS..SS...',
+      '...SS..SS...',
+      '...DD..DD...'
+    ];
+    var HERO_BIG = [
+      '....RRRR....',
+      '..RRRRRRRR..',
+      '..RRRRRRRR..',
+      '..SSSSSSSS..',
+      '..SESSSSSS..',
+      '..SSSSSSSS..',
+      '...SSSSSS...',
+      '...RRRRRR...',
+      '..RRRRRRRR..',
+      '..SSRRRRSS..',
+      '..SSRRRRSS..',
+      '...RRRRRR...',
+      '...BBBBBB...',
+      '..BBBBBBBB..',
+      '..SSBBBBSS..',
+      '..SSBBBBSS..',
+      '....BBBB....',
+      '....BBBB....',
+      '....BBBB....',
+      '....SSSS....',
+      '...SS..SS...',
+      '...SS..SS...',
+      '...DD..DD...',
+      '...DD..DD...'
+    ];
+
+    /* ---------------- DOM ---------------- */
+    var scoreEl = document.getElementById('score');
+    var coinsEl = document.getElementById('coins');
+    var livesEl = document.getElementById('lives');
+    var levelEl = document.getElementById('level');
+    var bestEl = document.getElementById('best');
+    var overlay = document.getElementById('overlay');
+    var overlayTitle = document.getElementById('overlayTitle');
+    var overlayText = document.getElementById('overlayText');
+    var overlayBtn = document.getElementById('overlayBtn');
+    var pauseBtn = document.getElementById('pauseBtn');
+    var restartBtn = document.getElementById('restartBtn');
+
+    /* ---------------- 工具 ---------------- */
+    function rep(ch, n) { return new Array(n + 1).join(ch); }
+
+    // 用 [列, 字符] 列表生成一行，其余为空格
+    function put(cols, w) {
+      var a = new Array(w).fill(' ');
+      for (var i = 0; i < cols.length; i++) a[cols[i][0]] = cols[i][1];
+      return a.join('');
+    }
+
+    /* ============================================================
+       关卡地图
+       图例：  # 地面   = 石台   B 砖块(出金币)   ? 问号块(金币)
+              $ 问号块(蘑菇)   U 用过的块   T 管道   C 金币
+              E 敌人   P 出生点   F 旗杆   空格 空气
+       每一行 0~9 对应从上到下，第 9 行是地面
+       ============================================================ */
+    var LEVELS = [
+      // —— 第 1 关：入门 ——
+      [
+        '', '', '', '', '',
+        put([[8,'?'],[12,'B'],[27,'?'],[28,'?'],[29,'B'],[40,'='],[50,'$'],[71,'?'],[72,'B'],[73,'B']], 100),
+        put([[14,'C'],[15,'C'],[16,'C'],[33,'C'],[34,'C'],[35,'C'],[39,'='],[40,'='],[44,'C'],[51,'C'],[52,'C'],[53,'C'],[65,'C'],[75,'C'],[76,'C'],[77,'C']], 100),
+        put([[22,'T'],[23,'T'],[38,'='],[39,'='],[40,'=']], 100),
+        put([[3,'P'],[17,'E'],[22,'T'],[23,'T'],[30,'E'],[37,'='],[38,'='],[39,'='],[40,'='],[56,'E'],[78,'E'],[96,'F']], 100),
+        rep('#', 43) + '   ' + rep('#', 18) + '   ' + rep('#', 33)
+      ],
+      // —— 第 2 关：两道坑 ——
+      [
+        '', '', '', '',
+        put([[11,'?'],[12,'B'],[36,'?'],[37,'$'],[49,'='],[69,'?'],[70,'B'],[71,'B']], 100),
+        put([[10,'C'],[11,'C'],[12,'C'],[13,'C'],[31,'C'],[40,'C'],[41,'C'],[48,'='],[49,'='],[54,'C'],[55,'C'],[70,'C'],[71,'C'],[72,'C']], 100),
+        put([[20,'T'],[21,'T'],[47,'='],[48,'='],[49,'='],[58,'='],[59,'='],[60,'=']], 100),
+        put([[3,'P'],[20,'T'],[21,'T'],[24,'E'],[40,'E'],[43,'E'],[46,'='],[47,'='],[48,'='],[49,'='],[58,'='],[59,'='],[60,'='],[62,'E'],[83,'E'],[96,'F']], 100),
+        rep('#', 30) + '   ' + rep('#', 23) + '    ' + rep('#', 20) + '   ' + rep('#', 17)
+      ],
+      // —— 第 3 关：最后的试炼 ——
+      [
+        '', '', '', '',
+        put([[12,'?'],[28,'$'],[29,'?'],[33,'B'],[34,'B'],[35,'B'],[73,'=']], 100),
+        put([[13,'C'],[14,'C'],[15,'C'],[19,'C'],[20,'C'],[36,'C'],[37,'C'],[56,'='],[57,'='],[58,'='],[72,'='],[73,'='],[79,'C'],[80,'C']], 100),
+        put([[42,'T'],[43,'T'],[71,'='],[72,'='],[73,'=']], 100),
+        put([[3,'P'],[8,'E'],[10,'E'],[24,'E'],[42,'T'],[43,'T'],[46,'E'],[62,'E'],[65,'E'],[70,'='],[71,'='],[72,'='],[73,'='],[88,'E'],[96,'F']], 100),
+        rep('#', 18) + '    ' + rep('#', 28) + '    ' + rep('#', 24) + '    ' + rep('#', 18)
+      ]
+    ];
+
+    /* ---------------- 状态 ---------------- */
+    var grid, cols, worldW, flag, flagDone;
+    var coins, enemies, mushrooms, pops, coinPops, parts;
+    var player, camera = { x: 0, y: 0 };
+    var state = 'idle';       // idle / running / paused / dying / flag / clear / over / victory
+    var keys = { left:false, right:false, run:false, jump:false };
+    var jumpBuffer = 0, jumpReleased = false, coyote = 0;
+    var score = 0, coinCount = 0, lives = START_LIVES, currentLevel = 0;
+    var flagT = 0, flagBonus = 0, deathT = 0, t = 0, lastTs = 0;
+    var best = 0;
+    try { best = parseInt(localStorage.getItem('mario-highscore') || '0', 10) || 0; } catch (e) {}
+    bestEl.textContent = best;
+
+    var clouds = [{x:40,y:44,s:1},{x:300,y:70,s:1.2},{x:560,y:38,s:1},{x:820,y:66,s:0.9}];
+    var hills = [{x:0,w:200,h:70},{x:360,w:260,h:100},{x:700,w:220,h:80}];
+
+    /* ---------------- 地图与实体 ---------------- */
+    function loadLevel(idx, big) {
+      var rows = LEVELS[idx];
+      var w = 0;
+      for (var i = 0; i < rows.length; i++) w = Math.max(w, rows[i].length);
+      cols = w; worldW = cols * TILE;
+      grid = [];
+      for (var r = 0; r < ROWS; r++) {
+        var line = rows[r] || '';
+        if (line.length < w) line += rep(' ', w - line.length);
+        grid.push(line.split(''));
+      }
+      coins = []; enemies = []; mushrooms = []; pops = []; coinPops = []; parts = [];
+      flag = null; flagDone = false;
+      var spawn = { x: 3, y: 8 };
+      for (var y = 0; y < ROWS; y++) {
+        for (var x = 0; x < cols; x++) {
+          var c = grid[y][x];
+          if (c === 'P') { spawn = { x: x, y: y }; grid[y][x] = ' '; }
+          else if (c === 'C') { coins.push({ x: x*TILE+7, y: y*TILE+7, w:18, h:18, spin: Math.random()*6.28 }); grid[y][x] = ' '; }
+          else if (c === 'E') { enemies.push({ x: x*TILE+2, y: y*TILE+(TILE-28), w:28, h:28, vx:-ENEMY_SPEED, dir:-1, alive:true, squished:false, squishT:0, hitWall:0, onGround:false }); grid[y][x] = ' '; }
+          else if (c === 'F') { flag = { col: x }; grid[y][x] = ' '; }
+        }
+      }
+      var ph = big ? BIG_H : SMALL_H;
+      player = {
+        x: spawn.x*TILE + (TILE-W)/2, y: spawn.y*TILE + (TILE-ph),
+        w: W, h: ph, vx:0, vy:0, onGround:false, face:1, big: !!big,
+        invuln: 0, frameT: 0, hitWall: 0
+      };
+      camera.x = 0;
+      updateHud();
+    }
+
+    function isSolid(tx, ty) {
+      if (ty < 0 || ty >= ROWS) return false;       // 掉出世界不算地面
+      if (tx < 0 || tx >= cols) return true;        // 左右边界是墙
+      var c = grid[ty][tx];
+      return c === '#' || c === '=' || c === 'B' || c === '?' || c === '$' || c === 'U' || c === 'T';
+    }
+
+    function tileRange(e) {
+      return {
+        x0: Math.floor(e.x / TILE),
+        x1: Math.floor((e.x + e.w) / TILE),
+        y0: Math.floor(e.y / TILE),
+        y1: Math.floor((e.y + e.h) / TILE)
+      };
+    }
+
+    function resolveX(e) {
+      var r = tileRange(e);
+      if (e.vx > 0) {
+        for (var ty = r.y0; ty <= r.y1; ty++) {
+          if (isSolid(r.x1, ty)) { e.x = r.x1*TILE - e.w; e.vx = 0; e.hitWall = 1; return; }
+        }
+      } else if (e.vx < 0) {
+        for (var ty = r.y0; ty <= r.y1; ty++) {
+          if (isSolid(r.x0, ty)) { e.x = (r.x0+1)*TILE; e.vx = 0; e.hitWall = -1; return; }
+        }
+      }
+    }
+
+    function resolveY(e) {
+      var bumped = [];
+      var r = tileRange(e);
+      if (e.vy > 0) {
+        for (var tx = r.x0; tx <= r.x1; tx++) {
+          if (isSolid(tx, r.y1)) { e.y = r.y1*TILE - e.h; e.vy = 0; e.onGround = true; break; }
+        }
+      } else if (e.vy < 0) {
+        for (var tx = r.x0; tx <= r.x1; tx++) {
+          if (isSolid(tx, r.y0)) { e.y = (r.y0+1)*TILE; e.vy = 0; bumped.push({x:tx, y:r.y0}); }
+        }
+      }
+      return bumped;
+    }
+
+    /* ---------------- 方块 / 金币 / 蘑菇 ---------------- */
+    function addScore(n) { score += n; scoreEl.textContent = score; }
+
+    function addCoin(n) {
+      coinCount += n;
+      if (coinCount >= 100) { coinCount -= 100; lives++; floatText(player.x, player.y-10, '+1UP', '#f0b429'); }
+      coinsEl.textContent = coinCount;
+      livesEl.textContent = lives;
+    }
+
+    function floatText(x, y, text, color) {
+      pops.push({ x: x, y: y, vy: -45, life: 0.8, text: text, color: color || '#ffffff' });
+    }
+
+    function bumpBlock(tx, ty) {
+      if (ty < 0 || ty >= ROWS) return;
+      var c = grid[ty][tx];
+      if (c === '?' || c === 'B') {
+        grid[ty][tx] = 'U';
+        coinPops.push({ x: tx*TILE+8, y: ty*TILE-6, vy: -240, life: 0.35 });
+        floatText(tx*TILE + TILE/2, ty*TILE - 6, '+100', C_COIN);
+        addCoin(1); addScore(100);
+      } else if (c === '$') {
+        grid[ty][tx] = 'U';
+        mushrooms.push({ x: tx*TILE+4, y: ty*TILE-24, w:24, h:24, vx:70, vy:-40, onGround:false, hitWall:0 });
+      } else {
+        return;
+      }
+      // 顶砖顺带干掉站在上面的敌人
+      for (var i = 0; i < enemies.length; i++) {
+        var e = enemies[i];
+        if (e.alive && !e.squished && e.x + e.w > tx*TILE && e.x < tx*TILE + TILE && Math.abs((e.y + e.h) - ty*TILE) < 6) squish(e);
+      }
+      // 小粒子
+      for (var p = 0; p < 4; p++) {
+        parts.push({ x: tx*TILE + 8 + p*5, y: ty*TILE, vx: (p<2?-1:1)*60, vy: -120 - p*20, life: 0.35, color: '#ffffff' });
+      }
+    }
+
+    function squish(e) {
+      e.squished = true; e.squishT = 0.4; e.vx = 0;
+      e.y += e.h - 14; e.h = 14;
+    }
+
+    function overlap(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    /* ---------------- 玩家 ---------------- */
+    function updatePlayer(dt) {
+      var move = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+      var speed = keys.run ? RUN : WALK;
+      player.vx = move * speed;
+      if (move !== 0) player.face = move;
+      if (move !== 0 && player.onGround) player.frameT += dt; else player.frameT = 0;
+
+      if (player.onGround) coyote = COYOTE; else coyote -= dt;
+      if (jumpBuffer > 0) jumpBuffer -= dt;
+      if (jumpBuffer > 0 && (player.onGround || coyote > 0)) {
+        player.vy = -JUMP_V; player.onGround = false; coyote = 0; jumpBuffer = 0; jumpReleased = false;
+      }
+      // 松键提前终止上升（可变跳高）
+      if (jumpReleased && player.vy < -120) { player.vy *= JUMP_CUT; jumpReleased = false; }
+      else if (player.vy >= -120) { jumpReleased = false; }
+
+      player.vy += GRAVITY * dt;
+      if (player.vy > MAX_FALL) player.vy = MAX_FALL;
+
+      player.onGround = false; player.hitWall = 0;
+      player.x += player.vx * dt; resolveX(player);
+      player.y += player.vy * dt;
+      var bumped = resolveY(player);
+      for (var i = 0; i < bumped.length; i++) bumpBlock(bumped[i].x, bumped[i].y);
+    }
+
+    function hurtPlayer() {
+      if (player.big) {
+        player.big = false;
+        player.y += BIG_H - SMALL_H;
+        player.h = SMALL_H;
+        player.invuln = INVULN_TIME;
+        floatText(player.x, player.y - 8, '变小！', '#e2503d');
+      } else {
+        die();
+      }
+    }
+
+    function die() {
+      state = 'dying'; deathT = 0;
+      player.vy = -430; player.vx = 0;
+    }
+
+    /* ---------------- 敌人 / 蘑菇 ---------------- */
+    function updateEnemy(e, dt) {
+      if (e.squished) { e.squishT -= dt; if (e.squishT <= 0) e.alive = false; return; }
+      e.vy += GRAVITY * dt; if (e.vy > MAX_FALL) e.vy = MAX_FALL;
+      e.onGround = false; e.hitWall = 0;
+      var sv = e.vx;
+      e.x += e.vx * dt; resolveX(e);
+      if (e.hitWall) { e.vx = -sv; e.dir = -e.dir; }
+      e.y += e.vy * dt; resolveY(e);
+      // 走到平台边缘就掉头（避免自己跳坑）
+      if (e.onGround) {
+        var aheadX = (e.vx > 0) ? e.x + e.w : e.x - 1;
+        if (!isSolid(Math.floor(aheadX / TILE), Math.floor((e.y + e.h + 1) / TILE))) { e.vx = -e.vx; e.dir = -e.dir; }
+      }
+      if (e.y > VIEW_H + 40) e.alive = false;
+    }
+
+    function updateMushroom(m, dt) {
+      m.vy += GRAVITY * dt; if (m.vy > MAX_FALL) m.vy = MAX_FALL;
+      m.onGround = false; m.hitWall = 0;
+      var sv = m.vx;
+      m.x += m.vx * dt; resolveX(m);
+      if (m.hitWall) m.vx = -sv;
+      m.y += m.vy * dt; resolveY(m);
+      if (m.y > VIEW_H + 40) m.dead = true;
+    }
+
+    function checkEnemyCollisions() {
+      for (var i = 0; i < enemies.length; i++) {
+        var e = enemies[i];
+        if (!e.alive || e.squished) continue;
+        if (!overlap(player, e)) continue;
+        if (player.vy > 0 && (player.y + player.h - e.y) < 16) {
+          squish(e);
+          player.vy = keys.jump ? -BOUNCE_HOLD : -BOUNCE;
+          player.y = e.y - player.h;
+          addScore(100);
+          floatText(e.x + e.w/2, e.y, '+100', '#ffffff');
+        } else if (player.invuln <= 0) {
+          hurtPlayer();
+        }
+      }
+    }
+
+    function checkCoins() {
+      for (var i = coins.length - 1; i >= 0; i--) {
+        if (overlap(player, coins[i])) {
+          addCoin(1); addScore(100);
+          parts.push({ x: coins[i].x + 5, y: coins[i].y + 5, vx: 0, vy: -80, life: 0.3, color: C_COIN });
+          coins.splice(i, 1);
+        }
+      }
+    }
+
+    function checkMushrooms() {
+      for (var i = mushrooms.length - 1; i >= 0; i--) {
+        var m = mushrooms[i];
+        if (m.dead) { mushrooms.splice(i, 1); continue; }
+        if (overlap(player, m)) {
+          if (player.big) { addScore(1000); floatText(m.x, m.y-6, '+1000', C_COIN); }
+          else { player.big = true; player.y -= BIG_H - SMALL_H; player.h = BIG_H; floatText(m.x, m.y-6, '变大！', '#9bca4b'); }
+          mushrooms.splice(i, 1);
+        }
+      }
+    }
+
+    /* ---------------- 主更新 ---------------- */
+    function update(dt) {
+      updatePlayer(dt);
+      for (var i = 0; i < enemies.length; i++) if (enemies[i].alive) updateEnemy(enemies[i], dt);
+      enemies = enemies.filter(function (e) { return e.alive; });
+      for (var j = 0; j < mushrooms.length; j++) updateMushroom(mushrooms[j], dt);
+      checkEnemyCollisions();
+      checkCoins();
+      checkMushrooms();
+
+      // 旗杆
+      if (!flagDone && flag && player.x + player.w > flag.col*TILE + TILE*0.35) {
+        flagDone = true; state = 'flag'; flagT = 0;
+        var h = (ROWS-1)*TILE - (player.y + player.h);
+        flagBonus = 500 + Math.max(0, Math.floor(h / TILE)) * 100;
+        player.vx = 0; player.vy = 0;
+      }
+
+      // 相机
+      var target = player.x + player.w/2 - VIEW_W/2;
+      camera.x = Math.max(0, Math.min(target, worldW - VIEW_W));
+
+      if (player.invuln > 0) player.invuln -= dt;
+      updateFx(dt);
+      if (player.y > VIEW_H + 20) die();
+    }
+
+    function updateDying(dt) {
+      deathT += dt;
+      player.vy += GRAVITY * dt;
+      player.y += player.vy * dt;
+      updateFx(dt);
+      if (player.y > VIEW_H + 60) {
+        lives--;
+        updateHud();
+        if (lives <= 0) { lives = 0; updateHud(); gameOver(); }
+        else { loadLevel(currentLevel, false); coinCount = 0; player.invuln = 1.2; state = 'running'; }
+      }
+    }
+
+    function updateFlag(dt) {
+      flagT += dt;
+      var poleX = flag.col*TILE + 10;
+      var baseY = (ROWS-1)*TILE - player.h;
+      var k = Math.min(1, flagT / 0.9);
+      player.x += (poleX - player.w/2 - player.x) * Math.min(1, k*2);
+      player.y += (baseY - player.y) * k;
+      updateFx(dt);
+      if (flagT >= 0.9) {
+        addScore(flagBonus);
+        floatText(poleX + 20, baseY - 10, '+'+flagBonus, C_COIN);
+        levelClear();
+      }
+    }
+
+    function updateFx(dt) {
+      for (var i = pops.length - 1; i >= 0; i--) { var p = pops[i]; p.y += p.vy*dt; p.life -= dt; if (p.life <= 0) pops.splice(i, 1); }
+      for (var j = coinPops.length - 1; j >= 0; j--) { var c = coinPops[j]; c.y += c.vy*dt; c.vy += 420*dt; c.life -= dt; if (c.life <= 0) coinPops.splice(j, 1); }
+      for (var k = parts.length - 1; k >= 0; k--) { var pt = parts[k]; pt.x += pt.vx*dt; pt.y += pt.vy*dt; pt.vy += 900*dt; pt.life -= dt; if (pt.life <= 0) parts.splice(k, 1); }
+    }
+
+    /* ---------------- 流程控制 ---------------- */
+    function newRun() {
+      score = 0; coinCount = 0; lives = START_LIVES; currentLevel = 0;
+      loadLevel(0, false);
+    }
+
+    function startGame() {
+      if (state === 'running') return;
+      if (state === 'over' || state === 'victory' || state === 'idle') newRun();
+      state = 'running';
+      overlay.classList.add('hidden');
+      pauseBtn.textContent = '暂停';
+    }
+
+    function pauseGame() {
+      if (state !== 'running') return;
+      state = 'paused';
+      showOverlay('已暂停', '休息一下，准备好就继续', '继续游戏');
+      pauseBtn.textContent = '继续';
+    }
+
+    function toggle() {
+      if (state === 'running') pauseGame();
+      else startGame();
+    }
+
+    function restart() {
+      newRun();
+      state = 'running';
+      overlay.classList.add('hidden');
+      pauseBtn.textContent = '暂停';
+    }
+
+    function levelClear() {
+      var keepBig = player.big;
+      currentLevel++;
+      if (currentLevel >= LEVELS.length) {
+        victory();
+      } else {
+        loadLevel(currentLevel, keepBig);
+        showOverlay('第 ' + currentLevel + ' 关完成！', '本关得分 ' + score + '，准备好进入第 ' + (currentLevel+1) + ' 关', '进入下一关');
+        state = 'clear';
+      }
+    }
+
+    function updateBest() {
+      if (score > best) {
+        best = score; bestEl.textContent = best;
+        try { localStorage.setItem('mario-highscore', String(best)); } catch (e) {}
+      }
+    }
+
+    function unlockMedals() {
+      var earned = { bronze: best >= MEDALS.bronze, silver: best >= MEDALS.silver, gold: best >= MEDALS.gold };
+      return SiteMedals.unlock('mario', earned);
+    }
+
+    function gameOver() {
+      state = 'over';
+      updateBest();
+      var newMedal = unlockMedals();
+      showOverlay('游戏结束', '本局得分 ' + score + ' · 历史最高 ' + best, '再来一局');
+      pauseBtn.textContent = '开始游戏';
+      if (newMedal) setTimeout(function () { showMedalDialog(newMedal, '仿马里奥'); }, 400);
+    }
+
+    function victory() {
+      state = 'victory';
+      updateBest();
+      var newMedal = unlockMedals();
+      showOverlay('通关！', '恭喜打通全部关卡！得分 ' + score + ' · 历史最高 ' + best, '再来一局');
+      pauseBtn.textContent = '开始游戏';
+      if (newMedal) setTimeout(function () { showMedalDialog(newMedal, '仿马里奥'); }, 400);
+    }
+
+    function showOverlay(title, text, btnText) {
+      overlayTitle.textContent = title;
+      overlayText.textContent = text;
+      overlayBtn.textContent = btnText;
+      overlay.classList.remove('hidden');
+    }
+
+    function updateHud() {
+      scoreEl.textContent = score;
+      coinsEl.textContent = coinCount;
+      livesEl.textContent = lives;
+      levelEl.textContent = currentLevel + 1;
+      bestEl.textContent = best;
+    }
+
+    /* ================= 绘制 ================= */
+    function drawCloud(cx, cy, s) {
+      ctx.fillRect(cx, cy, 40*s, 10*s);
+      ctx.fillRect(cx + 6*s, cy - 8*s, 16*s, 8*s);
+      ctx.fillRect(cx + 20*s, cy - 5*s, 14*s, 6*s);
+    }
+
+    function drawBackground() {
+      ctx.fillStyle = SKY; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+      // 太阳
+      ctx.fillStyle = '#f7d774'; ctx.fillRect(VIEW_W-96, 34, 40, 40);
+      ctx.fillStyle = '#fbe9a8'; ctx.fillRect(VIEW_W-88, 42, 24, 24);
+      // 云（慢速视差）
+      ctx.fillStyle = '#ffffff';
+      var cw = VIEW_W + 160;
+      for (var i = 0; i < clouds.length; i++) {
+        var cx = ((clouds[i].x - camera.x*0.3) % cw + cw) % cw - 80;
+        drawCloud(cx, clouds[i].y, clouds[i].s);
+      }
+      // 远山（中速视差）
+      ctx.fillStyle = '#b9d88a';
+      var hw = VIEW_W + 320;
+      for (var j = 0; j < hills.length; j++) {
+        var hx = ((hills[j].x - camera.x*0.5) % hw + hw) % hw - 160;
+        ctx.fillRect(hx, VIEW_H - hills[j].h, hills[j].w, hills[j].h);
+      }
+    }
+
+    function drawTile(c, px, py, tx, ty) {
+      if (c === '#') {
+        ctx.fillStyle = C_GROUND; ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = C_GROUND_DARK;
+        ctx.fillRect(px, py+15, TILE, 2); ctx.fillRect(px+10, py, 2, 15); ctx.fillRect(px+21, py+16, 2, 15);
+        if (!isSolid(tx, ty-1)) { ctx.fillStyle = '#7ac74f'; ctx.fillRect(px, py, TILE, 8); ctx.fillStyle = '#4f8f2f'; ctx.fillRect(px, py+8, TILE, 2); }
+      } else if (c === '=') {
+        ctx.fillStyle = C_STONE; ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = '#8a919c'; ctx.fillRect(px, py, TILE, 3); ctx.fillRect(px, py+TILE-3, TILE, 3); ctx.fillRect(px+15, py+3, 2, TILE-6);
+      } else if (c === 'B') {
+        ctx.fillStyle = C_BRICK; ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = '#8a5230';
+        ctx.fillRect(px, py+15, TILE, 2); ctx.fillRect(px+10, py, 2, 15); ctx.fillRect(px+21, py+16, 2, 15);
+        ctx.strokeStyle = '#1f2d20'; ctx.lineWidth = 2; ctx.strokeRect(px+1, py+1, TILE-2, TILE-2);
+      } else if (c === '?' || c === '$') {
+        var bounce = Math.sin(t*5 + tx + ty) * 2;
+        ctx.fillStyle = C_BLOCK; ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = C_COIN_DARK; ctx.fillRect(px+2, py+2, TILE-4, TILE-4);
+        ctx.fillStyle = C_BLOCK; ctx.fillRect(px+5, py+5, TILE-10, TILE-10);
+        ctx.fillStyle = '#1f2d20';
+        ctx.fillRect(px+3, py+3, 3, 3); ctx.fillRect(px+TILE-6, py+3, 3, 3);
+        ctx.fillRect(px+3, py+TILE-6, 3, 3); ctx.fillRect(px+TILE-6, py+TILE-6, 3, 3);
+        if (c === '?') {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(px+8, py+10+bounce, 4, 4);
+          ctx.fillRect(px+12, py+14+bounce, 4, 4);
+          ctx.fillRect(px+8, py+18+bounce, 4, 4);
+          ctx.fillRect(px+20, py+20+bounce, 4, 4);
+        } else {
+          ctx.fillStyle = '#e2503d'; ctx.fillRect(px+9, py+9, 14, 7);
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(px+10, py+10, 4, 3); ctx.fillRect(px+18, py+10, 3, 3);
+          ctx.fillStyle = '#f6e7c1'; ctx.fillRect(px+12, py+15, 8, 8);
+        }
+        ctx.strokeStyle = '#1f2d20'; ctx.lineWidth = 2; ctx.strokeRect(px+1, py+1, TILE-2, TILE-2);
+      } else if (c === 'U') {
+        ctx.fillStyle = C_USED; ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = '#8a6a3a';
+        ctx.fillRect(px+3, py+3, 3, 3); ctx.fillRect(px+TILE-6, py+3, 3, 3);
+        ctx.fillRect(px+3, py+TILE-6, 3, 3); ctx.fillRect(px+TILE-6, py+TILE-6, 3, 3);
+        ctx.strokeStyle = '#1f2d20'; ctx.lineWidth = 2; ctx.strokeRect(px+1, py+1, TILE-2, TILE-2);
+      } else if (c === 'T') {
+        ctx.fillStyle = C_PIPE; ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = '#7fd08a'; ctx.fillRect(px+5, py, 6, TILE);
+        if (!isSolid(tx, ty-1)) {
+          ctx.fillStyle = C_PIPE; ctx.fillRect(px-3, py, TILE+6, 8);
+          ctx.fillStyle = '#7fd08a'; ctx.fillRect(px+2, py, 6, 8);
+        }
+        ctx.strokeStyle = '#1f2d20'; ctx.lineWidth = 2; ctx.strokeRect(px+1, py+1, TILE-2, TILE-2);
+      }
+    }
+
+    function drawCoins() {
+      for (var i = 0; i < coins.length; i++) {
+        var c = coins[i];
+        var sw = Math.abs(Math.cos(t*6 + c.spin));
+        var w = Math.max(2, Math.round(14*sw));
+        var px = Math.round(c.x + (14-w)/2), py = Math.round(c.y);
+        ctx.fillStyle = C_COIN; ctx.fillRect(px, py, w, 14);
+        ctx.fillStyle = C_COIN_DARK; ctx.fillRect(px + Math.round((w-2)/2), py+2, 2, 10);
+      }
+    }
+
+    function drawEnemy(e) {
+      var px = Math.round(e.x), py = Math.round(e.y);
+      if (e.squished) { ctx.fillStyle = '#8a4a2e'; ctx.fillRect(px, py + e.h - 8, e.w, 8); return; }
+      ctx.fillStyle = C_ENEMY;
+      ctx.fillRect(px+2, py+6, e.w-4, e.h-10);
+      ctx.fillRect(px+6, py+2, e.w-12, 6);
+      ctx.fillStyle = '#6b3a20'; ctx.fillRect(px+2, py+e.h-8, e.w-4, 6);
+      var step = Math.floor(t*8) % 2;
+      ctx.fillStyle = '#3a2418';
+      ctx.fillRect(px + (step?2:8), py+e.h-6, 8, 6);
+      ctx.fillRect(px + (step?16:12), py+e.h-6, 8, 6);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(px+6, py+8, 4, 5); ctx.fillRect(px+e.w-10, py+8, 4, 5);
+      ctx.fillStyle = '#1f2d20'; ctx.fillRect(px+8, py+10, 2, 3); ctx.fillRect(px+e.w-8, py+10, 2, 3);
+    }
+
+    function drawMushroom(m) {
+      var px = Math.round(m.x), py = Math.round(m.y);
+      ctx.fillStyle = '#e2503d'; ctx.fillRect(px, py, 24, 12);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(px+4, py+3, 4, 4); ctx.fillRect(px+16, py+4, 4, 4);
+      ctx.fillStyle = '#f6e7c1'; ctx.fillRect(px+6, py+10, 12, 12);
+      ctx.fillStyle = '#1f2d20'; ctx.fillRect(px+7, py+13, 3, 5); ctx.fillRect(px+14, py+13, 3, 5);
+    }
+
+    function drawHero() {
+      if (player.invuln > 0 && Math.floor(t*10) % 2 === 0) return;  // 无敌闪烁
+      var sp = player.big ? HERO_BIG : HERO_SMALL;
+      var scale = 2, w = sp[0].length;
+      var bob = (player.frameT > 0 && player.onGround) ? (Math.floor(player.frameT*12) % 2) : 0;
+      var px = Math.round(player.x), py = Math.round(player.y) + bob;
+      for (var r = 0; r < sp.length; r++) {
+        var row = sp[r];
+        for (var c = 0; c < w; c++) {
+          var ch = row[c];
+          if (ch === '.') continue;
+          ctx.fillStyle = PALETTE[ch];
+          var dx = player.face < 0 ? px + (w-1-c)*scale : px + c*scale;
+          ctx.fillRect(dx, py + r*scale, scale, scale);
+        }
+      }
+    }
+
+    function drawFlag() {
+      if (!flag) return;
+      var px = flag.col*TILE + 10;
+      ctx.fillStyle = '#9aa3ad'; ctx.fillRect(px, 16, 6, (ROWS-1)*TILE - 16);
+      ctx.fillStyle = '#f0b429'; ctx.fillRect(px-2, 8, 10, 10);
+      ctx.fillStyle = '#e2503d';
+      ctx.beginPath();
+      ctx.moveTo(px+6, 24); ctx.lineTo(px+40, 36); ctx.lineTo(px+6, 48); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#8a8f98'; ctx.fillRect(px-10, (ROWS-1)*TILE-4, 32, 4);
+    }
+
+    function drawFx() {
+      ctx.textAlign = 'center';
+      ctx.font = '10px "Press Start 2P", monospace';
+      for (var i = 0; i < pops.length; i++) { var p = pops[i]; ctx.fillStyle = p.color; ctx.fillText(p.text, Math.round(p.x), Math.round(p.y)); }
+      for (var j = 0; j < coinPops.length; j++) {
+        var cp = coinPops[j];
+        ctx.fillStyle = C_COIN; ctx.fillRect(Math.round(cp.x), Math.round(cp.y), 16, 16);
+        ctx.fillStyle = C_COIN_DARK; ctx.fillRect(Math.round(cp.x)+6, Math.round(cp.y)+3, 4, 10);
+      }
+      for (var k = 0; k < parts.length; k++) { var pt = parts[k]; ctx.fillStyle = pt.color; ctx.fillRect(Math.round(pt.x), Math.round(pt.y), 4, 4); }
+    }
+
+    function render() {
+      drawBackground();
+      ctx.save();
+      ctx.translate(-Math.round(camera.x), -Math.round(camera.y));
+      var x0 = Math.floor(camera.x / TILE), x1 = Math.ceil((camera.x + VIEW_W) / TILE);
+      for (var ty = 0; ty < ROWS; ty++) {
+        for (var tx = x0; tx <= x1 && tx < cols; tx++) {
+          var c = grid[ty][tx];
+          if (c && c !== ' ') drawTile(c, tx*TILE, ty*TILE, tx, ty);
+        }
+      }
+      drawCoins();
+      drawFlag();
+      for (var m = 0; m < mushrooms.length; m++) drawMushroom(mushrooms[m]);
+      for (var e = 0; e < enemies.length; e++) drawEnemy(enemies[e]);
+      drawHero();
+      drawFx();
+      ctx.restore();
+    }
+
+    /* ================= 主循环 ================= */
+    function loop(ts) {
+      requestAnimationFrame(loop);
+      if (!lastTs) lastTs = ts;
+      var dt = (ts - lastTs) / 1000; lastTs = ts;
+      if (dt > 1/30) dt = 1/30;
+      t += dt;
+      if (state === 'running') update(dt);
+      else if (state === 'dying') updateDying(dt);
+      else if (state === 'flag') updateFlag(dt);
+      render();
+    }
+
+    /* ================= 输入 ================= */
+    var KEY_LEFT = ['ArrowLeft', 'a', 'A'];
+    var KEY_RIGHT = ['ArrowRight', 'd', 'D'];
+    var KEY_JUMP = ['ArrowUp', 'w', 'W', ' ', 'k', 'K'];
+    var KEY_RUN = ['Shift', 'x', 'X', 'z', 'Z'];
+
+    function inList(k, list) { return list.indexOf(k) !== -1; }
+
+    window.addEventListener('keydown', function (e) {
+      if (inList(e.key, KEY_LEFT)) { e.preventDefault(); keys.left = true; }
+      else if (inList(e.key, KEY_RIGHT)) { e.preventDefault(); keys.right = true; }
+      else if (inList(e.key, KEY_JUMP)) { e.preventDefault(); keys.jump = true; jumpBuffer = JUMP_BUFFER; if (state !== 'running' && state !== 'paused' && state !== 'dying' && state !== 'flag') startGame(); }
+      else if (inList(e.key, KEY_RUN)) { keys.run = true; }
+      else if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') { e.preventDefault(); toggle(); }
+      else if (e.key === 'Enter') { if (state !== 'running') startGame(); }
+    });
+
+    window.addEventListener('keyup', function (e) {
+      if (inList(e.key, KEY_LEFT)) { keys.left = false; }
+      else if (inList(e.key, KEY_RIGHT)) { keys.right = false; }
+      else if (inList(e.key, KEY_JUMP)) { keys.jump = false; jumpReleased = true; }
+      else if (inList(e.key, KEY_RUN)) { keys.run = false; }
+    });
+
+    // 手机按键（按住生效，松手释放）
+    var padBtns = document.querySelectorAll('.mario-pad-btn[data-key]');
+    for (var b = 0; b < padBtns.length; b++) {
+      (function (btn) {
+        var k = btn.getAttribute('data-key');
+        function onDown(e) {
+          e.preventDefault();
+          if (k === 'jump') { keys.jump = true; jumpBuffer = JUMP_BUFFER; if (state !== 'running' && state !== 'paused' && state !== 'dying' && state !== 'flag') startGame(); }
+          else if (k === 'left') keys.left = true;
+          else if (k === 'right') keys.right = true;
+          else if (k === 'run') keys.run = true;
+        }
+        function onUp(e) {
+          e.preventDefault();
+          if (k === 'jump') { keys.jump = false; jumpReleased = true; }
+          else if (k === 'left') keys.left = false;
+          else if (k === 'right') keys.right = false;
+          else if (k === 'run') keys.run = false;
+        }
+        btn.addEventListener('pointerdown', onDown);
+        btn.addEventListener('pointerup', onUp);
+        btn.addEventListener('pointercancel', onUp);
+        btn.addEventListener('pointerleave', onUp);
+      })(padBtns[b]);
+    }
+
+    overlayBtn.addEventListener('click', startGame);
+    pauseBtn.addEventListener('click', toggle);
+    restartBtn.addEventListener('click', restart);
+
+    // 切到后台自动暂停
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden && state === 'running') pauseGame();
+    });
+
+    /* ---------------- 启动 ---------------- */
+    loadLevel(0, false);
+    showOverlay('仿马里奥', '方向键 / WASD 移动，空格或上键跳跃，Shift 奔跑\n顶砖吃金币、踩敌人、跑到旗杆通关', '开始游戏');
+    state = 'idle';
+    pauseBtn.textContent = '开始游戏';
+    requestAnimationFrame(loop);
+  })();
+  </script>
 </body>
 </html>
