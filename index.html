@@ -27,10 +27,12 @@
         <!-- TODO: 改成你的网站名字 -->
         <span>CHRIST'S WORLD</span>
       </a>
-      <nav class="nav-links">
-        <a class="nav-link current" href="index.html">首页</a>
-        <a class="nav-link" href="categories/games.html">游戏</a>
-      </nav>
+    <nav class="nav-links">
+      <a class="nav-link current" href="index.html">首页</a>
+      <a class="nav-link" href="categories/games.html">游戏</a>
+      <a class="nav-link" id="userLink">用户</a>
+    </nav>
+
     </div>
   </header>
 
@@ -170,5 +172,23 @@
   </footer>
 
   <script src="js/common.js"></script>
+  <script>
+    // 跳转用户页面时检测登录信息
+    document.addEventListener('DOMContentLoaded', function () {
+      const userLink = document.querySelector('#userLink');
+      if (userLink) {
+        userLink.addEventListener('click', function (event) {
+          const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+          if (!isLoggedIn) {
+            event.preventDefault();
+            alert('请先登录才能访问用户页面！');
+            location.href = 'login.html';
+          }
+          location.href = 'categories/users.html';
+        });
+      }
+    });
+  </script>
+  
 </body>
 </html>

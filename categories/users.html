@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CQ的网站</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='2' fill='%232f5d3a'/%3E%3Crect x='4.2' y='6.6' width='1.5' height='3.4' fill='%239bca4b'/%3E%3Crect x='3.2' y='7.6' width='3.5' height='1.4' fill='%239bca4b'/%3E%3Ccircle cx='10.6' cy='8' r='0.85' fill='%23e2503d'/%3E%3Ccircle cx='12.2' cy='9.8' r='0.85' fill='%23f0b429'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- ================= 顶部导航 ================= -->
+  <header class="topnav">
+    <div class="container topnav-inner">
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        <span>CHRIST'S WORLD</span>
+      </a>
+      <nav class="nav-links">
+        <a class="nav-link" href="../index.html">首页</a>
+        <a class="nav-link" href="games.html">游戏</a>
+        <a class="nav-link current" href="users.html">用户</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ================= 页头（左侧标题 / 右上角奖牌榜） ================= -->
+  <div class="container page-head games-head">
+    <div>
+      <a class="back-link" href="../index.html">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 8H3M7 4L3 8l4 4"/></svg>
+        返回首页
+      </a>
+      <h1 class="page-title" style="margin-top:16px;">个人信息</h1>
+    </div>
+
+    <!-- 奖牌榜：数字由 js/common.js 的 SiteMedals.renderBoard() 自动填充 -->
+    <div class="medal-board" id="medalBoard" aria-label="奖牌榜">
+      <span class="board-label">奖牌榜<br>MEDALS</span>
+      <div class="medal-counters">
+        <span class="medal-item" title="金牌">
+          <svg viewBox="0 0 48 56" class="medal-svg" aria-hidden="true">
+            <path d="M19 3 L11 27 L20.5 22 Z" fill="#35659c"/>
+            <path d="M29 3 L37 27 L27.5 22 Z" fill="#2a5280"/>
+            <circle cx="24" cy="35" r="14" fill="#f0b429" stroke="#1f2d20" stroke-width="3"/>
+            <circle cx="24" cy="35" r="9.5" fill="none" stroke="#1f2d20" stroke-width="1.6" opacity=".35"/>
+            <path d="M24 28.5 L25.35 32.2 L29.3 32.4 L26.2 34.9 L27.2 38.8 L24 36.7 L20.8 38.8 L21.8 34.9 L18.7 32.4 L22.65 32.2 Z" fill="#ffffff"/>
+          </svg>
+          <b id="cntGold">0</b>
+        </span>
+        <span class="medal-item" title="银牌">
+          <svg viewBox="0 0 48 56" class="medal-svg" aria-hidden="true">
+            <path d="M19 3 L11 27 L20.5 22 Z" fill="#35659c"/>
+            <path d="M29 3 L37 27 L27.5 22 Z" fill="#2a5280"/>
+            <circle cx="24" cy="35" r="14" fill="#c3c9d2" stroke="#1f2d20" stroke-width="3"/>
+            <circle cx="24" cy="35" r="9.5" fill="none" stroke="#1f2d20" stroke-width="1.6" opacity=".35"/>
+            <path d="M24 28.5 L25.35 32.2 L29.3 32.4 L26.2 34.9 L27.2 38.8 L24 36.7 L20.8 38.8 L21.8 34.9 L18.7 32.4 L22.65 32.2 Z" fill="#ffffff"/>
+          </svg>
+          <b id="cntSilver">0</b>
+        </span>
+        <span class="medal-item" title="铜牌">
+          <svg viewBox="0 0 48 56" class="medal-svg" aria-hidden="true">
+            <path d="M19 3 L11 27 L20.5 22 Z" fill="#35659c"/>
+            <path d="M29 3 L37 27 L27.5 22 Z" fill="#2a5280"/>
+            <circle cx="24" cy="35" r="14" fill="#d98b46" stroke="#1f2d20" stroke-width="3"/>
+            <circle cx="24" cy="35" r="9.5" fill="none" stroke="#1f2d20" stroke-width="1.6" opacity=".35"/>
+            <path d="M24 28.5 L25.35 32.2 L29.3 32.4 L26.2 34.9 L27.2 38.8 L24 36.7 L20.8 38.8 L21.8 34.9 L18.7 32.4 L22.65 32.2 Z" fill="#ffffff"/>
+          </svg>
+          <b id="cntBronze">0</b>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  
+
+
+  <!-- ================= 页脚 ================= -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-brand">
+        <span class="brand-mark" style="width:22px;height:22px;box-shadow:none;">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        CHRIST'S WORLD
+      </span>
+    </div>
+  </footer>
+
+  <script src="../js/common.js">
+    
+  </script>
+</body>
+</html>
