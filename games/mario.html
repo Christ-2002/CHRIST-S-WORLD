@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>你爹的网站</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='2' fill='%232f5d3a'/%3E%3Crect x='4.2' y='6.6' width='1.5' height='3.4' fill='%239bca4b'/%3E%3Crect x='3.2' y='7.6' width='3.5' height='1.4' fill='%239bca4b'/%3E%3Ccircle cx='10.6' cy='8' r='0.85' fill='%23e2503d'/%3E%3Ccircle cx='12.2' cy='9.8' r='0.85' fill='%23f0b429'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- ================= 顶部导航 ================= -->
+  <header class="topnav">
+    <div class="container topnav-inner">
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        <span>CHRIST'S WORLD</span>
+      </a>
+      <nav class="nav-links">
+        <a class="nav-link" href="../index.html">首页</a>
+        <a class="nav-link current" href="../categories/games.html">游戏</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ================= 开发中占位 ================= -->
+  <main class="container">
+    <div class="page-head">
+      <a class="back-link" href="../categories/games.html">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 8H3M7 4L3 8l4 4"/></svg>
+        返回游戏列表
+      </a>
+    </div>
+
+    <div class="soon-shell">
+      <!-- 像素场景插画 -->
+      <svg class="soon-art" viewBox="0 0 160 110" shape-rendering="crispEdges">
+        <!-- 天空 -->
+        <rect width="160" height="110" fill="#8fc7e8"/>
+        <!-- 云 -->
+        <g fill="#ffffff">
+          <rect x="18" y="20" width="34" height="8"/>
+          <rect x="24" y="14" width="14" height="6"/>
+          <rect x="36" y="16" width="12" height="4"/>
+          <rect x="116" y="26" width="28" height="7"/>
+          <rect x="121" y="21" width="12" height="5"/>
+        </g>
+        <!-- 远山 -->
+        <path d="M10 84 L34 56 L58 84 Z" fill="#6fa352"/>
+        <path d="M44 84 L72 48 L100 84 Z" fill="#5a8f3c"/>
+        <!-- 浮空问号砖 -->
+        <rect x="68" y="38" width="24" height="24" fill="#f0b429" stroke="#1f2d20" stroke-width="2"/>
+        <path d="M76.5 45.5 q0-4 5.5-4 t5.5 4 q0 3-4 4.6 l-1 2.2 v2" stroke="#ffffff" stroke-width="3.2" fill="none" stroke-linecap="square"/>
+        <rect x="80.4" y="55.6" width="3.4" height="3.4" fill="#ffffff"/>
+        <!-- 小砖块 -->
+        <rect x="30" y="52" width="14" height="14" fill="#d98b46" stroke="#1f2d20" stroke-width="2"/>
+        <rect x="116" y="52" width="14" height="14" fill="#d98b46" stroke="#1f2d20" stroke-width="2"/>
+        <!-- 地面 -->
+        <rect x="0" y="84" width="160" height="26" fill="#d98b46"/>
+        <g stroke="#1f2d20" stroke-width="1.6">
+          <line x1="0" y1="97" x2="160" y2="97"/>
+          <line x1="0" y1="84" x2="160" y2="84"/>
+        </g>
+        <g stroke="#1f2d20" stroke-width="1.4">
+          <line x1="20" y1="84" x2="20" y2="97"/><line x1="60" y1="84" x2="60" y2="97"/>
+          <line x1="100" y1="84" x2="100" y2="97"/><line x1="140" y1="84" x2="140" y2="97"/>
+          <line x1="40" y1="97" x2="40" y2="110"/><line x1="80" y1="97" x2="80" y2="110"/>
+          <line x1="120" y1="97" x2="120" y2="110"/>
+        </g>
+        <!-- 施工小旗 -->
+        <rect x="118" y="62" width="2.5" height="22" fill="#1f2d20"/>
+        <path d="M120.5 62 h14 l-4 5 l4 5 h-14 Z" fill="#e2503d"/>
+      </svg>
+
+      <h1 class="soon-title">仿马里奥 · 正在开发中</h1>
+      <p class="soon-text">
+        这是第二个游戏的位置，计划做成横版平台跳跃：移动、奔跑、跳跃、踩敌人、顶金币、通关旗杆。
+        具体玩法和关卡设计确定后，就会把这页替换成真正的游戏，这张卡片无需改动。
+      </p>
+
+      <!-- 进度条（宽度在 css/style.css 的 .soon-progress i 里改） -->
+      <div class="soon-progress" aria-label="开发进度"><i></i></div>
+      <p style="font-family:var(--font-pixel);font-size:10px;color:var(--gb-dark);">LOADING... 12%</p>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+        <a class="pixel-btn" href="../categories/games.html">先去玩贪吃蛇</a>
+        <a class="pixel-btn secondary" href="../index.html">返回首页</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= 页脚 ================= -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-brand">
+        <span class="brand-mark" style="width:22px;height:22px;box-shadow:none;">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        CHRIST'S WORLD
+      </span>
+    </div>
+  </footer>
+
+  <script src="../js/common.js"></script>
+</body>
+</html>

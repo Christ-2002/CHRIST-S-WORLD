@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>你爹的网站</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='2' fill='%232f5d3a'/%3E%3Crect x='4.2' y='6.6' width='1.5' height='3.4' fill='%239bca4b'/%3E%3Crect x='3.2' y='7.6' width='3.5' height='1.4' fill='%239bca4b'/%3E%3Ccircle cx='10.6' cy='8' r='0.85' fill='%23e2503d'/%3E%3Ccircle cx='12.2' cy='9.8' r='0.85' fill='%23f0b429'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- ================= 顶部导航 ================= -->
+  <header class="topnav">
+    <div class="container topnav-inner">
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        <span>CHRIST'S WORLD</span>
+      </a>
+      <nav class="nav-links">
+        <a class="nav-link" href="../index.html">首页</a>
+        <a class="nav-link current" href="../categories/games.html">游戏</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ================= 游戏主体 ================= -->
+  <main class="container">
+    <div class="page-head" style="max-width:620px;margin-left:auto;margin-right:auto;">
+      <a class="back-link" href="../categories/games.html">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 8H3M7 4L3 8l4 4"/></svg>
+        返回游戏列表
+      </a>
+      <h1 class="page-title">贪吃蛇</h1>
+      <p class="page-sub">吃到果子得 10 分，每吃 5 个升一级，6 级起地图上同时出现两个果子。</p>
+    </div>
+
+    <div class="game-shell">
+      <!-- 计分板 -->
+      <div class="hud">
+        <div class="hud-scores">
+          <div class="score-box">
+            <span class="label">SCORE</span>
+            <span class="value" id="score">0</span>
+          </div>
+          <div class="score-box">
+            <span class="label">BEST</span>
+            <span class="value" id="best">0</span>
+          </div>
+          <div class="score-box">
+            <span class="label">LEVEL</span>
+            <span class="value" id="level">1</span>
+          </div>
+        </div>
+        <div class="hud-actions">
+          <button class="pixel-btn" id="pauseBtn">开始游戏</button>
+          <button class="pixel-btn secondary" id="restartBtn">重新开始</button>
+        </div>
+      </div>
+
+      <!-- 画布 + 覆盖层 -->
+      <div class="canvas-wrap">
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <div class="canvas-overlay" id="overlay">
+          <div class="overlay-box">
+            <p class="overlay-title" id="overlayTitle">贪吃蛇</p>
+            <p class="overlay-text" id="overlayText">方向键或 WASD 移动，空格键暂停</p>
+            <button class="pixel-btn" id="overlayBtn">开始游戏</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作说明 -->
+      <div class="help-row">
+        <span class="desktop-only">移动：<span class="key">↑</span><span class="key">↓</span><span class="key">←</span><span class="key">→</span> 或 <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span></span>
+        <span>暂停 / 继续：<span class="key">SPACE</span></span>
+        <span>手机：使用下方方向键</span>
+        <span>奖牌：100 分铜牌 · 200 分银牌 · 300 分金牌</span>
+      </div>
+
+      <!-- 手机方向键（窄屏自动显示） -->
+      <div class="dpad">
+        <div class="dpad-grid">
+          <button class="dpad-btn dpad-up"    data-dir="up"    aria-label="上">▲</button>
+          <button class="dpad-btn dpad-left"  data-dir="left"  aria-label="左">◀</button>
+          <span class="dpad-btn dpad-mid"></span>
+          <button class="dpad-btn dpad-right" data-dir="right" aria-label="右">▶</button>
+          <button class="dpad-btn dpad-down"  data-dir="down"  aria-label="下">▼</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= 页脚 ================= -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-brand">
+        <span class="brand-mark" style="width:22px;height:22px;box-shadow:none;">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        CHRIST'S WORLD
+      </span>
+    </div>
+  </footer>
+
+  <script src="../js/common.js"></script>
+  <script>
+  /* ============================================================
+     贪吃蛇游戏逻辑
+     想改难度：调 INIT_SPEED（初始速度/毫秒）、MIN_SPEED（最快速度）
+     想改棋盘大小：调 GRID（格数）和 CELL（每格像素），二者乘积要等于画布尺寸
+     ============================================================ */
+  (function () {
+    var canvas = document.getElementById('gameCanvas');
+    var ctx = canvas.getContext('2d');
+
+    var GRID = 20;          // 每行/列格子数
+    var CELL = 20;          // 每格像素（GRID × CELL = 400 画布尺寸）
+    var INIT_SPEED = 200;   // 初始每步间隔，毫秒（越小越快）
+    var MIN_SPEED = 100;     // 最快速度
+    var SPEED_STEP = 10;    // 每升一级加快多少毫秒
+    var FOOD_PER_LEVEL = 5; // 每吃几个果子升一级
+
+    // 颜色（想换配色改这里）
+    var C_BG = '#b9d88a', C_LINE = '#a8cb7c', C_BODY = '#2f5d3a',
+        C_BODY_ALT = '#356b40', C_HEAD = '#1d3a1f', C_EYE = '#ffffff',
+        C_FOOD = '#e2503d', C_LEAF = '#2f5d3a';
+
+    var scoreEl = document.getElementById('score');
+    var bestEl = document.getElementById('best');
+    var levelEl = document.getElementById('level');
+    var overlay = document.getElementById('overlay');
+    var overlayTitle = document.getElementById('overlayTitle');
+    var overlayText = document.getElementById('overlayText');
+    var overlayBtn = document.getElementById('overlayBtn');
+    var pauseBtn = document.getElementById('pauseBtn');
+    var restartBtn = document.getElementById('restartBtn');
+
+    var DIRS = {
+      up:    { x: 0, y: -1 },
+      down:  { x: 0, y: 1 },
+      left:  { x: -1, y: 0 },
+      right: { x: 1, y: 0 }
+    };
+
+    var snake, dir, dirQueue, foods, score, level, eaten, speed, timer, state;
+    var best = 0;
+    try { best = parseInt(localStorage.getItem('snake-highscore') || '0', 10) || 0; } catch (e) {}
+    bestEl.textContent = best;
+
+    function init() {
+      snake = [{ x: 8, y: 10 }, { x: 7, y: 10 }, { x: 6, y: 10 }];
+      dir = DIRS.right;
+      dirQueue = [];
+      score = 0; level = 1; eaten = 0; speed = INIT_SPEED;
+      foods = [];
+      ensureFoods();
+      updateHud();
+      draw();
+    }
+
+    function onFood(x, y) {
+      for (var f = 0; f < foods.length; f++) {
+        if (foods[f].x === x && foods[f].y === y) return true;
+      }
+      return false;
+    }
+
+    function addFood() {
+      var free = [];
+      for (var y = 0; y < GRID; y++) {
+        for (var x = 0; x < GRID; x++) {
+          if (!hitSnake(x, y) && !onFood(x, y)) free.push({ x: x, y: y });
+        }
+      }
+      if (free.length) { foods.push(free[Math.floor(Math.random() * free.length)]); }
+    }
+
+    // 6 级起地图上同时保持两个果子，1-5 级只有一个
+    function ensureFoods() {
+      var target = (level >= 6) ? 2 : 1;
+      while (foods.length < target) { addFood(); }
+    }
+
+    function hitSnake(x, y) {
+      for (var i = 0; i < snake.length; i++) {
+        if (snake[i].x === x && snake[i].y === y) return true;
+      }
+      return false;
+    }
+
+    function startGame() {
+      if (state === 'running') return;
+      if (state === 'over' || !state) { init(); }
+      state = 'running';
+      overlay.classList.add('hidden');
+      pauseBtn.textContent = '暂停';
+      schedule();
+    }
+
+    function pauseGame() {
+      if (state !== 'running') return;
+      state = 'paused';
+      clearTimeout(timer);
+      showOverlay('已暂停', '休息一下，准备好就继续', '继续游戏');
+      pauseBtn.textContent = '继续';
+    }
+
+    function toggle() {
+      if (state === 'running') { pauseGame(); }
+      else { startGame(); }
+    }
+
+    function gameOver() {
+      state = 'over';
+      clearTimeout(timer);
+      if (score > best) {
+        best = score;
+        bestEl.textContent = best;
+        try { localStorage.setItem('snake-highscore', String(best)); } catch (e) {}
+        showOverlay('新纪录！', '本局得分 ' + score + '，刷新了你的最高分', '再来一局');
+      } else {
+        showOverlay('游戏结束', '本局得分 ' + score + ' · 历史最高 ' + best, '再来一局');
+      }
+      pauseBtn.textContent = '开始游戏';
+      // 奖牌：按本局得分判定（100 铜 / 200 银 / 300 金），新解锁才弹窗
+      var earned = { bronze: score >= 100, silver: score >= 200, gold: score >= 300 };
+      var newMedal = SiteMedals.unlock('snake', earned);
+      if (newMedal) { setTimeout(function () { showMedalDialog(newMedal, '贪吃蛇'); }, 400); }
+    }
+
+    function restart() {
+      clearTimeout(timer);
+      state = null;
+      init();
+      startGame();
+    }
+
+    function schedule() {
+      clearTimeout(timer);
+      timer = setTimeout(tick, speed);
+    }
+
+    function tick() {
+      // 取出排队的转向（最多缓存 2 步，支持快速连按转弯）
+      if (dirQueue.length) { dir = dirQueue.shift(); }
+
+      var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+      // 撞墙
+      if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID) {
+        gameOver(); draw(); return;
+      }
+      // 撞自己（尾巴这一步会移走，所以最后一节不算碰撞——除非吃到食物）
+      var foodIndex = -1;
+      for (var fi = 0; fi < foods.length; fi++) {
+        if (head.x === foods[fi].x && head.y === foods[fi].y) { foodIndex = fi; break; }
+      }
+      var willEat = foodIndex !== -1;
+      var bodyToCheck = willEat ? snake : snake.slice(0, snake.length - 1);
+      for (var i = 0; i < bodyToCheck.length; i++) {
+        if (bodyToCheck[i].x === head.x && bodyToCheck[i].y === head.y) {
+          gameOver(); draw(); return;
+        }
+      }
+
+      snake.unshift(head);
+
+      if (willEat) {
+        score += 10;
+        eaten++;
+        if (eaten % FOOD_PER_LEVEL === 0) {
+          level++;
+          speed = Math.max(MIN_SPEED, INIT_SPEED - (level - 1) * SPEED_STEP);
+        }
+        foods.splice(foodIndex, 1);
+        addFood();
+        ensureFoods();   // 升到 6 级的这一颗果子吃完，立刻补出第二个
+        updateHud();
+      } else {
+        snake.pop();
+      }
+
+      draw();
+      if (state === 'running') schedule();
+    }
+
+    function updateHud() {
+      scoreEl.textContent = score;
+      levelEl.textContent = level;
+    }
+
+    /* ---------------- 绘制 ---------------- */
+    function draw() {
+      // 背景
+      ctx.fillStyle = C_BG;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 网格线
+      ctx.strokeStyle = C_LINE;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (var i = 1; i < GRID; i++) {
+        var p = i * CELL + 0.5;
+        ctx.moveTo(p, 0); ctx.lineTo(p, canvas.height);
+        ctx.moveTo(0, p); ctx.lineTo(canvas.width, p);
+      }
+      ctx.stroke();
+
+      // 食物（红果 + 小叶子），6 级后同时有两个
+      ctx.fillStyle = C_FOOD;
+      for (var fn = 0; fn < foods.length; fn++) {
+        var fx = foods[fn].x * CELL, fy = foods[fn].y * CELL;
+        ctx.fillRect(fx + 3, fy + 4, CELL - 6, CELL - 7);
+      }
+      ctx.fillStyle = C_LEAF;
+      for (var fl = 0; fl < foods.length; fl++) {
+        var lx = foods[fl].x * CELL, ly = foods[fl].y * CELL;
+        ctx.fillRect(lx + 10, ly + 2, 3, 3);
+      }
+
+      // 蛇身
+      for (var s = snake.length - 1; s >= 1; s--) {
+        var seg = snake[s];
+        ctx.fillStyle = (s % 2 === 0) ? C_BODY : C_BODY_ALT;
+        ctx.fillRect(seg.x * CELL + 1, seg.y * CELL + 1, CELL - 2, CELL - 2);
+      }
+
+      // 蛇头
+      var h = snake[0];
+      ctx.fillStyle = C_HEAD;
+      ctx.fillRect(h.x * CELL + 1, h.y * CELL + 1, CELL - 2, CELL - 2);
+      // 眼睛随方向变化
+      ctx.fillStyle = C_EYE;
+      var ex = h.x * CELL, ey = h.y * CELL;
+      if (dir === DIRS.right) {
+        ctx.fillRect(ex + 13, ey + 5, 3, 3);
+        ctx.fillRect(ex + 13, ey + 12, 3, 3);
+      } else if (dir === DIRS.left) {
+        ctx.fillRect(ex + 4, ey + 5, 3, 3);
+        ctx.fillRect(ex + 4, ey + 12, 3, 3);
+      } else if (dir === DIRS.up) {
+        ctx.fillRect(ex + 5, ey + 4, 3, 3);
+        ctx.fillRect(ex + 12, ey + 4, 3, 3);
+      } else {
+        ctx.fillRect(ex + 5, ey + 13, 3, 3);
+        ctx.fillRect(ex + 12, ey + 13, 3, 3);
+      }
+    }
+
+    function showOverlay(title, text, btnText) {
+      overlayTitle.textContent = title;
+      overlayText.textContent = text;
+      overlayBtn.textContent = btnText;
+      overlay.classList.remove('hidden');
+    }
+
+    /* ---------------- 输入 ---------------- */
+    function setDirection(name) {
+      var nd = DIRS[name];
+      if (!nd) return;
+      // 参照方向：队列里最后一个（连按时）或当前方向
+      var ref = dirQueue.length ? dirQueue[dirQueue.length - 1] : dir;
+      // 禁止 180° 掉头，禁止重复方向入队
+      if (nd.x === -ref.x && nd.y === -ref.y) return;
+      if (nd.x === ref.x && nd.y === ref.y) return;
+      if (dirQueue.length < 2) dirQueue.push(nd);
+      // 待机状态下按方向键直接开局
+      if (!state || state === 'over') { startGame(); }
+    }
+
+    var KEY_MAP = {
+      ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+      w: 'up', s: 'down', a: 'left', d: 'right',
+      W: 'up', S: 'down', A: 'left', D: 'right'
+    };
+
+    window.addEventListener('keydown', function (e) {
+      if (KEY_MAP[e.key]) {
+        e.preventDefault();
+        setDirection(KEY_MAP[e.key]);
+      } else if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+
+    // 手机方向键（pointerdown 响应更快，click 兜底鼠标点击；同方向重复按会自动忽略）
+    var dpadBtns = document.querySelectorAll('.dpad-btn[data-dir]');
+    for (var b = 0; b < dpadBtns.length; b++) {
+      dpadBtns[b].addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        setDirection(this.getAttribute('data-dir'));
+      });
+      dpadBtns[b].addEventListener('click', function (e) {
+        e.preventDefault();
+        setDirection(this.getAttribute('data-dir'));
+      });
+    }
+
+    overlayBtn.addEventListener('click', startGame);
+    pauseBtn.addEventListener('click', toggle);
+    restartBtn.addEventListener('click', restart);
+
+    // 初始画面
+    init();
+    state = null;
+  })();
+  </script>
+</body>
+</html>

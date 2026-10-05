@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>你爹的网站</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='2' fill='%232f5d3a'/%3E%3Crect x='4.2' y='6.6' width='1.5' height='3.4' fill='%239bca4b'/%3E%3Crect x='3.2' y='7.6' width='3.5' height='1.4' fill='%239bca4b'/%3E%3Ccircle cx='10.6' cy='8' r='0.85' fill='%23e2503d'/%3E%3Ccircle cx='12.2' cy='9.8' r='0.85' fill='%23f0b429'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- ================= 顶部导航 ================= -->
+  <header class="topnav">
+    <div class="container topnav-inner">
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        <span>CHRIST'S WORLD</span>
+      </a>
+      <nav class="nav-links">
+        <a class="nav-link" href="../index.html">首页</a>
+        <a class="nav-link current" href="../categories/games.html">游戏</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ================= 游戏主体 ================= -->
+  <main class="container">
+    <div class="page-head" style="max-width:620px;margin-left:auto;margin-right:auto;">
+      <a class="back-link" href="../categories/games.html">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 8H3M7 4L3 8l4 4"/></svg>
+        返回游戏列表
+      </a>
+      <h1 class="page-title">井字棋</h1>
+      <p class="page-sub">和 AI 对战：X 先手，任意三子连成一线即获胜。</p>
+    </div>
+
+    <div class="game-shell">
+      <!-- 比分板 -->
+      <div class="hud">
+        <div class="hud-scores">
+          <div class="score-box">
+            <span class="label">YOU</span>
+            <span class="value" id="scoreYou">0</span>
+          </div>
+          <div class="score-box">
+            <span class="label">DRAW</span>
+            <span class="value" id="scoreDraw">0</span>
+          </div>
+          <div class="score-box">
+            <span class="label">AI</span>
+            <span class="value" id="scoreAi">0</span>
+          </div>
+        </div>
+        <div class="hud-actions">
+          <button class="pixel-btn" id="btnChoose" type="button">重新选边</button>
+          <button class="pixel-btn secondary" id="btnClear" type="button">清空比分</button>
+        </div>
+      </div>
+
+      <!-- 棋盘 + 覆盖层 -->
+      <div class="board-wrap">
+        <div class="board" id="board">
+          <button class="cell" type="button" data-i="0" aria-label="第1格"></button>
+          <button class="cell" type="button" data-i="1" aria-label="第2格"></button>
+          <button class="cell" type="button" data-i="2" aria-label="第3格"></button>
+          <button class="cell" type="button" data-i="3" aria-label="第4格"></button>
+          <button class="cell" type="button" data-i="4" aria-label="第5格"></button>
+          <button class="cell" type="button" data-i="5" aria-label="第6格"></button>
+          <button class="cell" type="button" data-i="6" aria-label="第7格"></button>
+          <button class="cell" type="button" data-i="7" aria-label="第8格"></button>
+          <button class="cell" type="button" data-i="8" aria-label="第9格"></button>
+        </div>
+
+        <div class="canvas-overlay" id="overlay">
+          <!-- 选边面板 -->
+          <div class="overlay-box" id="choosePane">
+            <p class="overlay-title">井字棋</p>
+            <p class="overlay-text">选择谁先手（先手执 X）</p>
+            <div class="choose-btns">
+              <button class="pixel-btn" id="humanFirst" type="button">我先手（X）</button>
+              <button class="pixel-btn secondary" id="aiFirst" type="button">AI 先手（我执 O）</button>
+            </div>
+          </div>
+          <!-- 结果面板 -->
+          <div class="overlay-box" id="resultPane" style="display:none;">
+            <p class="overlay-title" id="resultTitle">平局</p>
+            <p class="overlay-text" id="resultText"></p>
+            <div class="choose-btns">
+              <button class="pixel-btn" id="againSame" type="button">再来一局</button>
+              <button class="pixel-btn secondary" id="againChoose" type="button">重新选边</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="status-line" id="statusText">请选择先手方开始游戏</p>
+
+      <div class="help-row">
+        <span>玩法：点击空格落子，横 / 竖 / 斜三子连线获胜</span>
+        <span>奖牌：平局 1 次铜牌 · 获胜 1 次银牌 · 获胜 5 次金牌</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= 页脚 ================= -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-brand">
+        <span class="brand-mark" style="width:22px;height:22px;box-shadow:none;">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        CHRIST'S WORLD
+      </span>
+    </div>
+  </footer>
+
+  <script src="../js/common.js"></script>
+  <script>
+  /* ============================================================
+     井字棋：玩家 vs AI
+     AI 使用 minimax（极小极大）算法遍历完整博弈树，
+     并对同等最优的走法随机选择；每次落子有 5% 概率失误、改走其他位置。
+     ============================================================ */
+  (function () {
+    var LINES = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],   // 横
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],   // 竖
+      [0, 4, 8], [2, 4, 6]               // 斜
+    ];
+
+    var cellEls = document.querySelectorAll('.cell');
+    var overlay = document.getElementById('overlay');
+    var choosePane = document.getElementById('choosePane');
+    var resultPane = document.getElementById('resultPane');
+    var resultTitle = document.getElementById('resultTitle');
+    var resultText = document.getElementById('resultText');
+    var statusText = document.getElementById('statusText');
+    var scoreYouEl = document.getElementById('scoreYou');
+    var scoreDrawEl = document.getElementById('scoreDraw');
+    var scoreAiEl = document.getElementById('scoreAi');
+
+    var board, humanMark, aiMark, turn, state, aiThinking, pendingMedal;
+    var scores = { you: 0, draw: 0, ai: 0 };
+    try {
+      var saved = JSON.parse(localStorage.getItem('ttt-scores') || 'null');
+      if (saved) { scores = saved; }
+    } catch (e) {}
+    renderScores();
+
+    function renderScores() {
+      scoreYouEl.textContent = scores.you;
+      scoreDrawEl.textContent = scores.draw;
+      scoreAiEl.textContent = scores.ai;
+    }
+
+    function saveScores() {
+      try { localStorage.setItem('ttt-scores', JSON.stringify(scores)); } catch (e) {}
+    }
+
+    function setStatus(msg) { statusText.textContent = msg; }
+
+    /* ---------- 开局 ---------- */
+    function chooseSide(humanFirst) {
+      humanMark = humanFirst ? 'X' : 'O';
+      aiMark = humanFirst ? 'O' : 'X';
+      newBoard();
+      if (aiMark === 'X') {
+        turn = aiMark;
+        setStatus('AI 执 X 先手，思考中…');
+        aiThinking = true;
+        setTimeout(aiMove, 550);
+      } else {
+        turn = humanMark;
+        setStatus('你执 X 先手，轮到你落子');
+      }
+    }
+
+    function newBoard() {
+      board = [null, null, null, null, null, null, null, null, null];
+      for (var i = 0; i < cellEls.length; i++) {
+        cellEls[i].textContent = '';
+        cellEls[i].className = 'cell';
+      }
+      state = 'playing';
+      aiThinking = false;
+      overlay.classList.add('hidden');
+    }
+
+    function backToChoose() {
+      state = 'choose';
+      choosePane.style.display = '';
+      resultPane.style.display = 'none';
+      overlay.classList.remove('hidden');
+      setStatus('请选择先手方开始游戏');
+    }
+
+    /* ---------- 落子 ---------- */
+    function place(i, mark) {
+      board[i] = mark;
+      cellEls[i].textContent = mark;
+      cellEls[i].classList.add('taken', mark.toLowerCase());
+    }
+
+    function judge(b) {
+      for (var i = 0; i < LINES.length; i++) {
+        var a = LINES[i][0], c = LINES[i][1], d = LINES[i][2];
+        if (b[a] && b[a] === b[c] && b[a] === b[d]) {
+          return { done: true, win: b[a], line: LINES[i] };
+        }
+      }
+      var full = b.every(function (v) { return v !== null; });
+      return { done: full, win: null, line: null };
+    }
+
+    function handleCell(i) {
+      if (state !== 'playing' || aiThinking || board[i] || turn !== humanMark) { return; }
+      place(i, humanMark);
+      var r = judge(board);
+      if (r.done) { endRound(r); return; }
+      turn = aiMark;
+      aiThinking = true;
+      setStatus('AI 思考中…');
+      setTimeout(aiMove, 380 + Math.floor(Math.random() * 320));
+    }
+
+    function aiMove() {
+      if (state !== 'playing') { return; }
+      var i = bestMove();
+      place(i, aiMark);
+      aiThinking = false;
+      var r = judge(board);
+      if (r.done) { endRound(r); return; }
+      turn = humanMark;
+      setStatus('你执 ' + humanMark + '，轮到你落子');
+    }
+
+    /* ---------- 终局 ---------- */
+    function endRound(r) {
+      state = 'over';
+      var title, text;
+      if (r.win) {
+        for (var i = 0; i < r.line.length; i++) {
+          cellEls[r.line[i]].classList.add('win');
+        }
+        if (r.win === humanMark) {
+          scores.you++;
+          title = '你赢了！';
+          text = '连成三子，你战胜了 AI';
+          setStatus('你赢了 ' + humanMark + ' 子连线');
+        } else {
+          scores.ai++;
+          title = 'AI 获胜';
+          text = 'AI 连成三子，再来一局找回场子';
+          setStatus('AI 获胜');
+        }
+      } else {
+        scores.draw++;
+        title = '平局';
+        text = '棋盘已满，势均力敌';
+        setStatus('平局');
+      }
+      saveScores();
+      renderScores();
+      resultTitle.textContent = title;
+      resultText.textContent = text + '　|　总比分 你 ' + scores.you + ' : ' + scores.ai + ' AI（平 ' + scores.draw + '）';
+      // 奖牌：平局累计 1 次得铜牌，获胜 1 次得银牌，获胜 5 次得金牌
+      var earned = { bronze: scores.draw >= 1, silver: scores.you >= 1, gold: scores.you >= 5 };
+      pendingMedal = SiteMedals.unlock('tictactoe', earned);
+      setTimeout(showResult, 700);
+    }
+
+    function showResult() {
+      choosePane.style.display = 'none';
+      resultPane.style.display = '';
+      overlay.classList.remove('hidden');
+      if (pendingMedal) {
+        var m = pendingMedal;
+        pendingMedal = null;
+        setTimeout(function () { showMedalDialog(m, '井字棋'); }, 250);
+      }
+    }
+
+    /* ---------- AI：minimax 极小极大 ---------- */
+    function empties(b) {
+      var list = [];
+      for (var i = 0; i < 9; i++) { if (b[i] === null) { list.push(i); } }
+      return list;
+    }
+
+    function bestMove() {
+      var empty = empties(board);
+      // 空棋盘：中心或四角都是最优开局，随机选一个
+      if (empty.length === 9) {
+        var opens = [4, 0, 2, 6, 8];
+        return opens[Math.floor(Math.random() * opens.length)];
+      }
+      var best = -Infinity, picks = [];
+      for (var k = 0; k < empty.length; k++) {
+        var i = empty[k];
+        board[i] = aiMark;
+        var s = minimax(board, 0, false);
+        board[i] = null;
+        if (s > best) { best = s; picks = [i]; }
+        else if (s === best) { picks.push(i); }
+      }
+      var bestPick = picks[Math.floor(Math.random() * picks.length)];
+      // 5% 概率失误：不按最优位置下，改从“最优位置之外”的空位随机落子
+      if (Math.random() < 0.05 && empty.length > 1) {
+        var others = empty.filter(function (x) { return picks.indexOf(x) === -1; });
+        if (others.length) {
+          return others[Math.floor(Math.random() * others.length)];
+        }
+      }
+      return bestPick;
+    }
+
+    function minimax(b, depth, maximizing) {
+      var r = judge(b);
+      if (r.done) {
+        if (r.win === aiMark) { return 10 - depth; }    // AI 越快赢越好
+        if (r.win === humanMark) { return depth - 10; } // 玩家越快赢越坏
+        return 0;
+      }
+      var empty = empties(b), i, best;
+      if (maximizing) {
+        best = -Infinity;
+        for (var k1 = 0; k1 < empty.length; k1++) {
+          i = empty[k1];
+          b[i] = aiMark;
+          best = Math.max(best, minimax(b, depth + 1, false));
+          b[i] = null;
+        }
+      } else {
+        best = Infinity;
+        for (var k2 = 0; k2 < empty.length; k2++) {
+          i = empty[k2];
+          b[i] = humanMark;
+          best = Math.min(best, minimax(b, depth + 1, true));
+          b[i] = null;
+        }
+      }
+      return best;
+    }
+
+    /* ---------- 事件绑定 ---------- */
+    for (var c = 0; c < cellEls.length; c++) {
+      cellEls[c].addEventListener('click', function () {
+        handleCell(parseInt(this.getAttribute('data-i'), 10));
+      });
+    }
+    document.getElementById('humanFirst').addEventListener('click', function () { chooseSide(true); });
+    document.getElementById('aiFirst').addEventListener('click', function () { chooseSide(false); });
+    document.getElementById('againSame').addEventListener('click', function () { chooseSide(humanMark === 'X'); });
+    document.getElementById('againChoose').addEventListener('click', backToChoose);
+    document.getElementById('btnChoose').addEventListener('click', backToChoose);
+    document.getElementById('btnClear').addEventListener('click', function () {
+      scores = { you: 0, draw: 0, ai: 0 };
+      saveScores();
+      renderScores();
+      setStatus('比分已清零，请选择先手方');
+      backToChoose();
+    });
+  })();
+  </script>
+</body>
+</html>

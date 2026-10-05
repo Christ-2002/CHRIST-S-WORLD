@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>你爹的网站</title>
+  <!-- ===== 网站图标（像素手柄） ===== -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='2' fill='%232f5d3a'/%3E%3Crect x='4.2' y='6.6' width='1.5' height='3.4' fill='%239bca4b'/%3E%3Crect x='3.2' y='7.6' width='3.5' height='1.4' fill='%239bca4b'/%3E%3Ccircle cx='10.6' cy='8' r='0.85' fill='%23e2503d'/%3E%3Ccircle cx='12.2' cy='9.8' r='0.85' fill='%23f0b429'/%3E%3C/svg%3E">
+  <!-- 像素英文字体 + 中文黑体 -->
+  <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ================= 顶部导航 ================= -->
+  <header class="topnav">
+    <div class="container topnav-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        <!-- TODO: 改成你的网站名字 -->
+        <span>CHRIST'S WORLD</span>
+      </a>
+      <nav class="nav-links">
+        <a class="nav-link current" href="index.html">首页</a>
+        <a class="nav-link" href="categories/games.html">游戏</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ================= HERO：个人介绍 ================= -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <p class="hero-kicker">HELLO WORLD !</p>
+        <h1>你好，我是<span class="hl">Christ</span></h1>
+        <p class="hero-sub">
+          联系方式：微信 <b style="font-weight:900;letter-spacing:1px;">cqh1489113437</b>
+        </p>
+        <div class="hero-actions">
+          <a class="pixel-btn" href="categories/games.html">
+            开始玩游戏
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+          </a>
+          <button class="pixel-btn secondary" id="copyWx" data-copy="cqh1489113437" type="button">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="2" y="3" width="9" height="8" rx="1"/>
+              <path d="M5 3V2.5A1.5 1.5 0 0 1 6.5 1h6A1.5 1.5 0 0 1 14 2.5v7A1.5 1.5 0 0 1 12.5 11H11"/>
+            </svg>
+            复制微信号
+          </button>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="avatar-frame">
+          <span class="avatar-corner tl"></span>
+          <span class="avatar-corner br"></span>
+          <img src="assets/avatar.jpg" alt="Christ 的头像">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 站内分类 ================= -->
+  <section class="section" style="padding-top:24px;">
+    <div class="container">
+      <div class="section-head">
+        <p class="section-kicker">CATEGORIES</p>
+        <h2 class="section-title">站内分类</h2>
+        <p class="section-desc">点开卡片进入对应分类，更多分类正在建设中。</p>
+      </div>
+
+      <div class="card-grid">
+
+        <!-- 分类 1：游戏（已上线，可点击） -->
+        <a class="pixel-card" href="categories/games.html">
+          <div class="card-cover cat-games">
+            <svg viewBox="0 0 16 16" fill="none">
+              <path d="M2 8.2Q2 5.2 5 5.2h6q3 0 3 3v.8q0 2.8-2.4 2.8q-1.4 0-1.6-1.4H6Q5.8 11.8 4.4 11.8Q2 11.8 2 9Z" fill="#1f2d20"/>
+              <rect x="4.3" y="6.8" width="1.4" height="3" fill="#9bca4b"/>
+              <rect x="3.5" y="7.6" width="3" height="1.4" fill="#9bca4b"/>
+              <circle cx="10.5" cy="7.9" r="0.8" fill="#e2503d"/>
+              <circle cx="12" cy="9.5" r="0.8" fill="#f0b429"/>
+            </svg>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">游戏</h3>
+            <div class="card-meta">
+              <span class="badge">3 款可玩</span>
+              <span class="card-go">ENTER &gt;</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 分类 2：学习笔记（规划中，不可点击。不需要可直接删除整张卡） -->
+        <div class="pixel-card locked" aria-disabled="true">
+          <div class="card-cover">
+            <svg viewBox="0 0 16 16" fill="none">
+              <rect x="3" y="2" width="10" height="12" rx="1" fill="#fbfcf4" stroke="#1f2d20" stroke-width="1.3"/>
+              <line x1="6" y1="2" x2="6" y2="14" stroke="#1f2d20" stroke-width="1.3"/>
+              <line x1="7.6" y1="5.4" x2="11" y2="5.4" stroke="#1f2d20" stroke-width="1.1"/>
+              <line x1="7.6" y1="8" x2="11" y2="8" stroke="#1f2d20" stroke-width="1.1"/>
+              <line x1="7.6" y1="10.6" x2="10" y2="10.6" stroke="#1f2d20" stroke-width="1.1"/>
+            </svg>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">学习笔记</h3>
+            <div class="card-meta">
+              <span class="lock-note">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
+                即将上线
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 分类 3：实用小工具（规划中，不可点击。不需要可直接删除整张卡） -->
+        <div class="pixel-card locked" aria-disabled="true">
+          <div class="card-cover">
+            <svg viewBox="0 0 16 16" fill="none">
+              <rect x="7" y="1.6" width="2" height="2.2" fill="#1f2d20"/>
+              <rect x="7" y="12.2" width="2" height="2.2" fill="#1f2d20"/>
+              <rect x="1.6" y="7" width="2.2" height="2" fill="#1f2d20"/>
+              <rect x="12.2" y="7" width="2.2" height="2" fill="#1f2d20"/>
+              <rect x="3.2" y="3.2" width="2" height="2" fill="#1f2d20" transform="rotate(45 4.2 4.2)"/>
+              <rect x="10.8" y="10.8" width="2" height="2" fill="#1f2d20" transform="rotate(45 11.8 11.8)"/>
+              <rect x="3.2" y="10.8" width="2" height="2" fill="#1f2d20" transform="rotate(-45 4.2 11.8)"/>
+              <rect x="10.8" y="3.2" width="2" height="2" fill="#1f2d20" transform="rotate(-45 11.8 4.2)"/>
+              <circle cx="8" cy="8" r="3.3" fill="#1f2d20"/>
+              <circle cx="8" cy="8" r="1.2" fill="#fbfcf4"/>
+            </svg>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">实用小工具</h3>
+            <div class="card-meta">
+              <span class="lock-note">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
+                即将上线
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 页脚 ================= -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-brand">
+        <span class="brand-mark" style="width:22px;height:22px;box-shadow:none;">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        CHRIST'S WORLD
+      </span>
+    </div>
+  </footer>
+
+  <script src="js/common.js"></script>
+</body>
+</html>
