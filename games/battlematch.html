@@ -31,9 +31,19 @@
     }
     .match-col { flex: 0 0 auto; width: 480px; max-width: calc(100vw - 350px); }
     .match-wrap { position: relative; }
-    .hud-actions { display: flex; gap: 10px; align-items: center; }
-    .hud-actions .pixel-btn { min-width: 96px; justify-content: center; }
+    .hud-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .hud-actions .pixel-btn { min-width: 84px; justify-content: center; }
     .restart-actions { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+    /* 难度选择弹窗 */
+    .diff-list { display: flex; flex-direction: column; gap: 12px; margin: 18px 0 4px; }
+    .diff-list .pixel-btn {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+      padding: 14px 16px; text-align: left;
+    }
+    .diff-list .diff-name { font-family: var(--font-pixel); font-size: 13px; }
+    .diff-list .diff-desc { font-family: var(--font-body); font-size: 12px; opacity: .85; line-height: 1.5; }
+    .diff-list .pixel-btn.current { background: var(--gb-mid); color: #fbfcf4; }
+    .diff-cancel { display: flex; justify-content: center; margin-top: 14px; }
     #matchCanvas {
       width: 100%; height: auto; aspect-ratio: 1 / 1; display: block;
       border: var(--border); border-radius: 6px;
@@ -108,8 +118,8 @@
       #fieldCanvas { width: 100%; height: auto; aspect-ratio: 300 / 650; }
       .match-col { flex: 1 1 auto; max-width: none; }
       .shop { grid-template-columns: repeat(2, 1fr); }
-      .hud-actions { gap: 6px; }
-      .hud-actions .pixel-btn { min-width: 0; min-height: 44px; padding: 10px 12px; font-size: 11px; line-height: 1.2; }
+      .hud-actions { gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+      .hud-actions .pixel-btn { min-width: 0; min-height: 40px; padding: 9px 10px; font-size: 10px; line-height: 1.2; }
       .battle-hud .score-box { min-width: 78px; padding: 8px 10px; }
       .energy-bar { height: 26px; }
       .energy-num { font-size: 12px; }
@@ -160,6 +170,7 @@
       </div>
       <div class="hud-spacer"></div>
       <div class="hud-actions">
+        <button class="pixel-btn secondary" id="btnDifficulty" type="button">难度：普通</button>
         <button class="pixel-btn secondary" id="btnPause" type="button">暂停</button>
         <button class="pixel-btn secondary" id="btnReshuffle" type="button">重置 R</button>
         <button class="pixel-btn" id="btnRestart" type="button">重新开始</button>
@@ -280,6 +291,20 @@
       G.paused = v;
       pauseMask.classList.toggle('show', v);
       if (btnPause) { btnPause.textContent = v ? '继续' : '暂停'; }
+    }
+    /* ---------- 难度：普通=敌方出兵量 x1.1，困难=x1.65（普通基础上再 x1.5） ---------- */
+    var DIFFS = {
+      normal: { mult: 1.1, label: '普通', name: '普通难度', desc: '在当前基础上，敌方出兵量 +10%' },
+      hard:   { mult: 1.65, label: '困难', name: '困难难度', desc: '在普通难度基础上再 +50%（总计约 +65%）' }
+    };
+    var difficulty = 'normal';
+    try {
+      var savedDiff = localStorage.getItem('battlematch-difficulty');
+      if (savedDiff && DIFFS[savedDiff]) { difficulty = savedDiff; }
+    } catch (e) {}
+    var btnDifficulty = document.getElementById('btnDifficulty');
+    function refreshDiffButton() {
+      if (btnDifficulty) { btnDifficulty.textContent = '难度：' + DIFFS[difficulty].label; }
     }
     var shopBtns = document.querySelectorAll('.shop-btn');
 
@@ -972,7 +997,7 @@
       // 敌方按时间间隔出兵
       G.enemyTimer -= dt;
       if (G.enemyTimer <= 0) {
-        G.enemyTimer = Math.max(3.2, 6.5 - G.time * 0.03);
+        G.enemyTimer = Math.max(3.2, 6.5 - G.time * 0.03) / DIFFS[difficulty].mult;
         spawnUnit('enemy', enemyPick());
       }
 
@@ -1394,6 +1419,10 @@
         else if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); closeRestartConfirm(true); }
         return;
       }
+      if (diffConfirmOpen) {
+        if (e.code === 'Escape') { e.preventDefault(); closeDiffConfirm(true); }
+        return;
+      }
       if (e.code === 'Space' && !e.repeat) {
         if (!G || G.over) { return; }
         e.preventDefault();
@@ -1417,6 +1446,7 @@
       updateHud();
       pauseMask.classList.remove('show');
       btnReshuffle.disabled = false;
+      refreshDiffButton();
       var mask = document.querySelector('.modal-mask');
       if (mask) { mask.remove(); }
     }
@@ -1454,6 +1484,60 @@
       document.getElementById('restartNo').addEventListener('click', function () { closeRestartConfirm(false); });
     }
     document.getElementById('btnRestart').addEventListener('click', askRestart);
+    var diffConfirmOpen = false;
+    var diffWasPaused = false;
+    function closeDiffConfirm(cancel) {
+      diffConfirmOpen = false;
+      var mask = document.getElementById('diffConfirm');
+      if (mask) { mask.remove(); }
+      if (cancel) { setPaused(diffWasPaused); }
+    }
+    function chooseDifficulty(d) {
+      if (!DIFFS[d]) { return; }
+      var changed = d !== difficulty;
+      difficulty = d;
+      try { localStorage.setItem('battlematch-difficulty', d); } catch (e) {}
+      refreshDiffButton();
+      diffConfirmOpen = false;
+      var mask = document.getElementById('diffConfirm');
+      if (mask) { mask.remove(); }
+      if (changed) { restart(); }
+      else { setPaused(diffWasPaused); }
+    }
+    function askDifficulty() {
+      if (!G || G.over || restartConfirmOpen || diffConfirmOpen) { return; }
+      diffConfirmOpen = true;
+      diffWasPaused = G.paused;
+      G.paused = true;
+      pauseMask.classList.remove('show');
+      if (btnPause) { btnPause.textContent = '继续'; }
+      var mask = document.createElement('div');
+      mask.className = 'modal-mask';
+      mask.id = 'diffConfirm';
+      var keys = ['normal', 'hard'];
+      var rows = '';
+      for (var di = 0; di < keys.length; di++) {
+        var k = keys[di], dd = DIFFS[k];
+        rows += '<button class="pixel-btn diff-row ' + (k === difficulty ? 'current' : 'secondary') + '" data-diff="' + k + '" type="button">' +
+                  '<span class="diff-name">' + dd.name + (k === difficulty ? '（当前）' : '') + '</span>' +
+                  '<span class="diff-desc">' + dd.desc + '</span>' +
+                '</button>';
+      }
+      mask.innerHTML =
+        '<div class="modal-box" role="dialog" aria-modal="true">' +
+          '<h3 class="modal-title">选择难度</h3>' +
+          '<p class="modal-text">切换到其他难度后，本局将重新开始。</p>' +
+          '<div class="diff-list">' + rows + '</div>' +
+          '<div class="diff-cancel"><button class="pixel-btn secondary" id="diffCancel" type="button">取消</button></div>' +
+        '</div>';
+      document.body.appendChild(mask);
+      var rowBtns = mask.querySelectorAll('.diff-row');
+      for (var ri = 0; ri < rowBtns.length; ri++) {
+        rowBtns[ri].addEventListener('click', function () { chooseDifficulty(this.getAttribute('data-diff')); });
+      }
+      document.getElementById('diffCancel').addEventListener('click', function () { closeDiffConfirm(true); });
+    }
+    btnDifficulty.addEventListener('click', askDifficulty);
     btnPause.addEventListener('click', function () {
       if (!G || G.over) { return; }
       setPaused(!G.paused);
