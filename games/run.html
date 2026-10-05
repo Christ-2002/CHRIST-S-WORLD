@@ -171,7 +171,7 @@
         <span>跳跃：<span class="key">SPACE</span> / <span class="key">W</span>（短按小跳、长按大跳）</span>
         <span>加速跑：<span class="key">SHIFT</span>（耗体力）</span>
         <span>暂停：<span class="key">P</span> · 重开：<span class="key">R</span></span>
-        <span>奖牌：2400 铜牌 · 2700 银牌 · 3000 金牌</span>
+        <span>奖牌：2800 铜牌 · 3000 银牌 · 3200 金牌</span>
         <span>手机：使用屏幕按键</span>
       </div>
 
@@ -245,9 +245,9 @@
       winBonus: 500,
       timeLimit: 70,        // 通关时限（秒）：剩余时间 = 70 - 已用时间
       timeScore: 80,        // 剩余时间每秒折算分数
-      goldScore: 3000,      // 金牌分数线
-      silverScore: 2700,    // 银牌分数线
-      bronzeScore: 2400     // 铜牌分数线
+      goldScore: 3200,      // 金牌分数线
+      silverScore: 3000,    // 银牌分数线
+      bronzeScore: 2800     // 铜牌分数线
     };
 
   /* ---------- 关卡数据 ---------- */
@@ -340,6 +340,7 @@
       onGround: true, runPhase: 0, bodyBob: 0,
       stamina: CFG.stamMax, speedBonus: 0,
       hx: -CFG.heartStart, hy: GROUND_Y, hvy: 0, hground: true, hvx: 0,
+      hlastX: -CFG.heartStart, hlastY: GROUND_Y,
       rage: false, rageP: 0, rageBanner: 0,
       cam: 0, t: 0, pt: 0, countdown: CFG.startDelay, goShow: 0,
       score: 0, ice: 0, finished: false, loseReason: '',
@@ -376,7 +377,7 @@
       elTitle.textContent = '已暂停';
       elText.innerHTML = '休息一下，心脏也在休息';
       elBtn.textContent = '继续游戏';
-      elOverlay.style.display = 'flex';
+      elOverlay.style.display = 'grid';
       elPause.textContent = '继续';
     } else if (state === 'pause') {
       state = G._pauseFrom || 'play';
@@ -419,7 +420,10 @@
   jumpBtn.addEventListener('touchend', jUp); jumpBtn.addEventListener('touchcancel', jUp);
   jumpBtn.addEventListener('mousedown', jDown);
   jumpBtn.addEventListener('mouseup', jUp); jumpBtn.addEventListener('mouseleave', jUp);
-  elBtn.addEventListener('click', newGame);
+  /* 暂停时按钮是「继续游戏」，不能当成重新开始 */
+  elBtn.addEventListener('click', function () {
+    if (state === 'pause') togglePause(); else newGame();
+  });
   elPause.addEventListener('click', togglePause);
   $('restartBtn').addEventListener('click', function () { if (state !== 'ready') newGame(); });
 
@@ -566,6 +570,7 @@
     if (G.hx < 60) {
       G.hx += hspd * dt;
       G.hy = GROUND_Y; G.hvy = 0; G.hground = true;
+      G.hlastX = G.hx; G.hlastY = GROUND_Y;
     } else {
       var hdx = G.px - G.hx;
       var hvx = hdx > 6 ? hspd : (hdx < -6 ? -hspd : 0);
@@ -584,12 +589,16 @@
       }
 
       if (G.hground) {
+        G.hlastX = G.hx; G.hlastY = G.hy;     // 记住最近站稳的落脚点
         var dirS = hvx >= 0 ? 1 : -1;
         var needV = 0;
+        var atGap = false;
         if (hvx !== 0) {
           var sA = supportAt(G.hx + dirS * 38, G.hy);
           if (sA === null) {
-            needV = CFG.heartJumpV;
+            /* 前方是坑：按“最近落脚面”反推起跳速度（原来固定 940 会跳过头掉进坑里） */
+            atGap = true;
+            needV = heartGapJumpV(dirS, hspd);
           } else if (sA < G.hy - 22) {
             needV = Math.sqrt(2 * CFG.grav * ((G.hy - sA) + 18));
           }
@@ -601,18 +610,60 @@
             }
           }
         }
-        if (G.py < G.hy - 40 && Math.abs(hdx) < 170) {
+        /* 玩家在头顶平台上就跟上去；正在跨坑时不额外抬高，免得越过落脚点 */
+        if (!atGap && G.py < G.hy - 40 && Math.abs(hdx) < 170) {
           needV = Math.max(needV, Math.sqrt(2 * CFG.grav * ((G.hy - G.py) + 26)));
         }
-        if (needV > 0) { G.hvy = -Math.min(needV, 1080); G.hground = false; }
+        if (needV > 0) { G.hvy = -Math.min(needV, 1600); G.hground = false; }
       }
 
-      if (G.hy > VH + 120) { G.hx = G.px - 280; G.hy = GROUND_Y; G.hvy = 0; }
+      /* 万一还是掉进坑里：从最近站稳的坑沿爬出来，不再瞬移到玩家身后 */
+      if (G.hy > VH + 120) {
+        G.hx = G.hlastX; G.hy = G.hlastY;
+        G.hvy = 0; G.hvx = 0; G.hground = true;
+      }
     }
 
     if (overlap(G.px - PW, G.py - PH, PW * 2, PH, G.hx - HW, G.hy - HH, HW * 2, HH)) {
       endGame(false, 'heart');
     }
+  }
+
+  /* 所有可落脚的面（地面 / 浮板 / 箱顶），供心脏计算落点 */
+  function landingSpots() {
+    var list = [];
+    for (var i = 0; i < platforms.length; i++)
+      list.push({ x1: platforms[i].x, x2: platforms[i].x + platforms[i].w, y: GROUND_Y });
+    for (var j = 0; j < floats.length; j++)
+      list.push({ x1: floats[j].x, x2: floats[j].x + floats[j].w, y: floats[j].y });
+    for (var k = 0; k < crates.length; k++)
+      list.push({ x1: crates[k].x, x2: crates[k].x + crates[k].w, y: crates[k].y });
+    return list;
+  }
+
+  /* 前方有坑时反推起跳速度：抛物线正好落在最近的可落脚面上（返回 0 = 直接掉下去就行） */
+  function heartGapJumpV(dir, hspd) {
+    if (hspd < 1) return 0;
+    var x0 = G.hx, y0 = G.hy, g = CFG.grav;
+    var spots = landingSpots(), cand = [];
+    for (var i = 0; i < spots.length; i++) {
+      var s = spots[i];
+      var inset = Math.min(40, (s.x2 - s.x1) * 0.5);
+      var landX = dir > 0 ? s.x1 + inset : s.x2 - inset;
+      var dd = (landX - x0) * dir;
+      if (dd < 24 || dd > 900) continue;
+      var T = dd / hspd;
+      var v0 = (y0 - s.y + 0.5 * g * T * T) / T;
+      cand.push({ d: dd, T: T, v: v0 });
+    }
+    if (!cand.length) return CFG.heartJumpV;
+    cand.sort(function (a, b) { return a.d - b.d; });
+    for (var n = 0; n < cand.length; n++) {
+      var c = cand[n];
+      if (c.v <= 0) return 0;              // 掉下去正好能到，不用跳
+      if (c.v < g * c.T) return c.v;       // 落点处在下落，能稳稳踩上
+    }
+    return CFG.heartJumpV;
   }
 
   /* ---------- 结算 ---------- */
@@ -652,7 +703,7 @@
         '<br>本次得分 <b>' + G.score + '</b> · 用时 ' + G.pt.toFixed(1) + ' 秒';
       elBtn.textContent = '再来一次';
     }
-    elOverlay.style.display = 'flex';
+    elOverlay.style.display = 'grid';
     elPause.textContent = '暂停';
   }
 
