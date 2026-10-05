@@ -23,13 +23,17 @@
     }
     .field-col { flex: 0 0 auto; }
     #fieldCanvas {
-      width: 220px; height: 640px; display: block;
+      width: 300px; height: 650px; display: block;
       border: var(--border); border-radius: 6px;
       box-shadow: var(--shadow-sm);
       background: #a9ce7f;
       touch-action: manipulation;
     }
-    .match-col { flex: 0 0 auto; width: 480px; max-width: calc(100vw - 270px); }
+    .match-col { flex: 0 0 auto; width: 480px; max-width: calc(100vw - 350px); }
+    .match-wrap { position: relative; }
+    .hud-actions { display: flex; gap: 10px; align-items: center; }
+    .hud-actions .pixel-btn { min-width: 96px; justify-content: center; }
+    .restart-actions { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
     #matchCanvas {
       width: 100%; height: auto; aspect-ratio: 1 / 1; display: block;
       border: var(--border); border-radius: 6px;
@@ -42,12 +46,22 @@
       margin-top: 12px;
     }
     .shop-btn {
+      position: relative;
       background: var(--paper); border: var(--border); border-radius: 6px;
       box-shadow: 3px 3px 0 var(--ink);
       padding: 9px 4px 7px;
       display: grid; justify-items: center; gap: 4px;
       font-family: inherit; cursor: pointer; color: var(--ink);
       transition: transform .08s, box-shadow .08s;
+    }
+    .shop-key {
+      position: absolute; top: -9px; right: -9px; z-index: 2;
+      min-width: 21px; height: 21px; padding: 0 4px; box-sizing: border-box;
+      display: grid; place-items: center;
+      background: var(--ink); color: #fbfcf4;
+      font-family: var(--font-pixel); font-size: 9px; line-height: 1;
+      border: 2px solid var(--paper); border-radius: 50%;
+      box-shadow: 2px 2px 0 rgba(31,45,32,.35);
     }
     .shop-btn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--ink); }
     .shop-btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
@@ -91,9 +105,11 @@
     @media (max-width: 860px) {
       .battle-wrap { gap: 10px; }
       .field-col { flex: 0 0 25vw; }
-      #fieldCanvas { width: 100%; height: auto; aspect-ratio: 220 / 640; }
+      #fieldCanvas { width: 100%; height: auto; aspect-ratio: 300 / 650; }
       .match-col { flex: 1 1 auto; max-width: none; }
       .shop { grid-template-columns: repeat(2, 1fr); }
+      .hud-actions { gap: 6px; }
+      .hud-actions .pixel-btn { min-width: 0; min-height: 44px; padding: 10px 12px; font-size: 11px; line-height: 1.2; }
       .battle-hud .score-box { min-width: 78px; padding: 8px 10px; }
       .energy-bar { height: 26px; }
       .energy-num { font-size: 12px; }
@@ -131,7 +147,7 @@
         返回游戏列表
       </a>
       <h1 class="page-title">对战消消乐</h1>
-      <p class="page-sub">右边消除攒能量、自动出兵，左边战场上蓝方士兵会一路打上红色敌方基地。按空格键可暂停。</p>
+      <p class="page-sub">右边消除攒能量、自动出兵，左边蓝方士兵会自动寻敌并打上红色敌方基地。空格暂停，R 键重置棋盘，数字键 1-4 快速买兵。</p>
     </div>
 
     <!-- 计分板 -->
@@ -144,21 +160,26 @@
       </div>
       <div class="hud-spacer"></div>
       <div class="hud-actions">
-        <button class="pixel-btn secondary" id="btnRestart" type="button">重新开始</button>
+        <button class="pixel-btn secondary" id="btnPause" type="button">暂停</button>
+        <button class="pixel-btn secondary" id="btnReshuffle" type="button">重置 R</button>
+        <button class="pixel-btn" id="btnRestart" type="button">重新开始</button>
       </div>
     </div>
 
     <div class="battle-wrap">
       <!-- 左：竖向战场（我方蓝基地在下，敌方红基地在上） -->
       <div class="field-col">
-        <canvas id="fieldCanvas" width="220" height="640"></canvas>
+        <canvas id="fieldCanvas" width="300" height="650"></canvas>
       </div>
 
       <!-- 右：消消乐 + 购买条 -->
       <div class="match-col">
-        <canvas id="matchCanvas" width="480" height="480"></canvas>
+        <div class="match-wrap">
+          <canvas id="matchCanvas" width="480" height="480"></canvas>
+        </div>
         <div class="shop" id="shop">
           <button class="shop-btn" data-unit="spearman" type="button">
+            <span class="shop-key">1</span>
             <span class="shop-ico">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3a6ea5" stroke-width="2" stroke-linecap="square">
                 <path d="M5 21 L17 5"/><path d="M17 5 L20 2 L18 7 Z" fill="#3a6ea5"/>
@@ -168,6 +189,7 @@
             <span class="shop-cost">30</span>
           </button>
           <button class="shop-btn" data-unit="archer" type="button">
+            <span class="shop-key">2</span>
             <span class="shop-ico">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5a8f3c" stroke-width="2" stroke-linecap="square">
                 <path d="M7 3 Q16 12 7 21"/><path d="M4 12 L20 8 L16 12 L20 16"/>
@@ -177,6 +199,7 @@
             <span class="shop-cost">45</span>
           </button>
           <button class="shop-btn" data-unit="mage" type="button">
+            <span class="shop-key">3</span>
             <span class="shop-ico">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8a5a9e" stroke-width="2" stroke-linecap="square">
                 <path d="M6 10 L12 3 L18 10 Z" fill="#8a5a9e"/><path d="M17 10 V21"/><circle cx="17" cy="8" r="2" fill="#f0b429"/>
@@ -186,6 +209,7 @@
             <span class="shop-cost">65</span>
           </button>
           <button class="shop-btn" data-unit="catapult" type="button">
+            <span class="shop-key">4</span>
             <span class="shop-ico">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7a5230" stroke-width="2" stroke-linecap="square">
                 <path d="M4 14 L15 14 L12 8"/><rect x="3" y="14" width="13" height="5" fill="#7a5230"/>
@@ -237,13 +261,26 @@
     var fctx = fieldCv.getContext('2d');
     var matchCv = document.getElementById('matchCanvas');
     var mctx = matchCv.getContext('2d');
-    var FW = 220, FH = 640;          // 战场内部分辨率
+    var FW = 300, FH = 650;          // 战场内部分辨率（改尺寸要同步 HTML/CSS，见 README）
     var MS = 480, N = 8, CELL = MS / N;  // 消消乐 8×8
+    // 基地 / 战线位置（FH 改了会自动跟随）
+    var BASE_W = 150, BASE_H = 24;            // 基地宽 / 高（压扁，对战区域更长）
+    var BASE_Y = { enemy: 20, ally: FH - 20 };
+    var STOP_Y = { enemy: 46, ally: FH - 46 };
+    var SPAWN_Y = { enemy: 50, ally: FH - 50 };
 
     var hudScore = document.getElementById('hudScore');
     var energyFill = document.getElementById('energyFill');
     var hudEnergy = document.getElementById('hudEnergy');
     var pauseMask = document.getElementById('pauseMask');
+    var btnPause = document.getElementById('btnPause');
+    var btnReshuffle = document.getElementById('btnReshuffle');
+    function setPaused(v) {
+      if (!G) { return; }
+      G.paused = v;
+      pauseMask.classList.toggle('show', v);
+      if (btnPause) { btnPause.textContent = v ? '继续' : '暂停'; }
+    }
     var shopBtns = document.querySelectorAll('.shop-btn');
 
     /* ---------- 消消乐方块颜色（内嵌不同符号，色弱也能区分） ---------- */
@@ -271,9 +308,95 @@
     var TOWER_X = 26;            // 左右两座塔的 x 坐标（离边线距离）
     var TOWER = { hp: 220, dmg: 7, range: 150, gap: 1.0, projSpeed: 300, r: 13 };
 
+    /* ---------- 平衡性数值（开发者专用：运行 tools/ 后台编辑器修改 CFG0，玩家不可见、不可改） ---------- */
+    var CFG0 = {
+      energyMax: 1000,
+      freeStep: 20,
+      seekRange: 120,
+      baseHp: 2000,
+      scores: {
+        three: 10,
+        four: 15,
+        five: 25
+      },
+      tower: {
+        hp: 1000,
+        dmg: 20,
+        range: 175,
+        gap: 0.75,
+        projSpeed: 400
+      },
+      units: {
+        swordsman: {
+          cost: 0,
+          hp: 100,
+          dmg: 18,
+          range: 20,
+          gap: 1,
+          speed: 25
+        },
+        spearman: {
+          cost: 80,
+          hp: 120,
+          dmg: 22,
+          range: 35,
+          gap: 1,
+          speed: 30
+        },
+        archer: {
+          cost: 100,
+          hp: 80,
+          dmg: 20,
+          range: 150,
+          gap: 1.2,
+          speed: 22,
+          projSpeed: 300,
+          aoe: 0
+        },
+        mage: {
+          cost: 160,
+          hp: 70,
+          dmg: 40,
+          range: 170,
+          gap: 2.2,
+          speed: 20,
+          projSpeed: 240,
+          aoe: 10
+        },
+        catapult: {
+          cost: 350,
+          hp: 150,
+          dmg: 30,
+          range: 200,
+          gap: 3,
+          speed: 12,
+          projSpeed: 180,
+          aoe: 25
+        }
+      }
+    };
+    var SCORE3 = 10, SCORE4 = 25, SCORE5 = 40, FREE_STEP = 20, SEEK_RANGE = 100, BASE_HP = 600;
+    function applyCfgToDefs() {
+      SCORE3 = CFG0.scores.three; SCORE4 = CFG0.scores.four; SCORE5 = CFG0.scores.five;
+      FREE_STEP = CFG0.freeStep; SEEK_RANGE = CFG0.seekRange; BASE_HP = CFG0.baseHp;
+      ENERGY_MAX = CFG0.energyMax;
+      for (var ut in CFG0.units) {
+        if (!UNITS[ut]) { continue; }
+        for (var uk in CFG0.units[ut]) { UNITS[ut][uk] = CFG0.units[ut][uk]; }
+      }
+      for (var tk in CFG0.tower) { TOWER[tk] = CFG0.tower[tk]; }
+    }
+    function refreshShopCosts() {
+      for (var si = 0; si < shopBtns.length; si++) {
+        var st = shopBtns[si].getAttribute('data-unit');
+        shopBtns[si].querySelector('.shop-cost').textContent = UNITS[st].cost;
+      }
+    }
+    applyCfgToDefs();
+
     function makeTowers() {
       var arr = [];
-      var ty = { enemy: 30 + TOWER_INSET, ally: FH - 30 - TOWER_INSET };
+      var ty = { enemy: BASE_Y.enemy + TOWER_INSET, ally: BASE_Y.ally - TOWER_INSET };
       ['enemy', 'ally'].forEach(function (side) {
         [TOWER_X, FW - TOWER_X].forEach(function (x) {
           arr.push({
@@ -300,11 +423,12 @@
         matched: [],         // 当前消除闪烁的格 [{r,c}]
         phaseT: 0,
         fxs: [],             // 浮动得分/特效
+        shards: [], drops: null,   // 棋盘重置动画
         /* 战场 */
         units: [], projectiles: [], hits: [], towers: makeTowers(),
         bases: {
-          ally:  { hp: 600, maxHp: 600, y: FH - 30, side: 'ally' },
-          enemy: { hp: 600, maxHp: 600, y: 30,       side: 'enemy' }
+          ally:  { hp: BASE_HP, maxHp: BASE_HP, y: BASE_Y.ally,  side: 'ally' },
+          enemy: { hp: BASE_HP, maxHp: BASE_HP, y: BASE_Y.enemy, side: 'enemy' }
         },
         enemyTimer: 12       // 开局 12 秒准备期
       };
@@ -373,10 +497,11 @@
 
     function beginClear(groups, wave) {
       G.wave = wave;
+      G.swap = null;
       var baseSum = 0, seen = {}, sx = 0, sy = 0, cnt = 0;
       for (var i = 0; i < groups.length; i++) {
         var len = groups[i].length;
-        baseSum += (len <= 3 ? 10 : len === 4 ? 25 : 40);
+        baseSum += (len <= 3 ? SCORE3 : len === 4 ? SCORE4 : SCORE5);
         for (var k = 0; k < len; k++) {
           var cell = groups[i][k], key = cell.r + '_' + cell.c;
           if (!seen[key]) {
@@ -419,6 +544,8 @@
       }
       if (!G || G.over) { return; }
 
+      if (G.phase === 'reshuffle') { updateReshuffle(dt); return; }
+
       if (G.phase === 'swap' || G.phase === 'swapback') {
         G.swap.t += dt / 0.16;
         if (G.swap.t >= 1) {
@@ -433,7 +560,7 @@
           } else {
             A = G.grid[s.ar][s.ac]; B = G.grid[s.br][s.bc];
             G.grid[s.ar][s.ac] = B; G.grid[s.br][s.bc] = A;
-            if (A) { A.y = s.br; } if (B) { B.y = s.ac; }
+            if (A) { A.y = s.br; } if (B) { B.y = s.ar; }
             G.phase = 'idle'; G.swap = null;
           }
         }
@@ -574,6 +701,24 @@
           drawGem(cx, cy, cell.t, scale, alpha);
         }
       }
+      // 棋盘重置动画：新块掉落 + 旧块碎片
+      if (G.phase === 'reshuffle') {
+        if (G.drops) {
+          for (var di = 0; di < G.drops.length; di++) {
+            var dp = G.drops[di];
+            drawGem((dp.c + 0.5) * CELL, dp.y, dp.t, 1, 1);
+          }
+        }
+        for (var shi = 0; shi < G.shards.length; shi++) {
+          var sh = G.shards[shi], gc = GEM_COLORS[sh.t];
+          mctx.save();
+          mctx.translate(sh.x, sh.y); mctx.rotate(sh.rot);
+          mctx.fillStyle = gc.fill; mctx.strokeStyle = gc.dark; mctx.lineWidth = 1.5;
+          mctx.fillRect(-sh.s / 2, -sh.s / 2, sh.s, sh.s);
+          mctx.strokeRect(-sh.s / 2, -sh.s / 2, sh.s, sh.s);
+          mctx.restore();
+        }
+      }
       // 选中框
       if (G.selected) {
         var sr = G.selected.r, sc = G.selected.c;
@@ -606,12 +751,116 @@
         y: (r1 + (r2 - r1) * e + 0.5) * CELL
       };
     }
+    /* ---------- 棋盘重置（按钮 / R 键，约 3 秒惩罚动画） ---------- */
+    function startReshuffle() {
+      if (G.over || G.paused || G.phase !== 'idle') { return; }
+      G.phase = 'reshuffle';
+      G.phaseT = 0;
+      G.selected = null; G.swap = null; G.matched = [];
+      G.shards = [];
+      for (var r = 0; r < N; r++) {
+        for (var c = 0; c < N; c++) {
+          var cell = G.grid[r][c];
+          if (!cell) { continue; }
+          for (var k = 0; k < 4; k++) {
+            G.shards.push({
+              x: (c + 0.5) * CELL + (k % 2 ? 7 : -7),
+              y: (r + 0.5) * CELL + (k > 1 ? 7 : -7),
+              vx: (Math.random() - 0.5) * 140,
+              vy: -40 - Math.random() * 120,
+              rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 9,
+              t: cell.t, s: CELL * (0.2 + Math.random() * 0.08)
+            });
+          }
+        }
+      }
+      var empty = [];
+      for (r = 0; r < N; r++) { empty.push(new Array(N).fill(null)); }
+      G.grid = empty;
+      G.drops = null;
+      btnReshuffle.disabled = true;
+    }
+
+    function updateReshuffle(dt) {
+      G.phaseT += dt;
+      var i, r2, c2;
+      // 阶段一：旧方块碎片下坠消失
+      for (i = G.shards.length - 1; i >= 0; i--) {
+        var sh = G.shards[i];
+        sh.vy += 1900 * dt;
+        sh.x += sh.vx * dt; sh.y += sh.vy * dt; sh.rot += sh.vr * dt;
+        if (sh.y > MS + 40) { G.shards.splice(i, 1); }
+      }
+      // 阶段二：0.9 秒后生成无三连新棋盘，从顶部掉落
+      if (!G.drops && G.phaseT >= 0.9) {
+        var types = [];
+        for (r2 = 0; r2 < N; r2++) {
+          var row = [];
+          for (c2 = 0; c2 < N; c2++) {
+            var t;
+            do {
+              t = 1 + Math.floor(Math.random() * 6);
+            } while (
+              (c2 >= 2 && row[c2 - 1] === t && row[c2 - 2] === t) ||
+              (r2 >= 2 && types[r2 - 1][c2] === t && types[r2 - 2][c2] === t)
+            );
+            row.push(t);
+          }
+          types.push(row);
+        }
+        G.drops = [];
+        for (r2 = 0; r2 < N; r2++) {
+          for (c2 = 0; c2 < N; c2++) {
+            G.drops.push({
+              t: types[r2][c2], r: r2, c: c2,
+              y: -CELL * (0.5 + Math.random() * 1.6),
+              vy: 0, start: 0.9 + c2 * 0.09 + Math.random() * 0.18,
+              landed: false
+            });
+          }
+        }
+      }
+      if (G.drops) {
+        var allLanded = true;
+        for (i = 0; i < G.drops.length; i++) {
+          var d = G.drops[i];
+          if (G.phaseT < d.start) { allLanded = false; continue; }
+          if (!d.landed) {
+            d.vy += 2600 * dt;
+            d.y += d.vy * dt;
+            var target = (d.r + 0.5) * CELL;
+            if (d.y >= target) {
+              if (d.vy > 700) { d.y = target; d.vy = -d.vy * 0.22; }
+              else { d.y = target; d.landed = true; }
+            }
+            if (!d.landed) { allLanded = false; }
+          }
+        }
+        // 全程约 3 秒，全部落定且满 3 秒才恢复操作
+        if (allLanded && G.phaseT >= 3.0) {
+          var ng = [];
+          for (r2 = 0; r2 < N; r2++) {
+            var nrow = [];
+            for (c2 = 0; c2 < N; c2++) { nrow.push(null); }
+            ng.push(nrow);
+          }
+          for (i = 0; i < G.drops.length; i++) {
+            var dd = G.drops[i];
+            ng[dd.r][dd.c] = { t: dd.t, y: dd.r };
+          }
+          G.grid = ng;
+          G.drops = null; G.shards = [];
+          G.phase = 'idle';
+          btnReshuffle.disabled = false;
+        }
+      }
+    }
     /* ===MATCH3_END=== */
 
     /* ================= 战场 ================= */
     function spawnUnit(side, type) {
       var def = UNITS[type];
-      var y = side === 'ally' ? FH - 58 : 58;
+      var y = SPAWN_Y[side];
       G.units.push({
         side: side, type: type,
         x: 28 + Math.random() * (FW - 56), y: y,
@@ -622,7 +871,7 @@
 
     // 每累计 20 分自动派出一名刀兵
     function spawnFreeSoldiers() {
-      var milestones = Math.floor(G.score / 20);
+      var milestones = Math.floor(G.score / FREE_STEP);
       while (G.freeGiven < milestones) {
         G.freeGiven++;
         spawnUnit('ally', 'swordsman');
@@ -639,28 +888,34 @@
       return 'swordsman';
     }
 
+    // 自动寻路：缓存目标，方圆 SEEK_RANGE 内最近的敌军 / 敌方塔，离开 1.3 倍距离才换目标
     function acquireTarget(u) {
-      var dir = u.side === 'ally' ? -1 : 1;
-      var best = null, bestScore = 1e9;
-      function consider(o, rad) {
-        var forward = (o.y - u.y) * dir;
-        if (forward < -14 || Math.abs(o.x - u.x) > 26 + rad * 0.55) { return; }
-        var sc = forward + Math.abs(o.x - u.x) * 0.5;
-        if (sc < bestScore) { bestScore = sc; best = o; }
+      if (u.tgt) {
+        var t0 = u.tgt;
+        var alive0 = t0.isTower
+          ? (G.towers.indexOf(t0) >= 0 && t0.hp > 0)
+          : (G.units.indexOf(t0) >= 0 && t0.hp > 0);
+        if (alive0 && Math.hypot(t0.x - u.x, t0.y - u.y) <= SEEK_RANGE * 1.3) { return t0; }
+        u.tgt = null;
+      }
+      var best = null, bd = 1e9;
+      function scan(o) {
+        var d = Math.hypot(o.x - u.x, o.y - u.y);
+        if (d <= SEEK_RANGE && d < bd) { bd = d; best = o; }
       }
       for (var i = 0; i < G.units.length; i++) {
-        var o = G.units[i];
-        if (o.side !== u.side) { consider(o, UNITS[o.type].r); }
+        if (G.units[i].side !== u.side) { scan(G.units[i]); }
       }
       for (var t = 0; t < G.towers.length; t++) {
-        if (G.towers[t].side !== u.side) { consider(G.towers[t], TOWER.r); }
+        if (G.towers[t].side !== u.side) { scan(G.towers[t]); }
       }
+      u.tgt = best;
       return best;
     }
 
     function fireProjectile(u, target, def, baseTarget) {
       var aim = baseTarget
-        ? { x: FW / 2, y: u.side === 'ally' ? 42 : FH - 42 }
+        ? { x: FW / 2, y: u.side === 'ally' ? BASE_Y.enemy + 10 : BASE_Y.ally - 10 }
         : { x: target.x, y: target.y };
       G.projectiles.push({
         x: u.x, y: u.y - 4 * (u.side === 'ally' ? -1 : 1),
@@ -722,19 +977,26 @@
       }
 
       var i, j, u, def;
-      // 同方单位横向避让，避免全叠在一条线上
+      // 同方单位二维避让，避免叠在一起
       for (i = 0; i < G.units.length; i++) {
         for (j = i + 1; j < G.units.length; j++) {
           var a = G.units[i], b = G.units[j];
           if (a.side !== b.side) { continue; }
           var dx = a.x - b.x, dy = a.y - b.y;
-          if (Math.abs(dy) < 15 && Math.abs(dx) < 11) {
-            var push = (11 - Math.abs(dx)) * 0.9 * dt;
-            if (Math.abs(dx) < 0.5) { push = (Math.random() < 0.5 ? -push : push); }
-            a.x += push * (dx >= 0 ? 1 : -1);
-            b.x -= push * (dx >= 0 ? 1 : -1);
-            a.x = Math.max(20, Math.min(FW - 20, a.x));
-            b.x = Math.max(20, Math.min(FW - 20, b.x));
+          var d = Math.hypot(dx, dy);
+          var ra = a.type === 'catapult' ? 13 : 9, rb = b.type === 'catapult' ? 13 : 9;
+          var min = ra + rb - 3;
+          if (d < min) {
+            var nx, ny;
+            if (d < 0.01) { nx = Math.random() < 0.5 ? -1 : 1; ny = 0; }
+            else { nx = dx / d; ny = dy / d; }
+            var push = (min - d) * 0.5;
+            a.x += nx * push; a.y += ny * push;
+            b.x -= nx * push; b.y -= ny * push;
+            a.x = Math.max(14, Math.min(FW - 14, a.x));
+            b.x = Math.max(14, Math.min(FW - 14, b.x));
+            a.y = Math.max(STOP_Y.enemy - 6, Math.min(STOP_Y.ally + 6, a.y));
+            b.y = Math.max(STOP_Y.enemy - 6, Math.min(STOP_Y.ally + 6, b.y));
           }
         }
       }
@@ -746,37 +1008,49 @@
         if (u.atkAnim > 0) { u.atkAnim -= dt; }
 
         var target = acquireTarget(u);
-        var baseRef = G.bases[u.side === 'ally' ? 'enemy' : 'ally'];
-        var stopLine = u.side === 'ally' ? 54 : FH - 54;
+        var foeSide = u.side === 'ally' ? 'enemy' : 'ally';
+        var baseRef = G.bases[foeSide];
+        var stopLine = STOP_Y[foeSide];
         var reachedBase = (u.side === 'ally' && u.y <= stopLine) ||
                           (u.side === 'enemy' && u.y >= stopLine);
 
-        var inRange = false;
+        var busy = false;
         if (target) {
-          var forward = (target.y - u.y) * dir;
+          var tdx = target.x - u.x, tdy = target.y - u.y;
+          var td = Math.hypot(tdx, tdy);
           var trad = target.isTower ? TOWER.r : UNITS[target.type].r;
-          inRange = forward <= def.range + trad - 2;
+          if (td <= def.range + trad - 2) {
+            // 在攻击距离内：停下攻击
+            if (u.cd <= 0) {
+              u.cd = def.gap; u.atkAnim = 0.18;
+              if (def.ranged) { fireProjectile(u, target, def, false); }
+              else { target.hp -= def.dmg; addHit(target.x, target.y, 8, '#ffffff'); }
+            }
+          } else {
+            // 自动寻路：斜向朝敌军靠近
+            u.x += (tdx / td) * def.speed * dt;
+            u.y += (tdy / td) * def.speed * dt;
+          }
+          busy = true;
         }
 
-        if (target && inRange) {
-          // 攻击敌方单位
-          if (u.cd <= 0) {
-            u.cd = def.gap; u.atkAnim = 0.18;
-            if (def.ranged) { fireProjectile(u, target, def, false); }
-            else { target.hp -= def.dmg; addHit(target.x, target.y, 8, '#ffffff'); }
+        if (!busy) {
+          if (reachedBase) {
+            // 攻击基地
+            if (u.cd <= 0) {
+              u.cd = def.gap; u.atkAnim = 0.18;
+              var bx = FW / 2 + (u.x - FW / 2) * 0.4, by = u.side === 'ally' ? 38 : FH - 38;
+              if (def.ranged) { fireProjectile(u, null, def, true); }
+              else { baseRef.hp -= def.dmg; addHit(bx, by, 10, '#ffe9a8'); }
+            }
+          } else {
+            // 朝敌方基地推进
+            u.y += dir * def.speed * dt;
           }
-        } else if (!target && reachedBase) {
-          // 攻击基地
-          if (u.cd <= 0) {
-            u.cd = def.gap; u.atkAnim = 0.18;
-            var bx = FW / 2 + (u.x - FW / 2) * 0.4, by = u.side === 'ally' ? 44 : FH - 44;
-            if (def.ranged) { fireProjectile(u, null, def, true); }
-            else { baseRef.hp -= def.dmg; addHit(bx, by, 10, '#ffe9a8'); }
-          }
-        } else {
-          // 前进
-          u.y += dir * def.speed * dt;
         }
+
+        u.x = Math.max(14, Math.min(FW - 14, u.x));
+        u.y = Math.max(STOP_Y.enemy - 6, Math.min(STOP_Y.ally + 6, u.y));
       }
 
       // 哨兵塔攻击射程内的敌方小兵
@@ -859,8 +1133,8 @@
 
     function drawBase(b) {
       var ally = b.side === 'ally';
-      var cx = FW / 2, w = 132, h = 32;
-      var top = ally ? FH - 42 : 10;
+      var cx = FW / 2, w = BASE_W, h = BASE_H;
+      var top = ally ? FH - 32 : 8;
       var fill = ally ? '#3a78c2' : '#d05040';
       var dark = ally ? '#274c72' : '#8e2f24';
 
@@ -894,7 +1168,7 @@
       fctx.closePath(); fctx.fill(); fctx.stroke();
 
       // 血条（在城堡前方）
-      var bw = 118, bx = cx - bw / 2;
+      var bw = 130, bx = cx - bw / 2;
       var barY = ally ? top - 12 : top + h + 6;
       fctx.fillStyle = '#1f2d20';
       fctx.fillRect(bx - 2, barY - 2, bw + 4, 9);
@@ -1078,19 +1352,22 @@
       }
     }
 
+    function buyUnit(type) {
+      if (!G || G.over || G.paused) { return false; }
+      var cost = UNITS[type].cost;
+      if (G.energy < cost) {
+        showToast('能量不足，还差 ' + (cost - G.energy));
+        return false;
+      }
+      G.energy -= cost;
+      spawnUnit('ally', type);
+      updateHud();
+      return true;
+    }
+    var KEY_UNITS = { Digit1: 'spearman', Digit2: 'archer', Digit3: 'mage', Digit4: 'catapult' };
     for (var bi = 0; bi < shopBtns.length; bi++) {
       shopBtns[bi].addEventListener('click', function () {
-        if (!G || G.over) { return; }
-        var type = this.getAttribute('data-unit');
-        var cost = UNITS[type].cost;
-        if (G.energy < cost) {
-          showToast('能量不足，还差 ' + (cost - G.energy));
-          this.blur();
-          return;
-        }
-        G.energy -= cost;
-        spawnUnit('ally', type);
-        updateHud();
+        buyUnit(this.getAttribute('data-unit'));
         this.blur();
       });
     }
@@ -1110,11 +1387,25 @@
 
     /* ---------- 空格键暂停 / 继续 ---------- */
     document.addEventListener('keydown', function (e) {
+      var tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+      if (tag === 'input' || tag === 'textarea') { return; }
+      if (restartConfirmOpen) {
+        if (e.code === 'Escape') { e.preventDefault(); closeRestartConfirm(false); }
+        else if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); closeRestartConfirm(true); }
+        return;
+      }
       if (e.code === 'Space' && !e.repeat) {
         if (!G || G.over) { return; }
         e.preventDefault();
-        G.paused = !G.paused;
-        pauseMask.classList.toggle('show', G.paused);
+        setPaused(!G.paused);
+      } else if (e.code === 'KeyR' && !e.repeat) {
+        if (!G || G.over || G.paused) { return; }
+        e.preventDefault();
+        startReshuffle();
+      } else if (KEY_UNITS[e.code]) {
+        if (!G || G.over || G.paused) { return; }
+        e.preventDefault();
+        buyUnit(KEY_UNITS[e.code]);
       }
     });
     /* ===MAIN_END=== */
@@ -1125,10 +1416,51 @@
       buildBoard();
       updateHud();
       pauseMask.classList.remove('show');
+      btnReshuffle.disabled = false;
       var mask = document.querySelector('.modal-mask');
       if (mask) { mask.remove(); }
     }
-    document.getElementById('btnRestart').addEventListener('click', restart);
+    var restartConfirmOpen = false;
+    var confirmWasPaused = false;
+    function closeRestartConfirm(go) {
+      restartConfirmOpen = false;
+      var mask = document.getElementById('restartConfirm');
+      if (mask) { mask.remove(); }
+      if (go) { restart(); }
+      else { setPaused(confirmWasPaused); }
+    }
+    function askRestart() {
+      if (!G || G.over) { restart(); return; }
+      if (restartConfirmOpen) { return; }
+      restartConfirmOpen = true;
+      confirmWasPaused = G.paused;
+      G.paused = true;
+      pauseMask.classList.remove('show');
+      if (btnPause) { btnPause.textContent = '继续'; }
+      var mask = document.createElement('div');
+      mask.className = 'modal-mask';
+      mask.id = 'restartConfirm';
+      mask.innerHTML =
+        '<div class="modal-box" role="dialog" aria-modal="true">' +
+          '<h3 class="modal-title">重新开始？</h3>' +
+          '<p class="modal-text">当前对局的得分、能量和战场都会清空。</p>' +
+          '<div class="restart-actions">' +
+            '<button class="pixel-btn secondary" id="restartNo" type="button">否，继续游戏</button>' +
+            '<button class="pixel-btn" id="restartYes" type="button">是，重新开始</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(mask);
+      document.getElementById('restartYes').addEventListener('click', function () { closeRestartConfirm(true); });
+      document.getElementById('restartNo').addEventListener('click', function () { closeRestartConfirm(false); });
+    }
+    document.getElementById('btnRestart').addEventListener('click', askRestart);
+    btnPause.addEventListener('click', function () {
+      if (!G || G.over) { return; }
+      setPaused(!G.paused);
+      this.blur();
+    });
+    btnReshuffle.addEventListener('click', function () { startReshuffle(); this.blur(); });
+    refreshShopCosts();
 
     restart();
     var lastTs = 0;
