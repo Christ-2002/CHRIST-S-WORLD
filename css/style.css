@@ -521,6 +521,7 @@ a.pixel-card:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--in
   .lock-note { font-size: 13.5px; }
   .help-row { font-size: 14px; }
   .footer-inner { font-size: 13px; }
+  .auth-shell { padding: 26px 18px 22px; }
   .game-shell { padding: 14px; }
   .hud { justify-content: center; }
   .dpad { display: block; }
@@ -623,6 +624,74 @@ a.pixel-card:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--in
 .modal-medal .medal-svg { width: 88px; height: auto; }
 .modal-title { font-size: 23px; font-weight: 900; letter-spacing: 1px; }
 .modal-text { font-size: 14px; color: var(--muted); margin-bottom: 8px; line-height: 1.7; }
+
+/* ================= 登录页 ================= */
+.auth-wrap {
+  padding: 8px 0 64px;
+  display: flex;
+  justify-content: center;
+}
+.auth-shell {
+  width: min(420px, 100%);
+  background: var(--paper);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 34px 30px 30px;
+  display: grid;
+  gap: 26px;
+}
+.auth-head {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.auth-logo {
+  width: 56px; height: 56px;
+  background: var(--gb-dark);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  place-items: center;
+}
+.auth-logo svg { width: 32px; height: 32px; }
+.auth-title { font-size: 26px; font-weight: 900; letter-spacing: 1px; }
+.auth-sub {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+.auth-shell form { display: grid; gap: 18px; }
+.field { display: grid; gap: 7px; }
+.field-label { font-size: 14px; font-weight: 700; }
+.input {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  padding: 11px 14px;
+  width: 100%;
+  outline: none;
+  transition: background .12s, box-shadow .12s;
+}
+.input::placeholder { color: var(--muted); opacity: .75; }
+.input:focus { background: #fbfcf4; box-shadow: 3px 3px 0 var(--ink); }
+
+.auth-error {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: -8px;
+}
+.auth-btn { width: 100%; justify-content: center; font-size: 16px; padding: 13px 22px; }
+.auth-foot { font-size: 13px; color: var(--muted); text-align: center; }
+.auth-foot a { color: var(--gb-dark); font-weight: 700; text-decoration: underline; }
 
 /* 无障碍：键盘焦点 */
 a:focus-visible, button:focus-visible {
