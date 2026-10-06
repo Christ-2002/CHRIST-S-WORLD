@@ -339,16 +339,17 @@
       freeStep: 20,
       seekRange: 120,
       baseHp: 2000,
+      reshuffleCost: 50,
       scores: {
         three: 10,
         four: 18,
         five: 28
       },
       tower: {
-        hp: 1000,
+        hp: 1500,
         dmg: 20,
         range: 175,
-        gap: 0.75,
+        gap: 1,
         projSpeed: 400
       },
       units: {
@@ -361,16 +362,16 @@
           speed: 25
         },
         spearman: {
-          cost: 70,
-          hp: 120,
+          cost: 80,
+          hp: 125,
           dmg: 20,
           range: 25,
           gap: 1,
           speed: 26
         },
         archer: {
-          cost: 80,
-          hp: 90,
+          cost: 90,
+          hp: 100,
           dmg: 22,
           range: 130,
           gap: 1.2,
@@ -380,24 +381,60 @@
         },
         mage: {
           cost: 150,
-          hp: 70,
-          dmg: 50,
+          hp: 80,
+          dmg: 30,
           range: 150,
-          gap: 2,
+          gap: 1.5,
           speed: 22,
           projSpeed: 240,
           aoe: 10
         },
         catapult: {
           cost: 250,
-          hp: 150,
+          hp: 200,
           dmg: 35,
-          range: 200,
-          gap: 3,
+          range: 180,
+          gap: 2.5,
           speed: 20,
           projSpeed: 180,
           aoe: 20
         }
+      },
+      enemy: {
+        baseInterval: 6,
+        minInterval: 3.5,
+        decay: 0.03,
+        units: {
+          catapult: {
+            time: 40,
+            chance: 0.05
+          },
+          mage: {
+            time: 30,
+            chance: 0.15
+          },
+          archer: {
+            time: 20,
+            chance: 0.35
+          },
+          spearman: {
+            time: 15,
+            chance: 0.45
+          }
+        }
+      },
+      difficulty: {
+        normal: {
+          mult: 1
+        },
+        hard: {
+          mult: 1.5
+        }
+      },
+      burn: {
+        chance: 0.5,
+        dps: 5,
+        duration: 3
       }
     };
     var SCORE3 = 10, SCORE4 = 25, SCORE5 = 40, FREE_STEP = 20, SEEK_RANGE = 100, BASE_HP = 600;
@@ -410,6 +447,9 @@
         for (var uk in CFG0.units[ut]) { UNITS[ut][uk] = CFG0.units[ut][uk]; }
       }
       for (var tk in CFG0.tower) { TOWER[tk] = CFG0.tower[tk]; }
+      // 难度出兵倍率（标签/名称/描述保留在 DIFFS，仅数值从 CFG0 取）
+      if (CFG0.difficulty && CFG0.difficulty.normal) { DIFFS.normal.mult = CFG0.difficulty.normal.mult; }
+      if (CFG0.difficulty && CFG0.difficulty.hard) { DIFFS.hard.mult = CFG0.difficulty.hard.mult; }
     }
     function refreshShopCosts() {
       for (var si = 0; si < shopBtns.length; si++) {
@@ -587,6 +627,7 @@
             G.grid[s.ar][s.ac] = B; G.grid[s.br][s.bc] = A;
             if (A) { A.y = s.br; } if (B) { B.y = s.ar; }
             G.phase = 'idle'; G.swap = null;
+            checkDeadBoard();
           }
         }
       } else if (G.phase === 'clear') {
@@ -616,7 +657,7 @@
         if (allDone) {
           var g2 = findMatches(G.grid);
           if (g2.length) { beginClear(g2, G.wave + 1); }
-          else { G.phase = 'idle'; }
+          else { G.phase = 'idle'; checkDeadBoard(); }
         }
       }
     }
@@ -776,9 +817,20 @@
         y: (r1 + (r2 - r1) * e + 0.5) * CELL
       };
     }
-    /* ---------- 棋盘重置（按钮 / R 键，约 3 秒惩罚动画） ---------- */
-    function startReshuffle() {
+    /* ---------- 棋盘重置（按钮 / R 键，约 3 秒惩罚动画） ----------
+       free=false：玩家手动重置，消耗 reshuffleCost 能量；
+       free=true ：死局自动触发的免费重置，不扣能量。 */
+    function startReshuffle(free) {
       if (G.over || G.paused || G.phase !== 'idle') { return; }
+      if (!free) {
+        var cost = CFG0.reshuffleCost || 0;
+        if (G.energy < cost) {
+          showToast('能量不足，手动重置需要 ' + cost + ' 点能量');
+          return;
+        }
+        G.energy -= cost;
+        updateHud();
+      }
       G.phase = 'reshuffle';
       G.phaseT = 0;
       G.selected = null; G.swap = null; G.matched = [];
@@ -877,8 +929,40 @@
           G.drops = null; G.shards = [];
           G.phase = 'idle';
           btnReshuffle.disabled = false;
+          checkDeadBoard();
         }
       }
+    }
+
+    // 判断当前满棋盘是否「至少存在一对相邻交换能成组」；无任何可消除组合即死局
+    function hasAnyMove() {
+      var r, c, r2, c2, tmp;
+      for (r = 0; r < N; r++) {
+        for (c = 0; c < N; c++) {
+          if (!G.grid[r][c]) { return false; }   // 棋盘未满，交给落子流程
+          var nbrs = [[r, c + 1], [r + 1, c]];
+          for (var n = 0; n < nbrs.length; n++) {
+            r2 = nbrs[n][0]; c2 = nbrs[n][1];
+            if (r2 >= N || c2 >= N || !G.grid[r2][c2]) { continue; }
+            // 临时交换 -> 检测 -> 换回复原
+            tmp = G.grid[r][c]; G.grid[r][c] = G.grid[r2][c2]; G.grid[r2][c2] = tmp;
+            var ok = findMatches(G.grid).length > 0;
+            tmp = G.grid[r][c]; G.grid[r][c] = G.grid[r2][c2]; G.grid[r2][c2] = tmp;
+            if (ok) { return true; }
+          }
+        }
+      }
+      return false;
+    }
+
+    // 棋盘落定后调用：若全盘无可消，自动触发一次免费重置（不扣能量）
+    function checkDeadBoard() {
+      if (!G || G.over || G.paused) { return; }
+      if (G.phase !== 'idle') { return; }
+      for (var r = 0; r < N; r++) {
+        for (var c = 0; c < N; c++) { if (!G.grid[r][c]) { return; } }
+      }
+      if (!hasAnyMove()) { startReshuffle(true); }
     }
     /* ===MATCH3_END=== */
 
@@ -903,13 +987,16 @@
       }
     }
 
-    // 敌方兵种随时间变强
+    // 敌方兵种随时间变强：按「稀有度从高到低」依次判定解锁时间与出现概率，刀兵为兜底
+    var ENEMY_PRIORITY = ['catapult', 'mage', 'archer', 'spearman'];
     function enemyPick() {
       var r = Math.random();
-      if (G.time >= 110 && r < 0.05) { return 'catapult'; }
-      if (G.time >= 80 && r < 0.13) { return 'mage'; }
-      if (G.time >= 55 && r < 0.33) { return 'archer'; }
-      if (G.time >= 30 && r < 0.55) { return 'spearman'; }
+      var eu = CFG0.enemy.units;
+      for (var i = 0; i < ENEMY_PRIORITY.length; i++) {
+        var t = ENEMY_PRIORITY[i];
+        var e = eu[t];
+        if (e && G.time >= e.time && r < e.chance) { return t; }
+      }
       return 'swordsman';
     }
 
@@ -967,6 +1054,7 @@
 
     function impact(p) {
       var foeSide = p.side === 'ally' ? 'enemy' : 'ally';
+      var hitUnits = [];   // 本次被投射物命中的单位（用于法师附加燃烧）
       if (p.aoe > 0) {
         addHit(p.tx, p.ty, p.aoe, p.color);
         for (var i = 0; i < G.units.length; i++) {
@@ -974,6 +1062,7 @@
           if (o.side !== foeSide) { continue; }
           if (Math.hypot(o.x - p.tx, o.y - p.ty) <= p.aoe + UNITS[o.type].r) {
             o.hp -= p.dmg * (p.base ? 0.6 : 1);
+            hitUnits.push(o);
           }
         }
         for (var ti2 = 0; ti2 < G.towers.length; ti2++) {
@@ -987,17 +1076,31 @@
       } else {
         addHit(p.tx, p.ty, 9, '#ffe9a8');
         if (p.base) { G.bases[foeSide].hp -= p.dmg; }
-        else if (p.target && p.target.hp > 0) { p.target.hp -= p.dmg; }
+        else if (p.target && p.target.hp > 0) {
+          p.target.hp -= p.dmg;
+          if (!p.target.isTower) { hitUnits.push(p.target); }
+        }
+      }
+      // 法师普攻（含范围溅射）：对每个命中单位独立掷燃烧
+      if (p.kind === 'mage') {
+        for (var h = 0; h < hitUnits.length; h++) {
+          if (Math.random() < CFG0.burn.chance) {
+            hitUnits[h].burnT = CFG0.burn.duration;
+            hitUnits[h].burnTick = 0;
+          }
+        }
       }
     }
 
     function updateField(dt) {
       if (G.over) { return; }
 
-      // 敌方按时间间隔出兵
+      // 敌方按时间间隔出兵（间隔随时间缩短，受难度倍率影响）
       G.enemyTimer -= dt;
       if (G.enemyTimer <= 0) {
-        G.enemyTimer = Math.max(4, 6.5 - G.time * 0.03) / DIFFS[difficulty].mult;
+        var ec = CFG0.enemy;
+        var interval = Math.max(ec.minInterval, ec.baseInterval - G.time * ec.decay);
+        G.enemyTimer = interval / DIFFS[difficulty].mult;
         spawnUnit('enemy', enemyPick());
       }
 
@@ -1031,6 +1134,12 @@
         var dir = u.side === 'ally' ? -1 : 1;
         u.cd -= dt; u.walk += dt * 6;
         if (u.atkAnim > 0) { u.atkAnim -= dt; }
+        // 燃烧 DoT：持续掉血，时间到自然熄灭（单位死亡时随其移除）
+        if (u.burnT > 0) {
+          u.burnT -= dt;
+          u.hp -= CFG0.burn.dps * dt;
+          if (u.burnT < 0) { u.burnT = 0; }
+        }
 
         var target = acquireTarget(u);
         var foeSide = u.side === 'ally' ? 'enemy' : 'ally';
@@ -1162,43 +1271,68 @@
       var top = ally ? FH - 32 : 8;
       var fill = ally ? '#3a78c2' : '#d05040';
       var dark = ally ? '#274c72' : '#8e2f24';
+      var light = ally ? '#5a96d6' : '#e06a58';
+
+      // 主体城墙
+      fctx.fillStyle = fill;
+      fctx.fillRect(cx - w / 2, top, w, h);
+      // 砖缝纹理（横向两条 + 竖向错缝）
+      fctx.strokeStyle = dark; fctx.lineWidth = 1;
+      fctx.globalAlpha = 0.35;
+      fctx.beginPath();
+      fctx.moveTo(cx - w / 2, top + h * 0.38); fctx.lineTo(cx + w / 2, top + h * 0.38);
+      fctx.moveTo(cx - w / 2, top + h * 0.72); fctx.lineTo(cx + w / 2, top + h * 0.72);
+      fctx.stroke();
+      fctx.globalAlpha = 0.22;
+      for (var bx = cx - w / 2 + 14; bx < cx + w / 2; bx += 22) {
+        fctx.beginPath();
+        fctx.moveTo(bx, top + h * 0.38); fctx.lineTo(bx, top + h * 0.72);
+        fctx.stroke();
+      }
+      fctx.globalAlpha = 1;
+      // 顶部高光
+      fctx.fillStyle = light;
+      fctx.fillRect(cx - w / 2, top, w, 3);
+      // 描边
+      fctx.strokeStyle = dark; fctx.lineWidth = 2.5;
+      fctx.strokeRect(cx - w / 2, top, w, h);
 
       // 墙垛（朝向战场一侧）
-      fctx.fillStyle = fill;
-      fctx.strokeStyle = dark;
-      fctx.lineWidth = 2.5;
+      fctx.fillStyle = fill; fctx.lineWidth = 2.5;
       for (var x = cx - w / 2 + 6; x < cx + w / 2 - 6; x += 16) {
         var merY = ally ? top + h : top - 8;
         fctx.fillRect(x, merY, 9, 8);
         fctx.strokeRect(x, merY, 9, 8);
       }
-      // 主体
-      fctx.fillRect(cx - w / 2, top, w, h);
-      fctx.strokeRect(cx - w / 2, top, w, h);
-      // 门（朝向战场）
-      fctx.fillStyle = dark;
+      // 城门（朝向战场，深色木门 + 门环）
+      fctx.fillStyle = '#4a3018';
       var doorY = ally ? top : top + h - 12;
-      fctx.fillRect(cx - 8, doorY, 16, 12);
-      // 旗
+      fctx.fillRect(cx - 9, doorY, 18, 12);
+      fctx.strokeStyle = '#2c1c0c'; fctx.lineWidth = 1.4;
+      fctx.strokeRect(cx - 9, doorY, 18, 12);
+      fctx.fillStyle = '#d8b25a';
+      fctx.beginPath(); fctx.arc(cx + 5, doorY + 6, 1.6, 0, Math.PI * 2); fctx.fill();
+
+      // 旗（旗杆 + 三角旗，带微风飘动感）
       fctx.strokeStyle = '#1f2d20'; fctx.lineWidth = 2;
       var flagPoleX = cx + w / 2 - 12;
       fctx.beginPath();
       fctx.moveTo(flagPoleX, ally ? top + 4 : top + h - 4);
       fctx.lineTo(flagPoleX, ally ? top - 14 : top + h + 14);
       fctx.stroke();
-      fctx.fillStyle = fill;
+      fctx.fillStyle = fill; fctx.strokeStyle = dark; fctx.lineWidth = 1.6;
       var fy = ally ? top - 24 : top + h + 4;
       fctx.beginPath();
-      fctx.moveTo(flagPoleX, fy); fctx.lineTo(flagPoleX + 12, fy + 5); fctx.lineTo(flagPoleX, fy + 10);
+      fctx.moveTo(flagPoleX, fy); fctx.lineTo(flagPoleX + 13, fy + 5); fctx.lineTo(flagPoleX, fy + 10);
       fctx.closePath(); fctx.fill(); fctx.stroke();
 
       // 血条（在城堡前方）
-      var bw = 130, bx = cx - bw / 2;
+      var bw = 130, bxx = cx - bw / 2;
       var barY = ally ? top - 12 : top + h + 6;
       fctx.fillStyle = '#1f2d20';
-      fctx.fillRect(bx - 2, barY - 2, bw + 4, 9);
+      fctx.fillRect(bxx - 2, barY - 2, bw + 4, 9);
       fctx.fillStyle = fill;
-      fctx.fillRect(bx, barY, bw * Math.max(0, b.hp / b.maxHp), 5);
+      fctx.fillRect(bxx, barY, bw * Math.max(0, b.hp / b.maxHp), 5);
     }
 
     function drawUnit(u) {
@@ -1207,8 +1341,12 @@
       var fy = ally ? 1 : -1;   // 武器朝向：蓝方朝上、红方朝下，身体一律直立
       var body = ally ? '#3a78c2' : '#d05040';
       var bodyDark = ally ? '#274c72' : '#8e2f24';
+      var skin = '#f0c8a0', skinDark = '#a9784a';
+      var metal = '#d6d6ce', metalDark = '#7a7a72';
+      var wood = '#8a6a3a', woodDark = '#5a3e20';
       var big = u.type === 'catapult';
-      var bob = Math.sin(u.walk) * 1.2;
+      var bob = Math.sin(u.walk) * 1.1;
+      var sw = u.atkAnim > 0 ? 1 : 0;   // 是否处于攻击帧
 
       fctx.save();
       fctx.translate(u.x, u.y + bob);
@@ -1216,57 +1354,131 @@
       // 阴影
       fctx.fillStyle = 'rgba(31,45,32,.22)';
       fctx.beginPath();
-      fctx.ellipse(0, big ? 11 : 9, big ? 13 : 8, 3.5, 0, 0, Math.PI * 2);
+      fctx.ellipse(0, big ? 11 : 9, big ? 13 : 8, 3.4, 0, 0, Math.PI * 2);
       fctx.fill();
 
-      if (u.type === 'catapult') {
-        // 投石车：车身 + 两轮 + 投掷臂（车身对称，臂朝向对方半场）
-        fctx.fillStyle = '#7a5230'; fctx.strokeStyle = '#4a3018'; fctx.lineWidth = 2;
-        roundRect(fctx, -11, -4, 22, 10, 2); fctx.fill(); fctx.stroke();
-        fctx.strokeStyle = '#5a3e20'; fctx.lineWidth = 3;
-        var armA = -0.5 + (u.atkAnim > 0 ? 0.5 : 0);
+      if (big) {
+        // ===== 投石车：木架车身 + 横梁 + 投掷臂 + 辐条轮 =====
+        fctx.fillStyle = wood; fctx.strokeStyle = woodDark; fctx.lineWidth = 2;
+        roundRect(fctx, -12, -3, 24, 9, 2); fctx.fill(); fctx.stroke();
+        fctx.fillStyle = woodDark; fctx.fillRect(-12, -3, 24, 2);   // 上横梁
+        var armAng = sw ? -1.15 : 0.15;
+        fctx.strokeStyle = woodDark; fctx.lineWidth = 3;
         fctx.beginPath();
-        fctx.moveTo(-6, -2);
-        fctx.lineTo(-6 + Math.cos(armA) * 14, fy * Math.sin(armA) * 14);
+        fctx.moveTo(0, 0);
+        fctx.lineTo(Math.cos(armAng) * 16, fy * Math.sin(armAng) * 16 - 2);
         fctx.stroke();
-        fctx.fillStyle = '#3a3a34';
-        fctx.beginPath(); fctx.arc(-6, 8, 3.6, 0, Math.PI * 2); fctx.arc(7, 8, 3.6, 0, Math.PI * 2); fctx.fill();
+        // 臂端石兜与石头
+        fctx.fillStyle = '#4a4a44';
+        fctx.beginPath();
+        fctx.arc(Math.cos(armAng) * 16, fy * Math.sin(armAng) * 16 - 4, 2.6, 0, Math.PI * 2);
+        fctx.fill();
+        // 两个辐条轮
+        fctx.fillStyle = woodDark;
+        fctx.beginPath(); fctx.arc(-7, 7, 4, 0, Math.PI * 2); fctx.arc(8, 7, 4, 0, Math.PI * 2); fctx.fill();
+        fctx.strokeStyle = wood; fctx.lineWidth = 1.4;
+        fctx.beginPath(); fctx.arc(-7, 7, 4, 0, Math.PI * 2); fctx.stroke();
+        fctx.beginPath(); fctx.arc(8, 7, 4, 0, Math.PI * 2); fctx.stroke();
       } else {
-        // 身体（直立）
+        // ===== 人形兵种 =====
+        // 小腿（踏步）
+        fctx.strokeStyle = bodyDark; fctx.lineWidth = 2.4;
+        var step = Math.sin(u.walk * 1.5) * 1.5;
+        fctx.beginPath();
+        fctx.moveTo(-3, 5); fctx.lineTo(-3 - step, 9);
+        fctx.moveTo(3, 5); fctx.lineTo(3 + step, 9);
+        fctx.stroke();
+        // 战甲身体
         fctx.fillStyle = body; fctx.strokeStyle = bodyDark; fctx.lineWidth = 2;
-        roundRect(fctx, -6, -3, 12, 10, 3); fctx.fill(); fctx.stroke();
-        // 头（直立）
-        fctx.fillStyle = '#f0c8a0'; fctx.strokeStyle = '#a9784a';
-        fctx.beginPath(); fctx.arc(0, -8, 4.6, 0, Math.PI * 2); fctx.fill(); fctx.stroke();
-        // 法师尖帽（对称）
-        if (u.type === 'mage') {
-          fctx.fillStyle = '#6a427a'; fctx.strokeStyle = '#472c54'; fctx.lineWidth = 1.6;
-          fctx.beginPath(); fctx.moveTo(-5, -10); fctx.lineTo(0, -17); fctx.lineTo(5, -10); fctx.closePath(); fctx.fill(); fctx.stroke();
-        }
-        // 武器：仅武器随阵营上下镜像，人不倒立
-        fctx.save(); fctx.scale(1, fy);
-        var swing = u.atkAnim > 0 ? 4 : 0;
+        roundRect(fctx, -6, -4, 12, 10, 3); fctx.fill(); fctx.stroke();
+        fctx.fillStyle = bodyDark; fctx.fillRect(-6, 1, 12, 1.6);   // 腰带
+        // 头
+        fctx.fillStyle = skin; fctx.strokeStyle = skinDark; fctx.lineWidth = 1.6;
+        fctx.beginPath(); fctx.arc(0, -8, 4.4, 0, Math.PI * 2); fctx.fill(); fctx.stroke();
+
+        // ---- 头盔 / 帽子（兵种区分）----
         if (u.type === 'swordsman') {
-          fctx.strokeStyle = '#d8d8d0'; fctx.lineWidth = 2.4;
-          fctx.beginPath(); fctx.moveTo(5, -1); fctx.lineTo(11 + swing, -5 - swing); fctx.stroke();
+          // 铁盔
+          fctx.fillStyle = metal; fctx.strokeStyle = metalDark; fctx.lineWidth = 1.4;
+          fctx.beginPath(); fctx.arc(0, -9, 4.4, Math.PI, 0); fctx.fill(); fctx.stroke();
+          fctx.fillRect(-4.4, -9, 8.8, 1.4);
         } else if (u.type === 'spearman') {
-          fctx.strokeStyle = '#8a6a3a'; fctx.lineWidth = 2;
-          fctx.beginPath(); fctx.moveTo(-2, 6); fctx.lineTo(10 + swing, -12 - swing); fctx.stroke();
-          fctx.fillStyle = '#e8e8e0';
-          fctx.beginPath(); fctx.moveTo(10 + swing, -12 - swing); fctx.lineTo(13 + swing, -15 - swing); fctx.lineTo(11 + swing, -9 - swing); fctx.closePath(); fctx.fill();
+          // 小盔 + 红缨
+          fctx.fillStyle = metal; fctx.strokeStyle = metalDark; fctx.lineWidth = 1.4;
+          fctx.beginPath(); fctx.arc(0, -9, 4.2, Math.PI, 0); fctx.fill(); fctx.stroke();
+          fctx.strokeStyle = '#c23a2a'; fctx.lineWidth = 1.6;
+          fctx.beginPath(); fctx.moveTo(0, -13); fctx.lineTo(0, -16.5); fctx.stroke();
         } else if (u.type === 'archer') {
-          fctx.strokeStyle = '#6a4a28'; fctx.lineWidth = 2;
-          fctx.beginPath(); fctx.arc(7, -1, 6, -1.1, 1.1); fctx.stroke();
-          fctx.strokeStyle = '#e8e8e0'; fctx.lineWidth = 1.4;
-          fctx.beginPath(); fctx.moveTo(2, -6); fctx.lineTo(2, 4); fctx.stroke();
+          // 兜帽
+          fctx.fillStyle = bodyDark;
+          fctx.beginPath(); fctx.moveTo(-5, -8); fctx.lineTo(0, -15); fctx.lineTo(5, -8); fctx.closePath(); fctx.fill();
         } else if (u.type === 'mage') {
-          fctx.strokeStyle = '#8a6a3a'; fctx.lineWidth = 2;
-          fctx.beginPath(); fctx.moveTo(6, 6); fctx.lineTo(10 + swing, -8 - swing); fctx.stroke();
-          fctx.fillStyle = '#c79ae0';
-          fctx.beginPath(); fctx.arc(10 + swing, -9 - swing, 2.8, 0, Math.PI * 2); fctx.fill();
+          // 尖顶帽 + 宽檐
+          fctx.fillStyle = '#6a427a'; fctx.strokeStyle = '#472c54'; fctx.lineWidth = 1.4;
+          fctx.fillRect(-5.5, -9.6, 11, 1.8);
+          fctx.beginPath(); fctx.moveTo(-4.5, -9); fctx.lineTo(0, -18); fctx.lineTo(4.5, -9); fctx.closePath(); fctx.fill(); fctx.stroke();
+        }
+
+        // ---- 武器：随阵营上下镜像，人不倒立 ----
+        fctx.save(); fctx.scale(1, fy);
+        if (u.type === 'swordsman') {
+          var bladeAng = sw ? -1.0 : -0.25;
+          fctx.save(); fctx.translate(5, 0); fctx.rotate(bladeAng);
+          fctx.strokeStyle = metal; fctx.lineWidth = 2.6;
+          fctx.beginPath(); fctx.moveTo(0, 0); fctx.lineTo(0, -11); fctx.stroke();
+          fctx.strokeStyle = woodDark; fctx.lineWidth = 2;
+          fctx.beginPath(); fctx.moveTo(-2.6, 0); fctx.lineTo(2.6, 0); fctx.stroke();
+          fctx.restore();
+          if (sw) {
+            fctx.strokeStyle = 'rgba(255,255,255,.7)'; fctx.lineWidth = 1.6;
+            fctx.beginPath(); fctx.arc(6, -2, 9, -0.6, 0.9); fctx.stroke();
+          }
+        } else if (u.type === 'spearman') {
+          var px = sw ? 3 : 0;
+          fctx.strokeStyle = wood; fctx.lineWidth = 1.8;
+          fctx.beginPath(); fctx.moveTo(-4, 8); fctx.lineTo(10 + px, -12); fctx.stroke();
+          fctx.fillStyle = metal;
+          fctx.beginPath(); fctx.moveTo(10 + px, -12); fctx.lineTo(13 + px, -15.5); fctx.lineTo(12 + px, -10.5); fctx.closePath(); fctx.fill();
+        } else if (u.type === 'archer') {
+          fctx.strokeStyle = woodDark; fctx.lineWidth = 2;
+          fctx.beginPath(); fctx.arc(7, -1, 6, -1.2, 1.2); fctx.stroke();
+          var pull = sw ? 3 : 0;
+          fctx.strokeStyle = '#e8e8e0'; fctx.lineWidth = 1.2;
+          fctx.beginPath();
+          fctx.moveTo(7 + Math.cos(-1.2) * 6, -1 + Math.sin(-1.2) * 6);
+          fctx.lineTo(7 - pull, -1);
+          fctx.lineTo(7 + Math.cos(1.2) * 6, -1 + Math.sin(1.2) * 6);
+          fctx.stroke();
+          if (sw) {
+            fctx.strokeStyle = metal; fctx.lineWidth = 1.4;
+            fctx.beginPath(); fctx.moveTo(2, -1); fctx.lineTo(11, -1); fctx.stroke();
+          }
+        } else if (u.type === 'mage') {
+          fctx.strokeStyle = woodDark; fctx.lineWidth = 2;
+          fctx.beginPath(); fctx.moveTo(6, 6); fctx.lineTo(9, -9); fctx.stroke();
+          fctx.fillStyle = sw ? '#e6bcff' : '#c79ae0';
+          fctx.beginPath(); fctx.arc(9, -10, sw ? 3.3 : 2.4, 0, Math.PI * 2); fctx.fill();
+          if (sw) {
+            fctx.strokeStyle = 'rgba(199,154,224,.6)'; fctx.lineWidth = 1.4;
+            fctx.beginPath(); fctx.arc(9, -10, 5, 0, Math.PI * 2); fctx.stroke();
+          }
         }
         fctx.restore();
       }
+
+      // 燃烧火苗（橙红小像素火，随步伐闪动，不刺眼）
+      if (u.burnT > 0) {
+        var fl = Math.sin(u.walk * 4) * 1.2;
+        fctx.fillStyle = '#e8722a';
+        fctx.beginPath();
+        fctx.moveTo(-2.5, -12 + fl); fctx.lineTo(0, -18 - fl); fctx.lineTo(2.5, -12 + fl);
+        fctx.closePath(); fctx.fill();
+        fctx.fillStyle = '#f5c04a';
+        fctx.beginPath();
+        fctx.moveTo(-1.2, -12 + fl * 0.6); fctx.lineTo(0, -15.5 - fl * 0.6); fctx.lineTo(1.2, -12 + fl * 0.6);
+        fctx.closePath(); fctx.fill();
+      }
+
       fctx.restore();
 
       // 血条（头顶）
@@ -1283,25 +1495,39 @@
       var ally = t.side === 'ally';
       var fill = ally ? '#3a78c2' : '#d05040';
       var dark = ally ? '#274c72' : '#8e2f24';
+      var light = ally ? '#5a96d6' : '#e06a58';
       var x = t.x, y = t.y;
       // 阴影
       fctx.fillStyle = 'rgba(31,45,32,.22)';
       fctx.beginPath(); fctx.ellipse(x, y + 18, 15, 4, 0, 0, Math.PI * 2); fctx.fill();
-      // 石底座
-      fctx.fillStyle = '#8d949c'; fctx.strokeStyle = '#565c64'; fctx.lineWidth = 2.5;
+      // 石底座（含灰缝）
+      fctx.fillStyle = '#9aa1a8'; fctx.strokeStyle = '#565c64'; fctx.lineWidth = 2.5;
       fctx.fillRect(x - 13, y + 10, 26, 7); fctx.strokeRect(x - 13, y + 10, 26, 7);
+      fctx.strokeStyle = 'rgba(86,92,100,.6)'; fctx.lineWidth = 1;
+      fctx.beginPath(); fctx.moveTo(x - 13, y + 13.5); fctx.lineTo(x + 13, y + 13.5); fctx.stroke();
       // 塔身
       fctx.fillStyle = fill; fctx.strokeStyle = dark; fctx.lineWidth = 2.5;
       fctx.fillRect(x - 9, y - 12, 18, 22); fctx.strokeRect(x - 9, y - 12, 18, 22);
+      // 塔身砖缝
+      fctx.strokeStyle = dark; fctx.globalAlpha = 0.3; fctx.lineWidth = 1;
+      fctx.beginPath();
+      fctx.moveTo(x - 9, y - 5); fctx.lineTo(x + 9, y - 5);
+      fctx.moveTo(x - 9, y + 2); fctx.lineTo(x + 9, y + 2);
+      fctx.stroke();
+      fctx.globalAlpha = 1;
+      // 左侧受光亮面
+      fctx.fillStyle = light; fctx.globalAlpha = 0.5;
+      fctx.fillRect(x - 9, y - 12, 3, 22);
+      fctx.globalAlpha = 1;
       // 顶部垛口
       fctx.lineWidth = 2;
       fctx.fillRect(x - 9, y - 17, 6, 5); fctx.strokeRect(x - 9, y - 17, 6, 5);
       fctx.fillRect(x - 3, y - 17, 6, 5); fctx.strokeRect(x - 3, y - 17, 6, 5);
       fctx.fillRect(x + 3, y - 17, 6, 5); fctx.strokeRect(x + 3, y - 17, 6, 5);
-      // 小窗
+      // 射箭孔（窄竖缝，深色）
       fctx.fillStyle = dark;
-      fctx.fillRect(x - 2.5, y - 4, 5, 8);
-      // 旗杆与旗
+      fctx.fillRect(x - 1.5, y - 6, 3, 9);
+      // 旗杆与三角旗
       fctx.strokeStyle = '#1f2d20'; fctx.lineWidth = 1.6;
       fctx.beginPath(); fctx.moveTo(x, y - 17); fctx.lineTo(x, y - 27); fctx.stroke();
       fctx.fillStyle = fill; fctx.strokeStyle = dark; fctx.lineWidth = 1.2;
@@ -1467,6 +1693,7 @@
     function restart() {
       G = newState();
       buildBoard();
+      checkDeadBoard();
       updateHud();
       pauseMask.classList.remove('show');
       btnReshuffle.disabled = false;

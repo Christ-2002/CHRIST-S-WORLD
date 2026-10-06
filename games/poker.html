@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>魔兽扑克 · WARCRAFT POKER</title>
+<style>
+  :root{
+    --ink:#10151a; --dark:#1c3a2a; --mid:#2f6b3f; --light:#7ec850;
+    --paper:#f4ecd6; --paper2:#e7dcc2; --bg:#0c2116; --panel:#143322; --panel2:#1d452e;
+    --red:#e2503d; --gold:#f0b429; --blue:#4aa3df; --purple:#b56ce0;
+    --bd:3px solid var(--ink);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; min-width:1024px; min-height:620px;}
+  body{
+    background:var(--bg); color:var(--paper); overflow:hidden;
+    font-family:"Microsoft YaHei","Consolas",monospace,sans-serif;
+  }
+  button{font-family:inherit; cursor:pointer;}
+  img,canvas{image-rendering:pixelated;}
+
+  /* ============ 总布局：6列 × 2行 ============ */
+  #screen{position:fixed; inset:0;
+    display:grid; grid-template-columns:repeat(6,1fr); grid-template-rows:1fr 1.12fr;
+    gap:8px; padding:8px;}
+  .box{background:transparent; border:none; border-radius:0; position:relative;
+    box-shadow:none; overflow:visible;}
+  #battle{grid-column:1/4; grid-row:1;}
+  #aiArea{grid-column:4/7; grid-row:1;}
+  #pArea{grid-column:1/5; grid-row:2;}
+  #pileArea{grid-column:5/7; grid-row:2;}
+
+  .boxhead{height:26px; background:var(--panel2); border-bottom:2px solid var(--ink);
+    display:flex; align-items:center; padding:0 10px; font-size:12px; font-weight:bold;
+    color:#a7d8b0; letter-spacing:1px; flex:none;}
+  .boxbody{position:absolute; top:0; left:0; right:0; bottom:0; padding:6px;}
+
+  /* ============ 对战区 ============ */
+  .battleSide{display:flex; align-items:center; gap:8px; height:50%; padding:16px 8px 4px; position:relative;}
+  .bLab{left:10px; top:2px;}
+  .battleSide + .battleSide{border-top:none;}
+  .battleCards{display:flex; gap:5px; flex:1; min-width:0;}
+  .scoreTag{flex:none; width:104px; background:#0007; border:2px solid var(--ink); border-radius:6px;
+    text-align:center; padding:6px 2px;}
+  .scoreTag .lab{font-size:10px; color:#9fb; display:block;}
+  .scoreTag .val{font-size:22px; font-weight:900; color:var(--gold);}
+  #battleResult{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); right:auto; font-size:15px; font-weight:bold;
+    background:#0008; border:2px solid var(--gold); border-radius:6px; padding:4px 10px; color:var(--gold); z-index:4;}
+
+  /* ============ AI 区（中心对称、略小） ============ */
+  #aiArea .boxbody{display:flex; flex-direction:column; gap:6px;}
+  .aiTop{display:flex; gap:10px; align-items:flex-start;}
+  .aiHidden{flex:1; display:flex; gap:6px; align-items:center; justify-content:center;
+    background:#0005; border-radius:6px; padding:8px; min-height:96px;}
+  .aiSkills{flex:1; background:#0005; border-radius:6px; padding:6px; display:flex; gap:6px;
+    align-items:center; justify-content:center; flex-wrap:wrap; overflow:hidden;}
+  .aiSkills .miniUsed{width:46px; height:62px; border-radius:4px; border:2px solid var(--ink);
+    background:#241d3a; filter:grayscale(1) brightness(.6);}
+
+  /* ============ 玩家区 ============ */
+  #pArea .boxbody{display:flex; gap:8px;}
+  .pLeft{flex:none; width:132px; display:flex; flex-direction:column; gap:6px;}
+  .pRight{flex:1; display:flex; flex-direction:column; gap:6px; min-width:0;}
+  .handZone{flex:1.05; background:#0005; border-radius:6px; padding:6px; display:flex; gap:8px;
+    align-items:center; justify-content:center; min-height:0; position:relative;}
+  .skillZone{flex:1; background:#0005; border-radius:6px; padding:6px; display:flex; gap:8px;
+    align-items:center; justify-content:center; min-height:0; position:relative;}
+  .zoneLab{position:absolute; font-size:10px; color:#7fa88a; top:4px; left:8px;}
+  .usedStrip{flex:none; min-height:38px; background:#0006; border-radius:5px; padding:4px;
+    display:flex; gap:5px; align-items:center; overflow:hidden;}
+  .usedStrip .uLab{font-size:10px; color:var(--gold); flex:none;}
+  .usedStrip .miniUsed{width:26px; height:32px; border-radius:3px; border:1.5px solid var(--ink);
+    background:#241d3a; flex:none; overflow:hidden;}
+
+  /* ============ 牌堆 / 按钮区 ============ */
+  #pileArea .boxbody{display:flex; flex-direction:column; gap:6px;}
+  .pileRow{flex:none; display:flex; gap:10px; justify-content:center;}
+  .pile{position:relative; width:80px; height:80px;}
+  .pile .pcap{position:absolute; inset:0;}
+  .pile .pcount{position:absolute; left:0; right:0; bottom:-3px; text-align:center;
+    font-size:12px; font-weight:bold; color:var(--gold); text-shadow:1px 1px 0 #000; z-index:5;}
+  .pile.small{width:66px; height:66px;}
+  .pileWrap{display:flex; flex-direction:column; align-items:center; gap:4px;}
+  .pileWrap .plab{font-size:10px; color:#9fb;}
+  .ctrlBtns{flex:1; display:grid; grid-template-columns:1fr 1fr; gap:6px; align-content:end;}
+  .cbtn{background:var(--mid); color:#fff; border:2px solid var(--ink); border-radius:5px;
+    padding:8px 4px; font-size:13px; font-weight:bold; box-shadow:2px 2px 0 #000;}
+  .cbtn:active{transform:translate(1px,1px); box-shadow:1px 1px 0 #000;}
+  .cbtn.red{background:var(--red);} .cbtn.gold{background:var(--gold); color:var(--ink);}
+  .infoLine{flex:none; background:#0007; border:2px solid var(--ink); border-radius:5px;
+    padding:5px 8px; font-size:11px; line-height:1.6; color:#cfe8d4; text-align:center;}
+  .infoLine b{color:var(--gold);}
+
+  /* ============ 扑克牌 ============ */
+  .pcard{position:relative; flex:none; background:var(--paper); color:var(--ink);
+    border:2px solid var(--ink); border-radius:6px; box-shadow:2px 2px 0 #000;
+    user-select:none; overflow:hidden;}
+  .pcard .cr{position:absolute; top:3px; left:4px; font-size:13px; font-weight:900; line-height:1; text-align:center;}
+  .pcard .cr small{display:block; font-size:11px;}
+  .pcard .cs{position:absolute; top:0; left:0; right:0; bottom:16px; display:flex;
+    align-items:center; justify-content:center; font-size:34px;}
+  .pcard .cname{position:absolute; left:0; right:0; bottom:1px; text-align:center;
+    font-size:10px; color:#6a5e44;}
+  .pcard.redSuit{color:#c22;}
+  .pcard.back{background:repeating-linear-gradient(45deg,#2f6b3f 0 7px,#1c3a2a 7px 14px); color:transparent;}
+  .pcard.back .cr,.pcard.back .cs,.pcard.back .cname{display:none;}
+  .pcard.back::after{content:"♣"; position:absolute; inset:0; display:flex; align-items:center;
+    justify-content:center; font-size:26px; color:#7ec850; opacity:.55;}
+  .pcard.clickable{cursor:pointer;}
+  .pcard.clickable:hover{transform:translateY(-4px);}
+  .pcard.sel{outline:4px solid var(--gold); outline-offset:1px; transform:translateY(-6px);}
+  .pcard.target{outline:4px solid var(--blue); outline-offset:1px; transform:translateY(-4px);}
+  .pcard.dim{filter:grayscale(.8) brightness(.55);}
+  .pcard.bigpop{animation:bigpop .6s ease;}
+  @keyframes bigpop{0%{transform:scale(1);}50%{transform:scale(1.22); box-shadow:0 0 20px var(--gold);}100%{transform:scale(1);}}
+  /* 尺寸 */
+  .pcard.big{width:92px; height:128px;}
+  .pcard.big .cs{font-size:40px;}
+  .pcard.mid{width:64px; height:92px;}
+  .pcard.mid .cr{font-size:11px;} .pcard.mid .cs{font-size:26px;} .pcard.mid .cname{display:none;}
+  .pcard.sm{width:54px; height:76px;}
+  .pcard.sm .cr{font-size:9px;} .pcard.sm .cs{font-size:19px;} .pcard.sm .cname{display:none;}
+
+  /* ============ 技能牌（无文字描述，名字在底） ============ */
+  .scard{position:relative; flex:none; background:#211a38; color:var(--paper);
+    border:2px solid var(--ink); border-radius:6px; box-shadow:2px 2px 0 #000;
+    user-select:none; overflow:hidden; cursor:pointer; width:92px; height:128px;}
+  .scard .sart{position:absolute; top:6px; left:6px; right:6px; bottom:24px;
+    background:#000; border:2px solid #000; border-radius:4px; overflow:hidden;}
+  .scard .sart canvas{width:100%; height:100%; display:block;}
+  .scard .snm{position:absolute; left:2px; right:2px; bottom:3px; text-align:center;
+    font-size:12px; font-weight:bold;}
+  .scard:hover{transform:translateY(-4px);}
+  .scard.used{filter:grayscale(1) brightness(.5); cursor:not-allowed;}
+  .scard.ready{outline:3px solid var(--gold); outline-offset:1px;}
+  .scard.sm{width:54px; height:76px;}
+  .scard.sm .sart{bottom:16px;} .scard.sm .snm{font-size:9px;}
+
+  /* 英雄牌 */
+  .hcard{position:relative; flex:none; background:var(--panel2); border:var(--bd); border-radius:7px;
+    box-shadow:3px 3px 0 #000; text-align:center; overflow:hidden; user-select:none;}
+  .hcard .hart{position:relative; background:#000; border-bottom:2px solid var(--ink); overflow:hidden;}
+  .hcard .hart canvas{display:block; width:100%; height:100%;}
+  .hcard .hnm{font-size:12px; font-weight:bold; padding:3px 2px 1px;}
+  .hcard .hhearts{padding:2px 4px 5px; display:flex; justify-content:center; gap:2px; flex-wrap:wrap;}
+  .hcard .hh{width:13px; height:12px;}
+  .hcard.poison{box-shadow:0 0 0 2px #4aff6a, 3px 3px 0 #000;}
+  .hcard.shake{animation:hshake .5s ease;}
+  @keyframes hshake{0%,100%{transform:translate(0);}20%{transform:translate(-5px,2px);}
+    40%{transform:translate(5px,-2px);}60%{transform:translate(-4px,-1px);}80%{transform:translate(4px,1px);}}
+  .slash{position:absolute; z-index:8; pointer-events:none; width:70%; height:14%;
+    background:linear-gradient(90deg,transparent,#ff3a2a 30%,#ffd0c0 50%,#ff3a2a 70%,transparent);
+    transform:rotate(-38deg); animation:slashin .45s ease; box-shadow:0 0 8px #ff5040;}
+  @keyframes slashin{0%{opacity:0; transform:rotate(-38deg) scale(2);}
+    40%{opacity:1; transform:rotate(-38deg) scale(1);}100%{opacity:0; transform:rotate(-38deg) scale(1);}}
+  .hcard.big{width:104px;} .hcard.big .hart{height:96px;}
+  .hcard.mid{width:86px;} .hcard.mid .hart{height:78px;}
+
+  /* ============ 悬停提示框 ============ */
+  #tip{position:fixed; z-index:200; max-width:280px; background:#0d1326; color:#e8eaf2;
+    border:2px solid var(--gold); border-radius:7px; padding:9px 11px; font-size:12px;
+    line-height:1.65; box-shadow:4px 4px 0 #0008; display:none; pointer-events:none;}
+  #tip b{color:var(--gold);} #tip .tt{display:block; font-weight:bold; color:#ffd88a; margin-bottom:3px; font-size:13px;}
+
+  /* ============ 弹窗 ============ */
+  .overlay{position:fixed; inset:0; background:#000000d5; z-index:100;
+    display:flex; align-items:center; justify-content:center;}
+  .modal{background:var(--panel); border:var(--bd); border-radius:10px;
+    box-shadow:6px 6px 0 #000; padding:18px; max-width:760px; max-height:90vh; overflow-y:auto; position:relative;}
+  .modal h2{color:var(--gold); font-size:19px; margin-bottom:10px; text-align:center;}
+  .modal p,.modal li{font-size:13px; line-height:1.85; color:var(--paper);}
+  .modal ul{padding-left:20px;}
+  .btnrow{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; justify-content:flex-end;}
+  .mbtn{background:var(--mid); color:#fff; border:2px solid var(--ink); border-radius:6px;
+    padding:9px 20px; font-size:14px; font-weight:bold; box-shadow:2px 2px 0 #000;}
+  .mbtn.gold{background:var(--gold); color:var(--ink);}
+  .mbtn:active{transform:translate(1px,1px); box-shadow:1px 1px 0 #000;}
+  /* 难度 / 选英雄 */
+  .diffRow{display:flex; gap:12px; justify-content:center; margin:14px 0;}
+  .diffBtn{padding:12px 26px; font-size:15px; font-weight:bold; border:var(--bd); border-radius:8px;
+    background:var(--mid); color:#fff; box-shadow:3px 3px 0 #000;}
+  .diffBtn.sel{background:var(--gold); color:var(--ink); outline:3px solid #fff;}
+  .pickRow{display:flex; gap:14px; justify-content:center; margin:12px 0; flex-wrap:nowrap;}
+  .pickCard{width:140px; background:var(--panel2); border:3px solid var(--ink); border-radius:8px;
+    padding:8px; text-align:center; cursor:pointer; box-shadow:3px 3px 0 #000; flex:none;}
+  .pickCard:hover{transform:translateY(-4px);}
+  .pickCard.picked{outline:4px solid var(--gold);}
+  .pickCard>canvas{width:96px; height:96px; background:#000; border:2px solid var(--ink); border-radius:4px;}
+  .pickCard .hh{width:13px; height:12px;}
+  .pickCard .hhearts{display:flex; justify-content:center; gap:2px; margin-top:4px;}
+  .pickCard .pn{font-weight:bold; font-size:13px; margin-top:5px;}
+  /* 牌型表 */
+  .handTable{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px;}
+  .handTable .hd{background:var(--panel2); padding:7px; font-size:12px; border:1px solid var(--ink); border-radius:5px;}
+  .handTable .hd b{color:var(--gold); font-size:13px;}
+  .handTable .hd .eg{color:#9fb; font-size:11px;}
+  /* 中央大字 / 闪光 / 粒子 */
+  #centerMsg{position:fixed; left:50%; top:42%; transform:translate(-50%,-50%);
+    font-size:40px; font-weight:900; color:var(--gold); text-shadow:4px 4px 0 #000;
+    z-index:60; pointer-events:none; text-align:center; display:none;}
+  #flash{position:fixed; inset:0; pointer-events:none; z-index:90; opacity:0;}
+  #fxLayer{position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:80;}
+  .particle{position:absolute; width:5px; height:5px; background:#4aff6a;}
+  #toast{position:fixed; left:50%; top:12%; transform:translateX(-50%); z-index:150;
+    background:#3a1414; color:#ffd0c0; border:2px solid var(--red); border-radius:6px;
+    padding:8px 16px; font-size:14px; font-weight:bold; display:none;}
+  /* 飞牌幽灵 */
+  .flyGhost{position:fixed; z-index:120; pointer-events:none; margin:0 !important;}
+</style>
+</head>
+<body>
+<div id="screen">
+  <!-- 左上：对战区 -->
+  <div class="box" id="battle">
+    <div id="battleResult" style="display:none;"></div>
+    <div class="boxbody" style="padding:4px;">
+      <div class="battleSide"><span class="zoneLab bLab">AI 出牌区</span><div class="battleCards" id="aiBattleCards"></div>
+        <div class="scoreTag"><span class="lab">AI 总分</span><span class="val" id="aiBattleScore">-</span></div></div>
+      <div class="battleSide"><span class="zoneLab bLab">你的出牌区</span><div class="battleCards" id="pBattleCards"></div>
+        <div class="scoreTag"><span class="lab">你的总分</span><span class="val" id="pBattleScore">-</span></div></div>
+    </div>
+  </div>
+  <!-- 右上：AI 区域 -->
+  <div class="box" id="aiArea">
+    <div class="boxbody">
+      <div class="aiTop">
+        <div id="aiHeroZone" style="flex:none;"></div>
+        <div class="aiHidden" id="aiHiddenRow"></div>
+      </div>
+      <div class="aiSkills" id="aiSkillMini"><span style="font-size:11px;color:#7fa88a;">AI 本局已用技能</span></div>
+    </div>
+  </div>
+  <!-- 左下：玩家区域 -->
+  <div class="box" id="pArea">
+    <div class="boxbody">
+      <div class="pLeft">
+        <div id="pHeroZone"></div>
+        <button class="cbtn gold" id="discardBtn" style="display:none;">换 牌</button>
+        <button class="cbtn" id="playBtn" style="display:none;">出 牌</button>
+        <div class="usedStrip" id="usedStrip"><span class="uLab">本局已用</span></div>
+      </div>
+      <div class="pRight">
+        <span class="zoneLab">我的手牌（点击选中）</span>
+        <div class="handZone" id="handZone"></div>
+        <span class="zoneLab" style="top:53%;">技能牌</span>
+        <div class="skillZone" id="skillZone"></div>
+      </div>
+    </div>
+  </div>
+  <!-- 右下：牌堆 + 控制 -->
+  <div class="box" id="pileArea">
+    <div class="boxbody">
+      <div class="pileRow">
+        <div class="pileWrap"><div class="pile" id="pilePokerDraw"></div><span class="plab">扑克·抽牌库</span></div>
+        <div class="pileWrap"><div class="pile" id="pilePokerDisc"></div><span class="plab">扑克·弃牌库</span></div>
+      </div>
+      <div class="pileRow">
+        <div class="pileWrap"><div class="pile small" id="pileSkDraw"></div><span class="plab">技能·抽牌库</span></div>
+        <div class="pileWrap"><div class="pile small" id="pileSkDisc"></div><span class="plab">技能·弃牌库</span></div>
+      </div>
+      <div class="infoLine" id="infoLine">—</div>
+      <div class="ctrlBtns">
+        <button class="cbtn red" id="surrBtn">投降/重开</button>
+        <button class="cbtn" id="pauseBtn">暂停</button>
+        <button class="cbtn" id="helpBtn">玩法</button>
+        <button class="cbtn" id="handBtn">牌型</button>
+        <button class="cbtn" id="logBtn">日志</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="tip"></div>
+<div id="toast"></div>
+<div id="centerMsg"></div>
+<div id="flash"></div>
+<div id="fxLayer"></div>
+<script>
+/* =====================================================================
+   POKER_CFG —— 游戏全部可调数值（编辑器读写此块；最终 } 顶格 column 0）
+===================================================================== */
+var POKER_CFG = {
+      time: {
+        discard: 30,
+        skill: 60
+      },
+      startCards: 5,
+      maxSkillsPerRound: 3,
+      skillStartHand: 3,
+      skillStartHandMage: 4,
+      skillHandCap: 5,
+      skillHandCapMage: 6,
+      skillRefillPerRound: 2,
+      heroes: {
+        deathKnight: {
+          hp: 5,
+          pact: 0.5,
+          pactDmg: 0.5
+        },
+        phantomAssassin: {
+          hp: 5,
+          crit: 0.2,
+          critDmg: 1
+        },
+        antiMage: {
+          hp: 4,
+          skillOnLoss: 1
+        },
+        archMage: {
+          hp: 4
+        },
+        treant: {
+          hp: 5,
+          heal: 0.5,
+          maxHeals: 3
+        },
+        juggernaut: {
+          hp: 4,
+          lowBonus: 8
+        },
+        viper: {
+          hp: 5,
+          layersPerWin: 1,
+          toxThreshold: 3,
+          toxDmg: 1
+        },
+        chaosKnight: {
+          hp: 4,
+          chaos: 0.6
+        },
+        lich: {
+          hp: 4,
+          frost: 0.5,
+          frostBonus: 10
+        },
+        bloodMage: {
+          hp: 4,
+          skipMaxRank: 3
+        }
+      },
+      skills: {
+        midas: {
+          count: 2,
+          pick: 1,
+          toRank: 14
+        },
+        spadeWish: {
+          count: 1,
+          pickMin: 1,
+          pick: 2
+        },
+        conjure: {
+          count: 1,
+          draw: 2
+        },
+        refresh: {
+          count: 1
+        },
+        nether: {
+          count: 2,
+          maxRank: 5
+        },
+        forceStaff: {
+          count: 2,
+          pickMin: 1,
+          pick: 2,
+          plus: 1
+        },
+        mechasm: {
+          count: 2,
+          baseBonus: 10
+        },
+        daedalus: {
+          count: 2,
+          ptsMult: 1.3
+        },
+        aegis: {
+          count: 1
+        },
+        bloodstone: {
+          count: 2,
+          extraSkill: 1
+        },
+        phase: {
+          count: 1,
+          ptsMult: 2
+        },
+        drum: {
+          count: 2,
+          totalBonus: 15
+        },
+        heart: {
+          count: 2,
+          totalMult: 1.2
+        },
+        shiva: {
+          count: 2,
+          minLevel: 3,
+          totalBonus: 12
+        },
+        ring: {
+          count: 1,
+          extraSwap: 1
+        },
+        armlet: {
+          count: 2,
+          baseBonus: 15,
+          backfire: 0.5
+        },
+        headdress: {
+          count: 2,
+          heal: 0.5
+        },
+        deso: {
+          count: 2,
+          permaBase: 5
+        },
+        potion: {
+          count: 2
+        },
+        bkb: {
+          count: 1
+        },
+        butterfly: {
+          count: 1,
+          chance: 0.5,
+          totalMult: 1.15
+        },
+        manta: {
+          count: 2,
+          pick: 1
+        },
+        dagon: {
+          count: 2,
+          ptsAdd: 6,
+          ptsAddMulti: 12
+        },
+        bfury: {
+          count: 2
+        },
+        circlet: {
+          count: 2,
+          perCard: 2
+        },
+        lifepotion: {
+          count: 2,
+          rounds: 2,
+          heal: 0.5
+        },
+        meteor: {
+          count: 2,
+          pick: 2,
+          plus: 3
+        }
+      },
+      hands: {
+        high: 10,
+        pair: 30,
+        twoPair: 60,
+        three: 95,
+        straight: 150,
+        flush: 175,
+        fullHouse: 230,
+        four: 305,
+        straightFlush: 380,
+        royalFlush: 500
+      },
+      ai: {
+        easy: 0,
+        normal: 0.4,
+        hard: 1.6
+      }
+    };
+/* ====================== 配置块结束 ====================== */
+
+/* ---------------- 常量与工具 ---------------- */
+var SUITS = ['♠','♥','♦','♣'];
+var SUIT_BLACK = {'♠':1,'♣':1};
+var SUIT_RED = {'♥':1,'♦':1};
+var HAND_NAMES = ['高牌','一对','两对','三条','顺子','同花','葫芦','四条','同花顺','皇家同花顺'];
+var HAND_KEYS  = ['high','pair','twoPair','three','straight','flush','fullHouse','four','straightFlush','royalFlush'];
+var C = POKER_CFG;
+function $(id){return document.getElementById(id);}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function rnd(){return Math.random();}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function rankLabel(r){return r===14?'A':r===13?'K':r===12?'Q':r===11?'J':String(r);}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+
+/* ---------------- 手牌评估（纯函数，支持 1~5 张子集） ----------------
+   返回 {level,key,name,usedIdx(参与计分的输入下标),points(有效牌点数和),
+          isFlush,isStraight,counts,rankKey} */
+function evaluateHand(cards){
+  var n=cards.length;
+  var idx=cards.map(function(c,i){return i;});
+  var ranksAll=cards.map(function(c){return c.rank;});
+  var orderDesc=idx.slice().sort(function(a,b){return ranksAll[b]-ranksAll[a] || a-b;});
+  var ranks=orderDesc.map(function(i){return ranksAll[i];});
+  var suits=cards.map(function(c){return c.suit;});
+  var cnt={}; ranksAll.forEach(function(r){cnt[r]=(cnt[r]||0)+1;});
+  var groups=Object.keys(cnt).map(function(k){return cnt[k];}).sort(function(a,b){return b-a;});
+  var level=0, usedIdx=[], rankKey=[];
+  function useRank(r,limit){
+    var got=0;
+    orderDesc.forEach(function(i){ if(ranksAll[i]===r && got<limit){usedIdx.push(i); got++;} });
+  }
+  function useAll(){ orderDesc.forEach(function(i){usedIdx.push(i);}); }
+  var isFlush=false, isStraight=false;
+  if(n===5){
+    isFlush = suits.every(function(s){return s===suits[0];});
+    var sorted=ranks.slice().sort(function(a,b){return a-b;});
+    isStraight=true;
+    for(var i=1;i<5;i++){ if(sorted[i]!==sorted[i-1]+1){isStraight=false;break;} }
+    var wheel=(sorted[0]===2&&sorted[1]===3&&sorted[2]===4&&sorted[3]===5&&sorted[4]===14);
+    if(wheel) isStraight=true;
+    if(isStraight&&isFlush){
+      if(ranks[0]===14&&ranks[1]===13){ level=9; useAll(); rankKey=[14]; }
+      else { level=8; useAll(); rankKey=wheel?[5]:ranks.slice(0,1); }
+    } else if(groups[0]===4){ level=7;
+      Object.keys(cnt).forEach(function(k){if(cnt[k]===4)useRank(+k,4);});
+      rankKey=Object.keys(cnt).filter(function(k){return cnt[k]===4;}).map(Number).
+        concat(orderDesc.filter(function(i){return cnt[ranksAll[i]]===4?false:true;}).map(function(i){return ranksAll[i];}));
+    } else if(groups[0]===3&&groups[1]===2){ level=6; useAll();
+      rankKey=Object.keys(cnt).filter(function(k){return cnt[k]===3;}).map(Number)
+        .concat(Object.keys(cnt).filter(function(k){return cnt[k]===2;}).map(Number));
+    } else if(isFlush){ level=5; useAll(); rankKey=ranks.slice(); }
+    else if(isStraight){ level=4; useAll(); rankKey=wheel?[5]:ranks.slice(0,1); }
+    else if(groups[0]===3){ level=3;
+      Object.keys(cnt).forEach(function(k){if(cnt[k]===3)useRank(+k,3);});
+      rankKey=Object.keys(cnt).filter(function(k){return cnt[k]===3;}).map(Number)
+        .concat(orderDesc.filter(function(i){return cnt[ranksAll[i]]<3;}).map(function(i){return ranksAll[i];}));
+    } else if(groups[0]===2&&groups[1]===2){ level=2;
+      var pairRanks=Object.keys(cnt).filter(function(k){return cnt[k]===2;}).map(Number).sort(function(a,b){return b-a;});
+      pairRanks.forEach(function(r){useRank(r,2);});
+      rankKey=pairRanks.concat(orderDesc.filter(function(i){return cnt[ranksAll[i]]===1;}).map(function(i){return ranksAll[i];}));
+    } else if(groups[0]===2){ level=1;
+      Object.keys(cnt).forEach(function(k){if(cnt[k]===2)useRank(+k,2);});
+      rankKey=Object.keys(cnt).filter(function(k){return cnt[k]===2;}).map(Number)
+        .concat(orderDesc.filter(function(i){return cnt[ranksAll[i]]===1;}).map(function(i){return ranksAll[i];}));
+    } else { level=0; usedIdx=[orderDesc[0]]; rankKey=ranks.slice(); }
+  } else if(n===4){
+    if(groups[0]===4){ level=7; useAll(); rankKey=[ranks[0]]; }
+    else if(groups[0]===3){ level=3;
+      Object.keys(cnt).forEach(function(k){if(cnt[k]===3)useRank(+k,3);});
+      rankKey=Object.keys(cnt).filter(function(k){return cnt[k]===3;}).map(Number)
+        .concat(orderDesc.filter(function(i){return cnt[ranksAll[i]]===1;}).map(function(i){return ranksAll[i];}));
+    } else if(groups[0]===2&&groups[1]===2){ level=2;
+      var pr2=Object.keys(cnt).filter(function(k){return cnt[k]===2;}).map(Number).sort(function(a,b){return b-a;});
+      pr2.forEach(function(r){useRank(r,2);}); rankKey=pr2;
+    } else if(groups[0]===2){ level=1;
+      Object.keys(cnt).forEach(function(k){if(cnt[k]===2)useRank(+k,2);});
+      rankKey=Object.keys(cnt).filter(function(k){return cnt[k]===2;}).map(Number)
+        .concat(orderDesc.filter(function(i){return cnt[ranksAll[i]]===1;}).map(function(i){return ranksAll[i];}));
+    } else { level=0; usedIdx=[orderDesc[0]]; rankKey=ranks.slice(); }
+  } else if(n===3){
+    if(groups[0]===3){ level=3; useAll(); rankKey=[ranks[0]]; }
+    else if(groups[0]===2){ level=1;
+      Object.keys(cnt).forEach(function(k){if(cnt[k]===2)useRank(+k,2);});
+      rankKey=Object.keys(cnt).filter(function(k){return cnt[k]===2;}).map(Number)
+        .concat(orderDesc.filter(function(i){return cnt[ranksAll[i]]===1;}).map(function(i){return ranksAll[i];}));
+    } else { level=0; usedIdx=[orderDesc[0]]; rankKey=ranks.slice(); }
+  } else if(n===2){
+    if(groups[0]===2){ level=1; useAll(); rankKey=[ranks[0]]; }
+    else { level=0; usedIdx=[orderDesc[0]]; rankKey=ranks.slice(); }
+  } else if(n===1){ level=0; usedIdx=[0]; rankKey=[ranksAll[0]]; }
+  var points=usedIdx.reduce(function(s,i){return s+ranksAll[i];},0);
+  return {level:level, key:HAND_KEYS[level], name:HAND_NAMES[level], points:points,
+          usedIdx:usedIdx, isFlush:isFlush, isStraight:isStraight, counts:cnt, rankKey:rankKey};
+}
+
+/* ---------------- 计分（纯函数） ----------------
+   mod = {baseAdd,baseMult,ptsAdd,ptsMult,totalAdd,totalMult,permaBase} */
+function computeScore(handRes, mod){
+  mod=mod||{};
+  var baseAdd=mod.baseAdd||0, baseMult=mod.baseMult||1;
+  var ptsAdd=mod.ptsAdd||0, ptsMult=mod.ptsMult||1;
+  var totalAdd=mod.totalAdd||0, totalMult=mod.totalMult||1, permaBase=mod.permaBase||0;
+  var base=C.hands[handRes.key]+permaBase;
+  var sub=(base+baseAdd)*baseMult + (handRes.points+ptsAdd)*ptsMult;
+  var final=(sub+totalAdd)*totalMult;
+  return Math.round(final*100)/100;
+}
+/* ---------------- 像素头像（16×16 字符画） ---------------- */
+var PIX = {
+  draw:function(canvas, rows, pal){
+    var ctx=canvas.getContext('2d'); ctx.imageSmoothingEnabled=false;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    var n=rows.length,m=rows[0].length, sx=canvas.width/m, sy=canvas.height/n;
+    for(var y=0;y<n;y++){for(var x=0;x<m;x++){
+      var ch=rows[y][x]; if(!pal[ch]) continue;
+      ctx.fillStyle=pal[ch];
+      ctx.fillRect(Math.floor(x*sx),Math.floor(y*sy),Math.ceil(sx),Math.ceil(sy));
+    }}
+  }
+};
+var PORTRAITS = {
+  deathKnight: {pal:{k:'#0c0c0c',s:'#c9d6e8',r:'#7a1f2b',g:'#4a5a6a'},rows:[
+    '................','.....kkkkkk......','....kssssssk.....','...kssssssssk....',
+    '...ksrssssrsk....','...kssssssssk....','...ksssksskssk...','....kssssssssk...',
+    '...kggggggggk...','..kggggggggggk..','..kgkggggggkgk..','..kgkggggggkgk..',
+    '...kggggggggk...','....kkk..kkk....','................','................']},
+  phantomAssassin:{pal:{k:'#0c0c0c',p:'#5a3a8a',w:'#e8e8f0',e:'#ff5a5a'},rows:[
+    '................','......kk.........','.....kppk........','....kppppk.......',
+    '...kppppppk......','..kpkppppkpk.....','..kpkpepekpk.....','..kppppppppk.....',
+    '...kppwwppk......','....kpppppk......','...kpk..kpk......','..kpk....kpk.....',
+    '..kk......kk.....','................','................','................']},
+  antiMage: {pal:{k:'#0c0c0c',b:'#2a4a8a',c:'#e8c89a',w:'#3aa3df'},rows:[
+    '................','....kkkkkk.......','...kbbbbbbk......','..kbbbbbbbbk.....',
+    '..kbbwbbwbbk....','..kbbbbbbbbk.....','..kbbccccbbk.....','...kcccccck......',
+    '....kcccck.......','...kcccccck......','..kcccccccck.....','..kcckkkkcck.....',
+    '................','................','................','................']},
+  archMage: {pal:{k:'#0c0c0c',b:'#3a3a8a',w:'#f0f0f0',y:'#f0b429'},rows:[
+    '................','......kyk.......','.....kywyk......','....kwwwwwk.....',
+    '...kwwbbbbwk....','..kwkbbbbkwk....','..kwkbbbbkwk....','..kbbbbbbbbk....',
+    '..kbybbbbybk....','..kbbbbbbbbk.....','...kbbbbbbk.....','....kbbbbk......',
+    '...kkkkkkkk.....','................','................','................']},
+  treant: {pal:{k:'#0c0c0c',g:'#2f6b3f',d:'#5a3a1a',e:'#8fe08a'},rows:[
+    '................','....kgggggk......','...kgggggggk.....','..kggkgggkggk....',
+    '..kgggggggggk....','..kgggegggegk....','..kgggggggggk....','...kgggggggk.....',
+    '....kddddk......','...kddddddk......','..kdkddddkdk.....','..kdkddddkdk.....',
+    '...kddddddk......','....kkkkkk.......','................','................']},
+  juggernaut: {pal:{k:'#0c0c0c',o:'#e08a2a',c:'#e8c89a',r:'#c22'},rows:[
+    '................','.....kkkkk.......','....kooooook.....','...kooooooook....',
+    '...kokcccook.....','...kocccccok.....','...kocrccrco.....','....kccccck......',
+    '.....kcccck......','....kooooook.....','...kooooooook....','..kooookkoooook..',
+    '................','................','................','................']},
+  viper: {pal:{k:'#0c0c0c',g:'#4a8a2a',y:'#e0e04a',e:'#ff3a3a'},rows:[
+    '................','.......kk........','......kggk.......','..kk.kggk.kk.....',
+    '.kyk.kggg.kyk....','.kyk.kggek.kyk...','.....kgggk.......','....kgggggk......',
+    '...kgggggggk.....','..kgggggggggk....','..kgkggggkgk.....','...kgggggggk.....',
+    '....kkkkkk.......','................','................','................']},
+  chaosKnight:{pal:{k:'#0c0c0c',p:'#8a5adf',r:'#e2503d',b:'#4aa3df'},rows:[
+    '................','.....kkkkk.......','....kpppppk......','...kprprprpk.....',
+    '..kpppppppppk....','..kpkppppkpk.....','..kpbppppbpk.....','..kppppppppk.....',
+    '...kpppppppk.....','..kprpppprpk.....','..kppppppppk.....','...kkkkkkkkk.....',
+    '................','................','................','................']},
+  lich: {pal:{k:'#0c0c0c',b:'#3a8acf',w:'#dff0ff',e:'#3affea'},rows:[
+    '................','....kkkkkk.......','...kbbbbbbk......','..kbbbbbbbbk.....',
+    '..kbebbbbebk.....','..kbbbbbbbbk.....','..kbbbbbbbbk.....','..kbwwbbbbwk.....',
+    '...kbbbbbbk......','...kbbbbbbk......','....kkkkkk.......','................',
+    '................','................','................','................']},
+  bloodMage:{pal:{k:'#0c0c0c',r:'#c22',o:'#e08a2a',y:'#f0d04a'},rows:[
+    '................','....kkkkkk.......','...krrrrrrrk.....','..krrrrrrrrrk....',
+    '..kryyrrryyrk....','..krryrrryrrk....','..krrrrrrrrrk....','..krrooorrrk.....',
+    '...krrrrrrrk.....','....krrrrrk......','...kooooooook....','..kooooooooook...',
+    '................','................','................','................']}
+};
+
+/* ---------------- 技能大图 16×16 ---------------- */
+var SKILL_ART = {
+  midas:{pal:{k:'#000',g:'#f0b429',w:'#fff3c0',s:'#c9d6e8'},rows:[
+    '......kk........','.....kggk.......','....kgwggk......','...kgwgwggk.....',
+    '..kggggggggk....','..kgwggggwggk...','..kgggggggggk...','...kgggggggk....',
+    '....kssssk......','....kssssk......','....kssssk......','.....kssk.......',
+    '.....kssk.......','....kk..kk......','................','................']},
+  spadeWish:{pal:{k:'#000',b:'#1a1a2a',w:'#cfd6e8'},rows:[
+    '.......k........','......kwk.......','.....kwwk.......','....kwwwk.......',
+    '...kwwwwwk......','..kwwwwwwwk.....','.kwwwwwwwwwk....','..kwwwwwwwk.....',
+    '...kwwwwwk......','....kwwwk.......','.....kwk........','......k.........',
+    '...k.....k......','..kkk.....kkk...','................','................']},
+  conjure:{pal:{p:'#b56ce0',y:'#f0b429',k:'#000',w:'#e8d8ff'},rows:[
+    'y.....y.........','.y...y..........','..y.y...........','...y............',
+    '...kpk..........','...kpk..........','..kpppk.........','.kppwppk........',
+    'kpppppppk.......','.kpppppk........','..kpppk.........','...kpk..........',
+    '....k...........','................','................','................']},
+  refresh:{pal:{c:'#4aa3df',k:'#000',w:'#bfe8ff'},rows:[
+    '....kkkk.......','...kwwwwk......','..kw....k......','.kc......k.....',
+    'kc........k....','k.........k....','k.........k....','k....cc...k....',
+    'k...c..c..k....','.k.c....c.k....','..kc....ck.....','...kcccck......',
+    '.....k.........','................','................','................']},
+  nether:{pal:{n:'#5a4a8a',w:'#c9b8e8',k:'#000'},rows:[
+    '................','..k........k...','...kn....nk....','....kn..nk.....',
+    '.....kwnk......','.....kwnk......','....kwnwnk.....','...kwnwwwnk....',
+    '..kwnwwwwwnk...','..kwnwwwwwnk...','...kwnwwwnk....','....kwnwnk.....',
+    '.....kwnk......','......kk.......','................','................']},
+  forceStaff:{pal:{o:'#e08a2a',k:'#000',w:'#ffd9a0',b:'#5a3a1a'},rows:[
+    '......k.........','.....kwk........','.....kwk........','.....kwk........',
+    '....kwwk........','...kwwwwk.......','..kwoowowk......','.kwoooooowk.....',
+    'kbwoooooowbk....','.kwoooooowk.....','..kwoooowk......','...kwwwwk.......',
+    '....kbbk........','....kbbk........','................','................']},
+  mechasm:{pal:{g:'#7ec850',w:'#fff',k:'#000',s:'#c9d6e8'},rows:[
+    '................','...kk....kk.....','..kwwk..kwwk....','.kwwwwkkwwwwk...',
+    'kwwwwwwwwwwwk...','.kwwwwwwwwwk....','..kgwwwwwwgk....','...kgwwwwgk.....',
+    '....kgwwgk......','.....kgwgk......','.....kgwgk......','....kgggk.......',
+    '...kssssssk.....','..kssssssssk....','................','................']},
+  daedalus:{pal:{r:'#e2503d',k:'#000',w:'#ffd0c8',g:'#8a8f98'},rows:[
+    '................','..k.............','..krk...........','..krrk..........',
+    '..krrrk.........','..krrgrrk.......','..krrggrrk......','..krrgwgrrk.....',
+    '..krrgwgrk......','...krrggrk......','....krrgrk......','.....krrk.......',
+    '......krk.......','......kk........','................','................']},
+  aegis:{pal:{s:'#c9d6e8',y:'#f0b429',k:'#000',w:'#fff'},rows:[
+    '....kkkk........','...kwwwwk.......','..kssysssk......','.kssyysssk......',
+    'kssyyyysssk.....','kssyysysssk.....','.kssyyyysssk....','..kssyysssk.....',
+    '...kssyssk......','....kssssk......','.....kssk.......','......ksk.......',
+    '.....kssk.......','....kkk.kkk.....','................','................']},
+  bloodstone:{pal:{b:'#c22',r:'#ff9a8a',k:'#000',w:'#ffd9d2'},rows:[
+    '....k....k......','...krb..brk.....','..krrrbbrrrk....','.krrrrbbbrrrk...',
+    'krrrrrbwbbrrrk..','krrrrbwbbrrrk...','.krrrrbbbrrrk...','..krrrbbrrrk....',
+    '...krrbbrrk.....','....krbbrk......','.....krbrk......','......krk.......',
+    '.....krrk.......','....kkk.kkk.....','................','................']},
+  phase:{pal:{l:'#8fe0ff',k:'#000',w:'#e8f8ff'},rows:[
+    '................','...k............','...klk..........','...kllk.........',
+    '...klllk........','...kllwlk.......','...kllwllk......','...kllwlllk.....',
+    '...kllwlllk.....','...kllwllk......','...kllwlk.......','...klllk........',
+    '...kllk..........','...klk...........','...kk...........','................']},
+  drum:{pal:{o:'#e08a2a',w:'#fff3c0',k:'#000',b:'#5a3a1a'},rows:[
+    '................','....kkkkk.......','...kwwwwwk......','..kwoooowk......',
+    '.kwoooooowk.....','kwoowwwooowk....','kwoowwwooowk....','.kwoooooowk.....',
+    '..kwoooowk......','...kwwwwwk......','....kbbbbk......','....kbbbbk......',
+    '....kbbbbk......','...kkbbbkk......','................','................']},
+  heart:{pal:{r:'#c22',p:'#ffb0b0',k:'#000'},rows:[
+    '................','..krr..rrk.....','.krprr.rrprk....','kppprrrrpppk....',
+    'kpprrrrrrppk....','.kprrrrrrrk.....','..krrrrrrk......','...krrrrrk......',
+    '....krrrk.......','.....krk........','.....krk........','....krrk........',
+    '....kppk........','...kkk.kkk......','................','................']},
+  shiva:{pal:{c:'#7fd8ff',k:'#000',w:'#e8f8ff',b:'#2a5a8a'},rows:[
+    'k...k...k......','.k.k...k.k......','..kc...ck.......','..kcckckcck.....',
+    '...kccck........','..kcccccck......','.kcccwwccck.....','kcccwwwwccck....',
+    '.kcccwwccck.....','..kcccccck......','...kccck........','....kcck........',
+    '....kbbk........','....kbbk........','................','................']},
+  ring:{pal:{y:'#f0b429',k:'#000',w:'#fff3c0'},rows:[
+    '................','...kkkkkkk......','..kwwwwwwwk.....','.wkyyyykywk.....',
+    'kwyyyyyyyywk....','kwyyyyyyyywk....','.kwyyyyyywk.....','..kwyyyywk......',
+    '...kwyywk.......','....kwwk........','.....kwk........','.....kwk........',
+    '....kwwk........','...kkk.kkk......','................','................']},
+  armlet:{pal:{r:'#c22',o:'#e08a2a',k:'#000',w:'#ffd0a0'},rows:[
+    '................','..krk....k......','..krrk...k......','..krrrk..k......',
+    '..krrork.k......','..krroorkk......','..krroorrk......','..krroorrk......',
+    '..krroork.......','...krork........','....krk.........','....krk.........',
+    '....krk.........','...kkk..........','................','................']},
+  headdress:{pal:{w:'#fff',r:'#c22',k:'#000',g:'#7ec850'},rows:[
+    '................','.....k.k........','....krw.rk......','...krwwwrk......',
+    '..krwwwwwrk.....','..kwwwwwwwk.....','...kwwwwwk......','....kwwwk.......',
+    '.....kwk........','....kggk........','...kggggk.......','..kggggggk......',
+    '.kggk..kggk.....','kkk......kkk....','................','................']},
+  deso:{pal:{g:'#5a5f68',r:'#e2503d',k:'#000',w:'#cfd6e8'},rows:[
+    '................','..k........k....','..kgk......k....','..kggk....krk...',
+    '..kgggk..krrk..','..kggggk.krrrk.','..kgggggkrrrgk.','..kgggggggrrgk..',
+    '..kgggggggrgk..','..kgggggggrgk...','...kgggggrk....','....kggggk.....',
+    '.....kggk......','......kkk......','................','................']},
+  potion:{pal:{b:'#3a6acf',w:'#cfe8ff',k:'#000',p:'#b56ce0'},rows:[
+    '................','....kkk.........','...kwwk.........','..kwwwk.........',
+    '.kwwwwwk........','kwwwwwwwk.......','kwwbwwwwk.......','kwwbwwwwk.......',
+    '.kwwwwwk........','..kwwwk.........','...kwwk..........','....kpk.........',
+    '....kpk.........','...kpppk........','................','................']},
+  bkb:{pal:{y:'#f0b429',k:'#000',w:'#fff3c0',p:'#b56ce0'},rows:[
+    '......k.........','.....kyk........','.....kyk........','....kyyk........',
+    '....kyyk........','...kyyyk........','..kyyyyk........','.kyypyyyk.......',
+    'kyypyyyyyk......','kyyyyyyyk.......','.kyyyyyk........','..kyyyk.........',
+    '...kyyk.........','...kkyk.........','................','................']},
+  butterfly:{pal:{w:'#e8e8f0',b:'#4aa3df',k:'#000',p:'#b56ce0'},rows:[
+    '................','.kwk....kwk.....','kwwk....kwwk....','kwwk...kwwk.....',
+    '.kwk...kwwk.....','..k....kwwk.....','...kkbpkk.......','...kbpppbk......',
+    '...kbpppbk......','...kkbpkk.......','..k....kwwk.....','.kwk...kwwk.....',
+    'kwwk...kwwk.....','kwwk....kwk.....','.kwk....kwk.....','................']},
+  manta:{pal:{c:'#4aa3df',w:'#cfe8ff',k:'#000'},rows:[
+    '................','.kc........ck...','.kcck....kcck...','.kccck...kcck...',
+    '..kcck...kcck...','...kck...kcck...','....kk...kcck...','....kkbkkkcck...',
+    '....kkbkkkcck...','....kk...kcck...','...kck...kcck...','..kcck...kcck...',
+    '.kccck...kcck...','.kcck....kcck...','.kc........ck...','................']},
+  dagon:{pal:{r:'#e2503d',o:'#e08a2a',k:'#000',w:'#ffd0c8'},rows:[
+    '......k.........','.....krk........','.....krk........','....krrk........',
+    '....krrk........','...krrrk........','..krrork........','.krroorrk.......',
+    'krroooorrk......','krroooorrk......','.krroorrk.......','..krrrrk........',
+    '...krrrk........','...krrrk........','....kkk.........','................']},
+  bfury:{pal:{g:'#8a8f98',k:'#000',w:'#e8e8f0',r:'#c22'},rows:[
+    'k............k..','kgk..........k..','kggk........krk.','kgggk......krrk.',
+    'kggggk....krrrk.','.kgggggk..krrrk.','..kggggggrrrrk..','...kgggggrrk....',
+    '..kggggggrrrrk..','.kgggggk..krrrk.','kgggggk....krrrk','kgggk......krrk.',
+    'kggk........krk.','kgk..........k..','k............k..','................']},
+  circlet:{pal:{y:'#f0b429',k:'#000',w:'#fff3c0'},rows:[
+    '................','....kkkkkk......','...kwwwwwwk.....','..kwyyyyyywk....',
+    '.kwyyyyyyyywk...','kwyyyyyyyyyywk..','kwyyyyyyyyyywk..','.kwyyyyyyyywk...',
+    '..kwyyyyyywk....','...kwwwwwwk.....','....kkkkkk......','................',
+    '................','................','................','................']},
+  lifepotion:{pal:{r:'#c22',w:'#ffd9d2',k:'#000',p:'#b56ce0'},rows:[
+    '....kkk.........','...kwwk.........','..kwwwwk........','.kwwwwwwk.......',
+    'kwwrwwrwwwk.....','kwwrwwrwwwk.....','.kwwwwwwk.......','..kwwwwk........',
+    '...kwwk.........','....kpk.........','....kpk.........','...kpppk........',
+    '..kpppppk.......','................','................','................']},
+  meteor:{pal:{o:'#e08a2a',r:'#e2503d',k:'#000',w:'#ffd0a0',y:'#f0d04a'},rows:[
+    '................','..krk...........','..krrrk.........','..krryrrk.......',
+    '..krryyrrk......','...kryyyrrk.....','....kyyyrk......','.....kyyk.......',
+    '....koook.......','...koooook......','..koooooook.....','.kooo.ooook.....',
+    'koo.....ooook...','kk.......kkkk...','................','................']}
+};
+
+/* ---------------- 定义 ---------------- */
+var HERO_DEFS=[
+  {key:'deathKnight',    name:'死亡骑士', pass:'死亡契约：败局后 50% 概率只扣 0.5 血'},
+  {key:'phantomAssassin',name:'幻影刺客', pass:'恩赐解脱：胜局 20% 暴击，对方额扣 1 血（每局限 1 次）'},
+  {key:'antiMage',       name:'敌法师',   pass:'法力汲取：每输 1 局立即获得 1 张随机技能牌'},
+  {key:'archMage',       name:'大法师',   pass:'辉煌光环：初始技能手牌 4 张，上限 6'},
+  {key:'treant',         name:'树精卫士', pass:'自然恢复：每胜 1 局立即回 0.5 血，整场最多回 3 点'},
+  {key:'juggernaut',     name:'剑圣',     pass:'剑舞：高牌 / 一对 / 三条结算时，有效牌点 +8'},
+  {key:'viper',          name:'毒龙',     pass:'毒性叠加：每胜 1 局对方叠 1 层毒，累计 3 层后下次败局额扣 1 血'},
+  {key:'chaosKnight',    name:'混沌骑士', pass:'混沌一击：双方牌型等级完全相同时，60% 判己方胜'},
+  {key:'lich',           name:'巫妖',     pass:'霜冻护甲：牌型为高牌 / 一对 / 两对时，50% 得 10 点额外基础分'},
+  {key:'bloodMage',      name:'血魔法师', pass:'烈焰筛选：初始发牌与免费换牌抽不到 2、3 点'}
+];
+var SKILL_DEFS={
+  midas:     {name:'迈达斯之手', tag:'改扑克',  desc:'选择 1 张扑克牌，将其点数变为 A，花色不变。'},
+  spadeWish: {name:'黑桃祈愿',   tag:'改扑克',  desc:'选择 1～2 张扑克牌，将其花色变为黑桃。'},
+  conjure:   {name:'无中生有',   tag:'抽技能',  desc:'使用后立即从技能牌库抽 2 张技能牌。'},
+  refresh:   {name:'刷新球',     tag:'换技能',  desc:'弃掉全部技能牌，重新抽取相同数量（含自身）。'},
+  nether:    {name:'净魂之刃',   tag:'换扑克',  desc:'自动弃掉手中所有点数 ≤5 的牌，并补相同数量新牌。'},
+  forceStaff:{name:'原力法杖',   tag:'改扑克',  desc:'选择 1～2 张扑克牌，各自点数 +1。'},
+  mechasm:   {name:'梅肯斯姆',   tag:'加基础分',desc:'本局结算牌型基础分 +10。'},
+  daedalus:  {name:'代达罗斯之殇',tag:'点数相乘',desc:'本局结算有效牌点 ×1.3。'},
+  aegis:     {name:'不朽之守护', tag:'防御',    desc:'本局若败，免除全部扣血。'},
+  bloodstone:{name:'血精石',     tag:'持续',    desc:'本局若胜，下一回合开局额外获得 1 张技能牌。'},
+  phase:     {name:'相位鞋',     tag:'条件相乘',desc:'牌型为对子 / 高牌时，有效牌点 ×2。'},
+  drum:      {name:'韧鼓',       tag:'条件加总',desc:'最大牌型为两对时，最终总分 +15。'},
+  heart:     {name:'龙心',       tag:'总分相乘',desc:'本回合最终总分 ×1.2。'},
+  shiva:     {name:'西瓦之守护', tag:'条件加总',desc:'最大牌型为三条及以上时，最终总分 +12。'},
+  ring:      {name:'王者之戒',   tag:'持续',    desc:'下一小局开局获得一次额外的换牌机会。'},
+  armlet:    {name:'食尸鬼王臂章',tag:'加基础分',desc:'本局牌型基础分 +15；但若本局败北，额外扣 0.5 血。'},
+  headdress: {name:'回复头巾',   tag:'回复',    desc:'本局结算后回复 0.5 血，不超过血量上限。'},
+  deso:      {name:'暗灭',       tag:'永久强化',desc:'本局结算后若你胜利，永久增加 5 点牌型基础分。'},
+  potion:    {name:'净化药水',   tag:'换扑克',  desc:'自动弃掉手中点数最小的 1 张牌，从抽牌库补 1 张。'},
+  bkb:       {name:'黑皇杖',     tag:'压制',    desc:'使对方本回合使用的技能牌全部失效。'},
+  butterfly: {name:'蝴蝶',       tag:'概率相乘',desc:'结算时 50% 概率，最终总分 ×1.15。'},
+  manta:     {name:'幻影斧',     tag:'改扑克',  desc:'选择 1 张扑克牌，将手中点数最小的牌变为与其点数相同，花色不变。'},
+  dagon:     {name:'达贡之神力', tag:'加点数',  desc:'结算有效牌点 +6；牌型为对子 / 两对时提升至 +12。'},
+  bfury:     {name:'狂战斧',     tag:'加点数',  desc:'结算时，有效牌中点数最大的一张，其点数额外重复计算一次。'},
+  circlet:   {name:'头环',       tag:'加点数',  desc:'本回合所有打出的有效牌各 +2 点有效牌点数。'},
+  lifepotion:{name:'生命药水',   tag:'持续回复',desc:'接下来两回合，每回合开始时回复 0.5 血。'},
+  meteor:    {name:'陨星锤',     tag:'改扑克',  desc:'选择任意 2 张扑克牌，点数各 +3。'}
+};
+var TARGETED={midas:1,spadeWish:1,forceStaff:1,manta:1,meteor:1};
+
+/* ---------------- 音效 ---------------- */
+var AC=null;
+function audio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}return AC;}
+function tone(freq,dur,type,vol){
+  var ctx=audio();if(!ctx)return;
+  var o=ctx.createOscillator(),g=ctx.createGain();
+  o.type=type||'square';o.frequency.value=freq;
+  g.gain.setValueAtTime(vol||.1,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dur);
+  o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+dur);
+}
+var SFX={
+  deal:function(){tone(600,.06,'square',.07);},
+  discard:function(){tone(300,.08,'sawtooth',.09);},
+  skill:function(){tone(880,.12,'triangle',.1);setTimeout(function(){tone(1200,.1,'triangle',.09);},60);},
+  reveal:function(){tone(440,.15,'square',.09);setTimeout(function(){tone(660,.2,'square',.09);},120);},
+  hurt:function(){tone(160,.25,'sawtooth',.13);},
+  win:function(){[523,659,784].forEach(function(f,i){setTimeout(function(){tone(f,.15,'triangle',.1);},i*120);});},
+  lose:function(){[400,300,200].forEach(function(f,i){setTimeout(function(){tone(f,.2,'sawtooth',.1);},i*150);});}
+};
+
+/* ---------------- 状态 ---------------- */
+var G=null;
+function newPlayer(name,isAI){
+  return {name:name,isAI:!!isAI,hero:null,hp:0,maxHp:0,
+    hand:[],played:[],playedRes:null,
+    skDraw:[],skDiscard:[],skHand:[],usedSkills:[],
+    pendingMod:null,poison:0,bloodstonePending:0,critUsed:false,
+    extraSwap:0,salveTurns:0,permBase:0,armletPending:false,healsTotal:0};
+}
+function freshGame(diffKey){
+  G={diff:diffKey||'normal',agg:C.ai[diffKey]||C.ai.normal,
+    pokerDraw:[],pokerDiscard:[],
+    p:newPlayer('你',false),ai:newPlayer('AI',true),
+    phase:'hero',timer:null,timeLeft:0,
+    paused:false,over:false,round:0,busy:false,
+    discardSel:[],handPicks:{}};
+}
+
+/* ---------------- 牌库 ---------------- */
+function makeCard(suit,rank){return {suit:suit,rank:rank,origSuit:suit,origRank:rank,
+  uid:suit+rank+'_'+Math.random().toString(36).slice(2)};}
+function buildPokerDeck(){
+  var d=[];SUITS.forEach(function(s){for(var r=2;r<=14;r++)d.push(makeCard(s,r));});
+  return shuffle(d);
+}
+function buildSkillDeck(){
+  var d=[];Object.keys(C.skills).forEach(function(k){
+    for(var i=0;i<C.skills[k].count;i++)d.push({key:k,uid:k+'_'+Math.random().toString(36).slice(2)});});
+  return shuffle(d);
+}
+function drawOne(who){
+  if(G.pokerDraw.length===0){G.pokerDraw=shuffle(G.pokerDiscard);G.pokerDiscard=[];}
+  var tries=0;
+  while(G.pokerDraw.length&&tries<80){
+    var card=G.pokerDraw.pop();
+    if(who.hero==='bloodMage'&&card.rank<=C.heroes.bloodMage.skipMaxRank){
+      G.pokerDiscard.push(card);tries++;
+      if(G.pokerDraw.length===0&&G.pokerDiscard.length>0){G.pokerDraw=shuffle(G.pokerDiscard);G.pokerDiscard=[];}
+      continue;}
+    return card;
+  }
+  if(G.pokerDraw.length===0&&G.pokerDiscard.length>0){G.pokerDraw=shuffle(G.pokerDiscard);G.pokerDiscard=[];}
+  return G.pokerDraw.pop();
+}
+function drawSkill(who){
+  if(who.skDraw.length===0){who.skDraw=shuffle(who.skDiscard);who.skDiscard=[];}
+  if(who.skDraw.length===0)return null;
+  return who.skDraw.pop();
+}
+function skillCap(who){return who.hero==='archMage'?C.skillHandCapMage:C.skillHandCap;}
+function toDiscard(card){G.pokerDiscard.push(makeCard(card.origSuit,card.origRank));}
+
+/* ---------------- 红心 ---------------- */
+var HEART_ROWS=['.XX.XX.','XXXXXXX','XXXXXXX','.XXXXX.','..XXX..','...X...'];
+function drawHeart(canvas,st){
+  var ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(var y=0;y<HEART_ROWS.length;y++)for(var x=0;x<HEART_ROWS[y].length;x++){
+    if(HEART_ROWS[y][x]==='.')continue;
+    var fill=st==='full'?'#e23d3d':st==='half'?(x<3?'#e23d3d':'#5a2222'):'#5a2222';
+    ctx.fillStyle=fill;var sx=canvas.width/7,sy=canvas.height/HEART_ROWS.length;
+    ctx.fillRect(Math.floor(x*sx),Math.floor(y*sy),Math.ceil(sx),Math.ceil(sy));
+  }
+}
+function heartsHTML(hp,maxHp,w,h){
+  var s='',n=Math.ceil(maxHp);
+  for(var i=0;i<n;i++){var v=hp-i;
+    s+='<canvas class="hh" data-st="'+(v>=1?'full':v>0?'half':'empty')+'" width="'+w+'" height="'+h+'"></canvas>';}
+  return s;
+}
+function paintHearts(scope){scope.querySelectorAll('canvas.hh').forEach(function(cv){drawHeart(cv,cv.dataset.st);});}
+
+/* ---------------- 牌 HTML ---------------- */
+var SUIT_CN={'♠':'黑桃','♥':'红桃','♦':'方块','♣':'梅花'};
+function pcardHTML(card,o){
+  o=o||{};
+  var cls=['pcard',o.size||'big'];
+  if(o.back)cls.push('back');
+  else if(!SUIT_BLACK[card.suit])cls.push('redSuit');
+  if(o.clickable)cls.push('clickable');
+  if(o.sel)cls.push('sel');
+  if(o.target)cls.push('target');
+  if(o.dim)cls.push('dim');
+  if(o.pop)cls.push('bigpop');
+  if(o.back)return '<div class="'+cls.join(' ')+'" style="'+(o.w?'width:'+o.w+'px;height:'+o.h+'px;':'')+'"></div>';
+  return '<div class="'+cls.join(' ')+'" style="'+(o.w?'width:'+o.w+'px;height:'+o.h+'px;':'')+'">'+
+    '<div class="cr">'+rankLabel(card.rank)+'<small>'+card.suit+'</small></div>'+
+    '<div class="cs">'+card.suit+'</div>'+
+    '<div class="cname">'+SUIT_CN[card.suit]+rankLabel(card.rank)+'</div></div>';
+}
+function scardHTML(sk,o){
+  o=o||{};
+  var cls=['scard'];if(o.sm)cls.push('sm');if(o.used)cls.push('used');
+  return '<div class="'+cls.join(' ')+'"><div class="sart"><canvas width="80" height="80"></canvas></div>'+
+    '<div class="snm">'+SKILL_DEFS[sk.key].name+'</div></div>';
+}
+function hcardHTML(who,size){
+  var def=HERO_DEFS.filter(function(h){return h.key===who.hero;})[0];
+  var cls=['hcard',size||'big'];
+  if(who.poison>0)cls.push('poison');
+  return '<div class="'+cls.join(' ')+'"><div class="hart"><canvas width="96" height="96"></canvas></div>'+
+    '<div class="hnm">'+def.name+'</div>'+
+    '<div class="hhearts">'+heartsHTML(who.hp,who.maxHp,13,12)+'</div></div>';
+}
+function paintArt(canvas,key,gray){
+  var art=SKILL_ART[key];
+  if(!gray){PIX.draw(canvas,art.rows,art.pal);return;}
+  var pal={};Object.keys(art.pal).forEach(function(k){
+    var c=art.pal[k];
+    var r=parseInt(c.substr(1,2),16),g=parseInt(c.substr(3,2),16),b=parseInt(c.substr(5,2),16);
+    var y=Math.round(r*.3+g*.59+b*.11);pal[k]='rgb('+y+','+y+','+y+')';
+  });
+  PIX.draw(canvas,art.rows,pal);
+}
+
+/* ---------------- 悬停提示 ---------------- */
+var tipEl=$('tip'),tipTimer=null;
+function bindTip(el,title,tag,text){
+  el.addEventListener('mouseenter',function(){
+    clearTimeout(tipTimer);
+    tipTimer=setTimeout(function(){showTip(el,title,tag,text);},500);});
+  el.addEventListener('mouseleave',function(){clearTimeout(tipTimer);tipEl.style.display='none';});
+}
+function showTip(anchor,title,tag,text){
+  tipEl.innerHTML='<span class="tt">'+title+'</span>'+(tag?'<div>'+tag+'</div>':'')+'<p>'+text+'</p>';
+  tipEl.style.display='block';
+  var r=anchor.getBoundingClientRect();
+  var tw=tipEl.offsetWidth,th=tipEl.offsetHeight;
+  var x=r.right+12;if(x+tw>innerWidth-8)x=r.left-tw-12;
+  var y=clamp(r.top,8,innerHeight-th-8);
+  tipEl.style.left=x+'px';tipEl.style.top=y+'px';
+}
+
+/* ---------------- toast / 日志 ---------------- */
+var toastTimer=null,logs=[];
+function toast(msg){
+  var t=$('toast');t.textContent=msg;t.style.display='block';
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.style.display='none';},1800);
+}
+function addLog(msg,cls){logs.push({m:msg,c:cls||''});}
+
+/* ---------------- 飞牌 ---------------- */
+function rectOf(el){if(!el)return null;var r=el.getBoundingClientRect();
+  return {x:r.x,y:r.y,w:r.width,h:r.height};}
+function flyTo(fr,to,inner,dur,cb){
+  if(!fr){if(cb)cb();return;}
+  var g=document.createElement('div');g.className='flyGhost';
+  g.style.left=fr.x+'px';g.style.top=fr.y+'px';g.style.width=fr.w+'px';g.style.height=fr.h+'px';
+  g.innerHTML=inner;document.body.appendChild(g);
+  var dx=to?to.x-fr.x:0,dy=to?to.y-fr.y:0;
+  var sx=to?to.w/fr.w:1,sy=to?to.h/fr.h:1;
+  requestAnimationFrame(function(){requestAnimationFrame(function(){
+    g.style.transition='transform '+(dur||380)+'ms cubic-bezier(.45,.05,.5,1)';
+    g.style.transformOrigin='0 0';
+    g.style.transform='translate('+dx+'px,'+dy+'px) scale('+sx+','+sy+')';});});
+  setTimeout(function(){g.remove();if(cb)cb();},(dur||380)+40);
+}
+function backGhost(w,h){return pcardHTML(null,{back:true,w:w,h:h});}
+
+/* ---------------- 渲染 ---------------- */
+function renderHeroes(){
+  var pz=$('pHeroZone'),az=$('aiHeroZone');
+  pz.innerHTML='';az.innerHTML='';
+  if(G.p.hero){
+    pz.innerHTML=hcardHTML(G.p,'big');
+    PIX.draw(pz.querySelector('canvas'),PORTRAITS[G.p.hero].rows,PORTRAITS[G.p.hero].pal);
+    paintHearts(pz);
+  }
+  if(G.ai.hero){
+    az.innerHTML=hcardHTML(G.ai,'mid');
+    PIX.draw(az.querySelector('canvas'),PORTRAITS[G.ai.hero].rows,PORTRAITS[G.ai.hero].pal);
+    paintHearts(az);
+  }
+}
+function renderPlayerHand(){
+  var z=$('handZone');z.innerHTML='';
+  var click=(G.phase==='discard'||G.phase==='skill')&&!G.paused&&!G.busy;
+  G.p.hand.forEach(function(c,i){
+    var sel=G.phase==='discard'?G.discardSel.indexOf(i)>=0:!!G.handPicks[i];
+    z.insertAdjacentHTML('beforeend',pcardHTML(c,{clickable:click,sel:sel}));
+    var el=z.lastChild;
+    el.onclick=function(){onHandClick(i);};
+    bindTip(el,SUIT_CN[c.suit]+rankLabel(c.rank),'扑克牌',
+      G.phase==='discard'?'点击选中以换牌。':'点击高光：作为技能目标，或作为最终打出的牌。');
+  });
+}
+function renderPlayerSkills(){
+  var z=$('skillZone');z.innerHTML='';
+  var click=G.phase==='skill'&&!G.paused&&!G.busy;
+  G.p.skHand.forEach(function(sk){
+    var full=G.p.usedSkills.length>=C.maxSkillsPerRound;
+    z.insertAdjacentHTML('beforeend',scardHTML(sk,{used:full}));
+    var el=z.lastChild;
+    el.onclick=function(){if(click)onSkillClick(sk);};
+    var cv=el.querySelector('canvas');paintArt(cv,sk.key);
+    var d=SKILL_DEFS[sk.key];bindTip(el,d.name,d.tag,d.desc);
+  });
+}
+function renderAIHidden(){
+  var z=$('aiHiddenRow');z.innerHTML='';
+  for(var i=0;i<G.ai.hand.length;i++)z.insertAdjacentHTML('beforeend',pcardHTML(null,{back:true,size:'sm'}));
+}
+function renderAISkillMini(){
+  var z=$('aiSkillMini');z.innerHTML='';
+  G.ai.skHand.forEach(function(){
+    z.insertAdjacentHTML('beforeend',pcardHTML(null,{back:true,size:'sm'}));});
+  G.ai.usedSkills.forEach(function(k){
+    var d=document.createElement('div');d.className='miniUsed';
+    d.innerHTML='<canvas width="46" height="62"></canvas>';z.appendChild(d);
+    paintArt(d.querySelector('canvas'),k,true);
+  });
+}
+function renderUsedStrip(){
+  var z=$('usedStrip');z.innerHTML='<span class="uLab">本局已用 '+G.p.usedSkills.length+'/'+C.maxSkillsPerRound+'</span>';
+  G.p.usedSkills.forEach(function(k){
+    var d=document.createElement('div');d.className='miniUsed';
+    d.innerHTML='<canvas width="26" height="32"></canvas>';z.appendChild(d);
+    paintArt(d.querySelector('canvas'),k,true);
+  });
+}
+function renderPile(elId,n,bg){
+  var el=$(elId);el.innerHTML='';
+  for(var i=Math.min(n,4)-1;i>=0;i--){
+    var d=document.createElement('div');d.className='pcap';
+    d.style.background=bg;d.style.outline='2px solid #14181d';d.style.borderRadius='5px';
+    d.style.transform='translate('+(-i*2)+'px,'+(-i*2.5)+'px)';
+    el.appendChild(d);
+  }
+  var c=document.createElement('div');c.className='pcount';c.textContent=n;el.appendChild(c);
+}
+function renderPiles(){
+  renderPile('pilePokerDraw',G.pokerDraw.length,'repeating-linear-gradient(45deg,#2f6b3f 0 6px,#1c3a2a 6px 12px)');
+  renderPile('pilePokerDisc',G.pokerDiscard.length,'#f3ecd8');
+  renderPile('pileSkDraw',G.p.skDraw.length,'#241d3a');
+  renderPile('pileSkDisc',G.p.skDiscard.length,'#332a4a');
+}
+function phaseName(){
+  return G.phase==='discard'?'换牌阶段':G.phase==='skill'?'技能 / 出牌阶段':
+    G.phase==='reveal'?'亮牌结算':G.phase==='hero'?'准备':'—';
+}
+function renderInfo(){
+  var extra=(G.phase==='discard'||G.phase==='skill')?
+    ' · 剩余 <b>'+Math.max(0,G.timeLeft)+'</b> 秒':'';
+  $('infoLine').innerHTML='<b>第 '+G.round+' 回合</b> · '+phaseName()+extra;
+}
+function renderButtons(){
+  $('discardBtn').style.display=G.phase==='discard'?'':'none';
+  $('playBtn').style.display=G.phase==='skill'?'':'none';
+  $('discardBtn').textContent=G.p.extraSwap>0?'再次换牌':'换 牌';
+}
+function renderAll(){
+  renderHeroes();renderPlayerHand();renderPlayerSkills();
+  renderAIHidden();renderAISkillMini();renderUsedStrip();
+  renderPiles();renderInfo();renderButtons();
+}
+
+/* ---------------- 计时器 ---------------- */
+function startTimer(secs,cb){
+  stopTimer();G.timeLeft=secs;G._cb=cb;renderInfo();
+  G.timer=setInterval(function(){
+    if(G.paused||G.over)return;
+    G.timeLeft--;renderInfo();
+    if(G.timeLeft<=0){stopTimer();if(G._cb)G._cb();}
+  },1000);
+}
+function stopTimer(){if(G&&G.timer){clearInterval(G.timer);G.timer=null;}}
+
+/* ---------------- 回合开始 ---------------- */
+function startRound(){
+  G.round++;
+  G.discardSel=[];G.handPicks={};
+  [G.p,G.ai].forEach(function(w){
+    if(w.salveTurns>0){w.hp=Math.min(w.maxHp,w.hp+C.skills.lifepotion.heal);w.salveTurns--;}
+  });
+  if(G.round===1){
+    [G.p,G.ai].forEach(function(w){
+      var n=w.hero==='archMage'?C.skillStartHandMage:C.skillStartHand;
+      for(var s=0;s<n;s++){var d0=drawSkill(w);if(d0)w.skHand.push(d0);}
+    });
+  } else {
+    refillSkills(G.p);refillSkills(G.ai);
+  }
+  dealAnimated(G.p,function(){
+    dealAnimated(G.ai,function(){
+      G.phase='discard';G.discardSel=[];G.handPicks={};G.busy=false;
+      renderAll();
+      startTimer(C.time.discard,function(){doDiscard(true);});
+    });
+  });
+}
+function refillSkills(w){
+  var cap=skillCap(w);
+  if(w.bloodstonePending>0){
+    for(var i=0;i<w.bloodstonePending&&w.skHand.length<cap;i++){var b0=drawSkill(w);if(b0)w.skHand.push(b0);}
+    w.bloodstonePending=0;
+  }
+  for(var j=0;j<C.skillRefillPerRound&&w.skHand.length<cap;j++){var r0=drawSkill(w);if(r0)w.skHand.push(r0);}
+}
+function dealAnimated(w,cb){
+  w.hand=[];w.played=[];w.playedRes=null;w.usedSkills=[];w.armletPending=false;w.critUsed=false;w.critUsed=false;
+  w.pendingMod=freshMod();
+  var dest=w.isAI?$('aiHiddenRow'):$('handZone');
+  var src=$('pilePokerDraw');
+  renderAll();
+  var i=0;
+  (function next(){
+    if(i>=C.startCards){cb();return;}
+    var card=drawOne(w);w.hand.push(card);renderAll();
+    var kids=dest.children;var target=kids[kids.length-1];
+    target.style.visibility='hidden';
+    flyTo(rectOf(src),rectOf(target),backGhost(src.offsetWidth,src.offsetHeight),300,function(){
+      target.style.visibility='';SFX.deal();i++;next();});
+  })();
+}
+
+/* ---------------- 换牌 ---------------- */
+function onHandClick(i){
+  if(G.paused||G.busy)return;
+  if(G.phase==='discard'){
+    var p=G.discardSel.indexOf(i);
+    if(p>=0)G.discardSel.splice(p,1);else G.discardSel.push(i);
+    SFX.discard();renderAll();
+  } else if(G.phase==='skill'){
+    if(G.handPicks[i])delete G.handPicks[i];else G.handPicks[i]=1;
+    SFX.discard();renderAll();
+  }
+}
+function doDiscard(timeout){
+  if(G.phase!=='discard'||G.busy)return;
+  G.busy=true;
+  var sel=G.discardSel.slice().sort(function(a,b){return b-a;});
+  swapAnimated(G.p,sel,function(){
+    G.discardSel=[];
+    // AI 换牌（含王者戒额外一次）
+    aiDiscard();
+    if(G.ai.extraSwap>0){G.ai.extraSwap--;aiDiscard();}
+    if(G.p.extraSwap>0&&!timeout){
+      G.p.extraSwap--;G.busy=false;G.phase='discard';renderAll();
+      startTimer(C.time.discard,function(){doDiscard(true);});
+      return;
+    }
+    enterSkill();
+  });
+}
+function swapAnimated(w,sel,cb){
+  if(sel.length===0){cb();return;}
+  var hz=w.isAI?$('aiHiddenRow'):$('handZone');
+  var disc=$('pilePokerDisc'),draw=$('pilePokerDraw');
+  var removed=sel.map(function(i){return {c:w.hand[i],r:rectOf(hz.children[i])};});
+  sel.forEach(function(i){hz.children[i].style.visibility='hidden';});
+  var flown=0;
+  removed.forEach(function(o){
+    flyTo(o.r,rectOf(disc),backGhost(o.r.w,o.r.h),340,function(){flown++;
+      if(flown===removed.length)redraw();});
+  });
+  function redraw(){
+    removed.forEach(function(o){var i=w.hand.indexOf(o.c);w.hand.splice(i,1);toDiscard(o.c);});
+    var n=removed.length,arrived=0;
+    (function drawNext(){
+      if(arrived>=n){cb();return;}
+      var nc=drawOne(w);w.hand.push(nc);renderAll();
+      var z=w.isAI?$('aiHiddenRow'):$('handZone');
+      var t=z.children[z.children.length-1];t.style.visibility='hidden';
+      flyTo(rectOf(draw),rectOf(t),backGhost(draw.offsetWidth,draw.offsetHeight),320,function(){
+        t.style.visibility='';SFX.deal();arrived++;drawNext();});
+    })();
+  }
+}
+function enterSkill(){
+  G.phase='skill';G.handPicks={};G.busy=false;renderAll();
+  startTimer(C.time.skill,function(){requestPlay(true);});
+  setTimeout(aiSkillPlan,500);
+}
+
+/* ---------------- 技能（玩家） ---------------- */
+function freshMod(){return {baseAdd:0,baseMult:1,ptsAdd:0,ptsMult:1,totalAdd:0,totalMult:1,flags:{}};}
+function onSkillClick(sk){
+  if(G.phase!=='skill'||G.busy||G.paused)return;
+  if(G.p.usedSkills.length>=C.maxSkillsPerRound){toast('每回合最多使用 '+C.maxSkillsPerRound+' 张技能牌');return;}
+  var key=sk.key,cfg=C.skills[key];
+  if(TARGETED[key]){
+    var idxs=Object.keys(G.handPicks).map(Number);
+    var mn=cfg.pickMin||cfg.pick,mx=cfg.pick;
+    if(idxs.length<mn||idxs.length>mx){
+      toast('请先高光 '+mn+(mx>mn?'～'+mx:'')+' 张扑克牌，再点「'+SKILL_DEFS[key].name+'」');return;}
+    applyTargeted(G.p,key,idxs);
+  } else {
+    applyInstant(G.p,key,cfg);
+  }
+  consumeSkill(G.p,sk);
+}
+function consumeSkill(w,sk){
+  var i=w.skHand.indexOf(sk);if(i>=0){w.skHand.splice(i,1);w.skDiscard.push(sk);}
+  w.usedSkills.push(sk.key);
+  w.pendingMod=w.pendingMod||freshMod();
+  SFX.skill();flash('#7ec850');G.handPicks={};renderAll();
+}
+function applyTargeted(w,key,idxs){
+  var cfg=C.skills[key];
+  if(key==='midas')idxs.forEach(function(i){w.hand[i].rank=cfg.toRank;});
+  else if(key==='spadeWish')idxs.forEach(function(i){w.hand[i].suit='♠';});
+  else if(key==='forceStaff')idxs.forEach(function(i){w.hand[i].rank=Math.min(14,w.hand[i].rank+cfg.plus);});
+  else if(key==='meteor')idxs.forEach(function(i){w.hand[i].rank=Math.min(14,w.hand[i].rank+cfg.plus);});
+  else if(key==='manta'){
+    var rr=w.hand[idxs[0]].rank;
+    var others=w.hand.map(function(c,i){return {c:c,i:i};})
+      .filter(function(o){return o.i!==idxs[0];}).sort(function(a,b){return a.c.rank-b.c.rank;});
+    if(others[0])others[0].c.rank=rr;
+  }
+}
+function applyInstant(w,key,cfg){
+  var m=w.pendingMod=w.pendingMod||freshMod();
+  switch(key){
+    case 'conjure':
+      for(var d=0;d<cfg.draw;d++)if(w.skHand.length<skillCap(w)){var c0=drawSkill(w);if(c0)w.skHand.push(c0);}
+      break;
+    case 'refresh':{
+      var n=w.skHand.length;
+      w.skHand.forEach(function(s){w.skDiscard.push(s);});w.skHand=[];
+      for(var r=0;r<n;r++){var f0=drawSkill(w);if(f0)w.skHand.push(f0);}
+      break;}
+    case 'nether':{
+      var low=w.hand.filter(function(c){return c.rank<=cfg.maxRank;});
+      low.forEach(function(c){var i=w.hand.indexOf(c);w.hand.splice(i,1);toDiscard(c);});
+      for(var k=0;k<low.length;k++)w.hand.push(drawOne(w));
+      break;}
+    case 'potion':{
+      var s=w.hand.slice().sort(function(a,b){return a.rank-b.rank;})[0];
+      if(s){var i=w.hand.indexOf(s);w.hand.splice(i,1);toDiscard(s);w.hand.push(drawOne(w));}
+      break;}
+    case 'mechasm':m.baseAdd+=cfg.baseBonus;break;
+    case 'armlet':m.baseAdd+=cfg.baseBonus;w.armletPending=true;break;
+    case 'daedalus':m.ptsMult*=cfg.ptsMult;break;
+    case 'aegis':m.flags.aegis=true;break;
+    case 'bloodstone':m.flags.bloodstone=true;break;
+    case 'phase':m.flags.phase=true;break;
+    case 'drum':m.flags.drum=true;break;
+    case 'heart':m.totalMult*=cfg.totalMult;break;
+    case 'shiva':m.flags.shiva=true;break;
+    case 'ring':w.extraSwap+=cfg.extraSwap;break;
+    case 'headdress':m.flags.headdress=true;break;
+    case 'deso':m.flags.deso=true;break;
+    case 'bkb':m.flags.bkb=true;break;
+    case 'butterfly':m.flags.butterfly=true;break;
+    case 'dagon':m.flags.dagon=true;break;
+    case 'bfury':m.flags.bfury=true;break;
+    case 'circlet':m.flags.circlet=true;break;
+    case 'lifepotion':w.salveTurns=cfg.rounds;break;
+  }
+}
+
+/* ---------------- 出牌 ---------------- */
+function requestPlay(auto){
+  if(G.phase!=='skill'||G.busy)return;
+  var idxs=Object.keys(G.handPicks).map(Number);
+  if(!auto&&idxs.length===0){toast('请先高光要打出的牌，再点「出牌」');return;}
+  if(auto&&idxs.length===0)for(var t=0;t<G.p.hand.length;t++)idxs.push(t);
+  G.busy=true;stopTimer();
+  // 先记录所有起点
+  var pz=$('handZone'),az=$('aiHiddenRow');
+  var pRects=[],aRects=[];
+  for(var i=0;i<pz.children.length;i++)pRects.push(rectOf(pz.children[i]));
+  for(var j=0;j<az.children.length;j++)aRects.push(rectOf(az.children[j]));
+  var keep=idxs.slice().sort(function(a,b){return a-b;});
+  var dropIdx=pRects.map(function(_,i){return i;}).filter(function(i){return keep.indexOf(i)<0;});
+  var disc=$('pilePokerDisc');
+  dropIdx.forEach(function(i){pz.children[i].style.visibility='hidden';
+    flyTo(pRects[i],rectOf(disc),backGhost(pRects[i].w,pRects[i].h),350);});
+  setTimeout(function(){
+    // 先取出要打出的牌（splice 前，避免索引错位）
+    var playedCards=keep.slice().sort(function(a,b){return a-b;})
+      .map(function(i){return G.p.hand[i];});
+    // 未选进弃牌堆
+    dropIdx.sort(function(a,b){return b-a;}).forEach(function(i){
+      toDiscard(G.p.hand[i]);G.p.hand.splice(i,1);});
+    G.p.played=playedCards;
+    G.ai.played=G.ai.hand.slice();G.ai.hand=[];G.p.hand=[];
+    renderBattleFaces();
+    var pb=$('pBattleCards'),ab=$('aiBattleCards');
+    var n=0,total=G.p.played.length+G.ai.played.length;
+    function tick(){n++;if(n>=total)finish();}
+    G.p.played.forEach(function(c,k){
+      flyTo(pRects[keep[k]],rectOf(pb.children[k]),backGhost(pRects[keep[k]].w,pRects[keep[k]].h),360,tick);});
+    G.ai.played.forEach(function(c,k){
+      flyTo(aRects[k],rectOf(ab.children[k]),backGhost(aRects[k].w,aRects[k].h),360,tick);});
+    if(total===0)finish();
+    function finish(){G.phase='reveal';renderAll();setTimeout(resolveReveal,400);}
+  },380);
+}
+function renderBattleFaces(){
+  var pb=$('pBattleCards'),ab=$('aiBattleCards');
+  pb.innerHTML='';ab.innerHTML='';
+  G.p.played.forEach(function(c){pb.insertAdjacentHTML('beforeend',pcardHTML(c,{size:'mid'}));});
+  G.ai.played.forEach(function(c){ab.insertAdjacentHTML('beforeend',pcardHTML(c,{back:true,size:'mid'}));});
+}
+
+/* ---------------- AI ---------------- */
+function aiDiscard(){
+  var w=G.ai,agg=G.agg;
+  var res=evaluateHand(w.hand),swap=[];
+  w.hand.forEach(function(c,i){
+    if(res.usedIdx.indexOf(i)>=0)return;
+    var keep=clamp(.25+c.rank/14*.45,0,1)*(1.35-agg);
+    if(rnd()>keep&&(c.rank<12||agg>=1.3))swap.push(i);
+  });
+  if(agg>.85){
+    var suits={};w.hand.forEach(function(c,i){(suits[c.suit]=suits[c.suit]||[]).push(i);});
+    Object.keys(suits).forEach(function(s){if(suits[s].length===4)
+      swap=w.hand.map(function(c,i){return i;}).filter(function(i){return w.hand[i].suit!==s;});});
+  }
+  swap.sort(function(a,b){return b-a;});
+  swap.forEach(function(i){var c=w.hand.splice(i,1)[0];toDiscard(c);});
+  for(var k=0;k<swap.length;k++)w.hand.push(drawOne(w));
+}
+function skillValue(sk,w){
+  var res=evaluateHand(w.hand),key=sk.key;
+  switch(key){
+    case 'midas':var l=w.hand.slice().sort(function(a,b){return a.rank-b.rank;})[0];
+      return l?(14-l.rank)/12*3:1;
+    case 'spadeWish':return 2;
+    case 'conjure':return 1.6;
+    case 'refresh':return 1.2;
+    case 'nether':return w.hand.some(function(c){return c.rank<=5})?2.2:.6;
+    case 'forceStaff':return 2.2;
+    case 'mechasm':return 2;
+    case 'daedalus':return 2.4;
+    case 'aegis':return w.hp<=2?2.8:.8;
+    case 'bloodstone':return 1.6;
+    case 'phase':return (res.key==='pair'||res.key==='high')?2.6:.7;
+    case 'drum':return res.key==='twoPair'?2.4:.7;
+    case 'heart':return 2.2;
+    case 'shiva':return res.level>=3?2.3:.7;
+    case 'ring':return 1.3;
+    case 'armlet':return 2.1;
+    case 'headdress':return w.hp<w.maxHp?1.8:.5;
+    case 'deso':return 2.2;
+    case 'potion':return 2;
+    case 'bkb':return 1.8;
+    case 'butterfly':return 1.7;
+    case 'manta':return 2;
+    case 'dagon':return (res.key==='pair'||res.key==='twoPair')?2.5:1.8;
+    case 'bfury':return res.usedIdx.length>=2?2:1.4;
+    case 'circlet':return 1.9;
+    case 'lifepotion':return w.hp<w.maxHp?1.7:.4;
+    case 'meteor':return 2.2;
+  }
+  return 1;
+}
+var aiPlanVer=0;
+function aiSkillPlan(){
+  if(G.phase!=='skill'||G.over)return;
+  var ver=++aiPlanVer,w=G.ai,plan=[];
+  (function decide(){
+    var best=null,bs=-1;
+    w.skHand.forEach(function(sk){
+      if(plan.indexOf(sk)>=0)return;
+      var v=skillValue(sk,w);if(v>bs){bs=v;best=sk;}
+    });
+    var threshold=2.1-G.agg*1.6; // 简单≈1.6 普通≈1.1 困难≈0.7
+    if(!best||bs<threshold)return;
+    if(plan.length>=C.maxSkillsPerRound)return;
+    plan.push(best);decide();
+  })();
+  var step=0;
+  setTimeout(function next(){
+    if(ver!==aiPlanVer)return;
+    if(G.paused){setTimeout(next,300);return;}
+      if(G.phase!=='skill'||G.over)return;
+      if(step>=plan.length||w.usedSkills.length>=C.maxSkillsPerRound)return;
+      var sk=plan[step++];
+      if(sk&&w.skHand.indexOf(sk)>=0)aiUseSkill(w,sk);
+      setTimeout(next,650);
+  },200);
+}
+function bestTargets(w,key,cfg){
+  var pickN=(key==='midas'||key==='manta')?1:cfg.pick;
+  var all=w.hand.map(function(c,i){return i;}),combos=[];
+  (function rec(start,acc){if(acc.length===pickN){combos.push(acc.slice());return;}
+    for(var i=start;i<all.length;i++){acc.push(i);rec(i+1,acc);acc.pop();}})(0,[]);
+  var best=combos[0]||[],bs=-1;
+  combos.forEach(function(combo){
+    var copies=w.hand.map(function(c){return {rank:c.rank,suit:c.suit,origRank:c.origRank,origSuit:c.origSuit};});
+    combo.forEach(function(i){
+      if(key==='midas')copies[i].rank=14;
+      else if(key==='spadeWish')copies[i].suit='s';
+      else if(key==='forceStaff')copies[i].rank=Math.min(14,copies[i].rank+cfg.plus1);
+      else if(key==='meteor')copies[i].rank=Math.min(14,copies[i].rank+cfg.plus3);
+      else if(key==='manta'){var r=w.hand.slice().sort(function(a,b){return b.rank-a.rank;})[0];copies[i].rank=r.rank;}
+    });
+    var r2=evaluateHand(copies),sh=w.hand,sp=w.played,sr=w.playedRes;
+    w.hand=copies;w.played=copies;w.playedRes=r2;
+    var sc=computeScore(r2,buildMod(w,r2,false));
+    w.hand=sh;w.played=sp;w.playedRes=sr;
+    if(sc>bs){bs=sc;best=combo;}
+  });
+  return best;
+}
+function aiUseSkill(w,sk){
+  if(!sk||!sk.key)return;
+  var key=sk.key,cfg=C.skills[key];
+  w.pendingMod=w.pendingMod||freshMod();
+  if(TARGETED[key]){
+    var idxs=[];
+    if(G.agg>=1.3){idxs=bestTargets(w,key,cfg);}
+    else if(key==='midas'){var c=w.hand.slice().sort(function(a,b){return a.rank-b.rank;})[0];
+      idxs=[w.hand.indexOf(c)];}
+    else if(key==='spadeWish'||key==='forceStaff'||key==='meteor'){
+      idxs=w.hand.slice().sort(function(a,b){return a.rank-b.rank})
+        .slice(0,cfg.pick).map(function(c){return w.hand.indexOf(c);});
+    } else if(key==='manta'){var r=w.hand.slice().sort(function(a,b){return b.rank-a.rank;})[0];
+      idxs=[w.hand.indexOf(r)];}
+    applyTargeted(w,key,idxs);
+  } else {
+    applyInstant(w,key,cfg);
+  }
+  var i=w.skHand.indexOf(sk);if(i>=0){w.skHand.splice(i,1);w.skDiscard.push(sk);}
+  w.usedSkills.push(key);SFX.skill();renderAll();
+}
+
+/* ---------------- 亮牌结算 ---------------- */
+function buildMod(w,res,skipSkills){
+  var m=w.pendingMod?w.pendingMod:freshMod();
+  if(!skipSkills){
+    if(m.flags.phase&&(res.key==='pair'||res.key==='high'))m.ptsMult*=C.skills.phase.ptsMult;
+    if(m.flags.drum&&res.key==='twoPair')m.totalAdd+=C.skills.drum.totalBonus;
+    if(m.flags.shiva&&res.level>=C.skills.shiva.minLevel)m.totalAdd+=C.skills.shiva.totalBonus;
+    if(m.flags.dagon)m.ptsAdd+=(res.key==='pair'||res.key==='twoPair')?
+      C.skills.dagon.ptsAddMulti:C.skills.dagon.ptsAdd;
+    if(m.flags.circlet)m.ptsAdd+=C.skills.circlet.perCard*res.usedIdx.length;
+    if(m.flags.bfury){
+      var mx=0;res.usedIdx.forEach(function(i){mx=Math.max(mx,w.played[i].rank);});m.ptsAdd+=mx;
+    }
+    if(m.flags.butterfly&&rnd()<C.skills.butterfly.chance)m.totalMult*=C.skills.butterfly.totalMult;
+  }
+  if(w.hero==='juggernaut'&&(res.key==='high'||res.key==='pair'||res.key==='three'))
+    m.ptsAdd+=C.heroes.juggernaut.lowBonus;
+  if(w.hero==='lich'&&(res.key==='high'||res.key==='pair'||res.key==='twoPair')
+     &&rnd()<C.heroes.lich.frost)m.baseAdd+=C.heroes.lich.frostBonus;
+  m.permaBase=w.permBase;
+  return m;
+}
+function resolveReveal(){
+  var p=G.p,ai=G.ai;
+  var pRes=evaluateHand(p.played),aiRes=evaluateHand(ai.played);
+  p.playedRes=pRes;ai.playedRes=aiRes;
+  var pSkip=!!(ai.pendingMod&&ai.pendingMod.flags.bkb);
+  var aiSkip=!!(p.pendingMod&&p.pendingMod.flags.bkb);
+  var pMod=buildMod(p,pRes,pSkip),aiMod=buildMod(ai,aiRes,aiSkip);
+  var pScore=computeScore(pRes,pMod),aiScore=computeScore(aiRes,aiMod);
+  // 翻明 AI
+  var ab=$('aiBattleCards');ab.innerHTML='';
+  ai.played.forEach(function(c){ab.insertAdjacentHTML('beforeend',pcardHTML(c,{size:'mid'}));});
+  dimInvalid('pBattleCards',pRes);dimInvalid('aiBattleCards',aiRes);
+  $('pBattleScore').textContent=pScore;$('aiBattleScore').textContent=aiScore;
+  SFX.reveal();
+  if(pRes.level>=7)$('pBattleCards').querySelectorAll('.pcard').forEach(function(el){el.classList.add('bigpop');});
+  if(aiRes.level>=7)$('aiBattleCards').querySelectorAll('.pcard').forEach(function(el){el.classList.add('bigpop');});
+  addLog('你：'+pRes.name+' '+pScore+' ｜ AI：'+aiRes.name+' '+aiScore);
+
+  var winner=null,loser=null;
+  if(pScore>aiScore){winner=p;loser=ai;}
+  else if(aiScore>pScore){winner=ai;loser=p;}
+  else if(pRes.level===aiRes.level){
+    if(p.hero==='chaosKnight'&&rnd()<C.heroes.chaosKnight.chaos){winner=p;loser=ai;}
+    else if(ai.hero==='chaosKnight'&&rnd()<C.heroes.chaosKnight.chaos){winner=ai;loser=p;}
+  }
+  var br=$('battleResult');br.style.display='block';
+  if(!winner){br.textContent='平局，双方不扣血';br.style.background='#0008';br.style.color='#cfe8d2';
+    renderAll();afterRound();return;}
+  br.textContent=winner===p?'你 赢 得 本 局':'AI 赢 得 本 局';
+  br.style.color=winner===p?'#8fe08a':'#ff9a8a';
+
+  var dmg=1;
+  var f=loser.pendingMod?loser.pendingMod.flags:null;
+  if(f&&f.aegis){dmg=0;toast((loser===p?'你':'AI')+' 的不朽之守护免伤');}
+  if(dmg>0&&loser.hero==='deathKnight'&&rnd()<C.heroes.deathKnight.pact)dmg=C.heroes.deathKnight.pactDmg;
+  if(loser.armletPending)dmg+=C.skills.armlet.backfire;
+  if(dmg>0&&loser.poison>=C.heroes.viper.toxThreshold){
+    dmg+=C.heroes.viper.toxDmg;loser.poison=0;poisonFX();}
+  loser.hp=Math.round((loser.hp-dmg)*100)/100;
+  if(dmg>0)hurtFX(loser);
+
+  if(winner.hero==='phantomAssassin'&&!winner.critUsed&&rnd()<C.heroes.phantomAssassin.crit&&loser.hp>0){
+    loser.hp-=C.heroes.phantomAssassin.critDmg;winner.critUsed=true;hurtFX(loser);}
+  if(winner.hero==='viper')loser.poison+=C.heroes.viper.layersPerWin;
+  if(winner.hero==='treant'&&winner.healsTotal<C.heroes.treant.maxHeals&&winner.hp<winner.maxHp){
+    winner.hp=Math.min(winner.maxHp,winner.hp+C.heroes.treant.heal);
+    winner.healsTotal=Math.round((winner.healsTotal+C.heroes.treant.heal)*100)/100;
+  }
+  if(loser.hero==='antiMage'&&loser.skHand.length<skillCap(loser)){
+    for(var a=0;a<C.heroes.antiMage.skillOnLoss&&loser.skHand.length<skillCap(loser);a++)
+      loser.skHand.push(drawSkill(loser));
+  }
+  if(winner.pendingMod&&winner.pendingMod.flags.bloodstone)
+    winner.bloodstonePending+=C.skills.bloodstone.extraSkill;
+  if(winner.pendingMod&&winner.pendingMod.flags.headdress)
+    winner.hp=Math.min(winner.maxHp,winner.hp+C.skills.headdress.heal);
+  if(winner.pendingMod&&winner.pendingMod.flags.deso)
+    winner.permBase+=C.skills.deso.permaBase;
+
+  renderAll();
+  if(loser.hp<=0){endGame(winner===p);return;}
+  afterRound();
+}
+function dimInvalid(rowId,res){
+  Array.prototype.forEach.call($(rowId).children,function(el,i){
+    if(res.usedIdx.indexOf(i)<0)el.classList.add('dim');});
+}
+function afterRound(){
+  G.busy=true;
+  setTimeout(function(){
+    if(G.over)return;
+    G.p.played.forEach(toDiscard);G.ai.played.forEach(toDiscard);
+    $('pBattleCards').innerHTML='';$('aiBattleCards').innerHTML='';
+    $('pBattleScore').textContent='-';$('aiBattleScore').textContent='-';
+    $('battleResult').style.display='none';
+    G.busy=false;startRound();
+  },2600);
+}
+
+/* ---------------- 结束 ---------------- */
+function endGame(pw){
+  G.over=true;G.phase='over';stopTimer();G.busy=false;
+  if(pw){
+    SFX.win();
+    var mk=G.diff==='easy'?'bronze':G.diff==='normal'?'silver':'gold';
+    var pay={};pay[mk]=true;
+    try{if(window.SiteMedals)SiteMedals.unlock('poker',pay);}catch(e){}
+    setTimeout(function(){
+      openOverlay('<h2>胜利！</h2><p style="text-align:center;font-size:15px">你击败了 '+
+        ({easy:'简单',normal:'普通',hard:'困难'}[G.diff])+' AI，获得 <b>'+
+        ({bronze:'铜牌',silver:'银牌',gold:'金牌'}[mk])+'</b></p>'+
+        '<p style="text-align:center">共经历 '+G.round+' 个回合。</p>',
+        [['返回主菜单',showStartScreen],['再来一局',showStartScreen]]);
+    },1200);
+  } else {
+    SFX.lose();
+    setTimeout(function(){
+      openOverlay('<h2>战败…</h2><p style="text-align:center">调整策略，再来一局吧。</p>',
+        [['返回主菜单',showStartScreen],['再来一局',showStartScreen]]);
+    },1200);
+  }
+}
+
+/* ---------------- 特效 ---------------- */
+function flash(color){
+  var f=$('flash');f.style.transition='none';f.style.background=color;f.style.opacity=.4;
+  setTimeout(function(){f.style.transition='opacity .5s';f.style.opacity=0;},30);
+}
+function hurtFX(w){
+  SFX.hurt();
+  var card=(w===G.p?$('pHeroZone'):$('aiHeroZone')).querySelector('.hcard');
+  if(card){
+    card.classList.remove('shake');void card.offsetWidth;card.classList.add('shake');
+    var s=document.createElement('div');s.className='slash';
+    s.style.top='42%';card.appendChild(s);
+    setTimeout(function(){s.remove();},500);
+  }
+  flash('#e2503d');
+}
+function poisonFX(){
+  for(var i=0;i<14;i++){
+    var pt=document.createElement('div');pt.className='particle';
+    pt.style.left='50%';pt.style.top='40%';pt.style.background='#4aff6a';
+    $('fxLayer').appendChild(pt);
+    var x=0,y=0;
+    var an=setInterval(function(){x+=(Math.random()*10-5);y-=Math.random()*6+2;
+      pt.style.transform='translate('+x+'px,'+y+'px)';},50);
+    setTimeout(function(){clearInterval(an);pt.remove();},800);
+  }
+}
+
+/* ---------------- 弹窗 ---------------- */
+var overlayOpen=null;
+function openOverlay(html,buttons){
+  closeOverlay();
+  var ov=document.createElement('div');ov.className='overlay';
+  var m=document.createElement('div');m.className='modal';m.innerHTML=html;
+  if(buttons){
+    var br=document.createElement('div');br.className='btnrow';
+    buttons.forEach(function(b){
+      var btn=document.createElement('button');btn.className='mbtn'+(b[2]?' gold':'');
+      btn.textContent=b[0];btn.onclick=b[1];br.appendChild(btn);});
+    m.appendChild(br);
+  }
+  ov.appendChild(m);document.body.appendChild(ov);overlayOpen=ov;
+}
+function closeOverlay(){if(overlayOpen){overlayOpen.remove();overlayOpen=null;}}
+
+/* ---------------- 玩法 / 牌型 ---------------- */
+function helpHTML(){
+  return '<h2>玩法说明</h2><ul>'+
+  '<li>双方各选一名英雄，英雄自带血量与被动技能。</li>'+
+  '<li>每回合：发 5 张暗牌 → 免费换牌（30 秒）→ 使用技能 / 出牌（60 秒，每回合最多 3 张技能）→ 同时亮牌比大小。</li>'+
+  '<li>最终得分 =（牌型基础分 + 基础加减）× 基础相乘 +（有效牌点 + 点数加减）× 点数相乘，再做总分加减与相乘。</li>'+
+  '<li>得分低的一方扣血，平局不扣血；先把对方血打空者获胜。</li>'+
+  '<li>出牌时可只打出部分手牌：高光要出的牌再点出牌，未选的牌进弃牌堆、不参与结算；亮牌后无效牌会变暗。</li>'+
+  '<li>改扑克牌的技能：先高光目标扑克牌，再点技能牌；直接生效的技能点一下立即生效。</li>'+
+  '<li>牌库抽空会自动把弃牌堆洗回；技能改变的花色点数仅限本回合。</li>'+
+  '<li>按空格键可随时暂停。</li></ul>';
+}
+var EXAMPLES={
+  high:'A♠',pair:'K♥ K♦',twoPair:'A♠ A♥ 8♦ 8♣',three:'Q♠ Q♥ Q♦',
+  straight:'5♠ 6♥ 7♦ 8♣ 9♠',flush:'五张全部 ♥',fullHouse:'10 三张 + 6 一对',
+  four:'9♠ 9♥ 9♦ 9♣',straightFlush:'4♠ 5♠ 6♠ 7♠ 8♠',royalFlush:'10 J Q K A 同花色'
+};
+function handTableHTML(){
+  var rows='';
+  for(var i=9;i>=0;i--){var k=HAND_KEYS[i];
+    rows+='<div class="hd"><b>'+HAND_NAMES[i]+'</b></div>'+
+      '<div class="hd">'+C.hands[k]+' 分</div>'+
+      '<div class="hd"><span class="eg">'+EXAMPLES[k]+'</span></div>';}
+  return '<h2>牌型与计分</h2><p>计分顺序：先加减、后相乘；只有有效计分牌计点，其余牌变暗。</p>'+
+  '<div class="handTable"><div class="hd"><b>牌型</b></div><div class="hd"><b>基础分</b></div><div class="hd"><b>牌型实例</b></div>'+
+  rows+'</div>';
+}
+
+/* ---------------- 暂停 ---------------- */
+function pauseMenu(){
+  openOverlay('<h2>已暂停</h2><p style="text-align:center">准备好后点击继续游戏。</p>',[
+    ['继续游戏',function(){togglePause();},true],
+    ['玩法说明',function(){openOverlay(helpHTML(),[['返回',pauseMenu]]);}],
+    ['牌型计分',function(){openOverlay(handTableHTML(),[['返回',pauseMenu]]);}],
+    ['返回主菜单',function(){G.paused=false;stopTimer();showStartScreen();}]
+  ]);
+}
+function togglePause(){
+  if(!G||G.over||G.phase==='hero')return;
+  G.paused=!G.paused;
+  if(G.paused)pauseMenu();else closeOverlay();
+}
+
+/* ---------------- 开局 ---------------- */
+var chosenDiff='normal';
+function showStartScreen(){
+  closeOverlay();stopTimer();
+  freshGame(chosenDiff);renderAll();
+  openOverlay('<h2>魔兽扑克 · 选择 AI 难度</h2>'+
+  '<div class="diffRow">'+
+  '<button class="diffBtn" data-d="easy">简单</button>'+
+  '<button class="diffBtn sel" data-d="normal">普通</button>'+
+  '<button class="diffBtn" data-d="hard">困难</button></div>'+
+  '<p style="text-align:center">击败简单 AI = 铜牌　·　普通 = 银牌　·　困难 = 金牌</p>',
+  [['下一步：选择英雄',startHeroPick,true]]);
+  document.querySelectorAll('.diffBtn').forEach(function(b){
+    b.onclick=function(){
+      document.querySelectorAll('.diffBtn').forEach(function(x){x.classList.remove('sel');});
+      b.classList.add('sel');chosenDiff=b.dataset.d;
+    };
+  });
+}
+function random4(){
+  var k=HERO_DEFS.map(function(h){return h.key;});shuffle(k);return k.slice(0,4);
+}
+var playerPool=null,aiPool=null,pickedPlayer=null;
+function startHeroPick(){
+  playerPool=random4();aiPool=random4();pickedPlayer=null;
+  openOverlay('<h2>选择你的英雄</h2><p style="text-align:center">从 4 名英雄中选 1 名，AI 同样独立 4 选 1。</p>'+
+  '<div class="pickRow" id="pickRow"></div>',
+  [['确认',confirmHeroPick,true]]);
+  var row=$('pickRow');
+  playerPool.forEach(function(key){
+    var def=HERO_DEFS.filter(function(h){return h.key===key;})[0];
+    var d=document.createElement('div');d.className='pickCard';
+    d.innerHTML='<canvas width="96" height="96"></canvas>'+
+      '<div class="pn">'+def.name+'</div>'+
+      '<div class="hhearts">'+heartsHTML(C.heroes[key].hp,C.heroes[key].hp,13,12)+'</div>';
+    d.onclick=function(){
+      document.querySelectorAll('.pickCard').forEach(function(x){x.classList.remove('picked');});
+      d.classList.add('picked');pickedPlayer=key;
+    };
+    row.appendChild(d);
+    PIX.draw(d.querySelector('canvas'),PORTRAITS[key].rows,PORTRAITS[key].pal);
+    paintHearts(d);
+    bindTip(d,def.name,'英雄被动',def.pass);
+  });
+}
+function confirmHeroPick(){
+  if(!pickedPlayer){toast('请先点选一名英雄');return;}
+  var aiPick=pick(aiPool);
+  setupHero(G.p,pickedPlayer);setupHero(G.ai,aiPick);
+  G.pokerDraw=buildPokerDeck();
+  G.p.skDraw=buildSkillDeck();G.ai.skDraw=buildSkillDeck();
+  closeOverlay();
+  renderAll();startRound();
+}
+function setupHero(w,key){w.hero=key;w.hp=C.heroes[key].hp;w.maxHp=C.heroes[key].hp;}
+
+/* ---------------- 按钮 / 键盘 ---------------- */
+$('pauseBtn').onclick=togglePause;
+$('helpBtn').onclick=function(){openOverlay(helpHTML(),[['关闭',closeOverlay,true]]);};
+$('handBtn').onclick=function(){openOverlay(handTableHTML(),[['关闭',closeOverlay,true]]);};
+$('surrBtn').onclick=function(){
+  openOverlay('<h2>投降 / 重新开始？</h2><p style="text-align:center">当前对局将结束并返回主菜单。</p>',
+    [['取消',closeOverlay],['确认投降',function(){G.over=true;stopTimer();showStartScreen();},true]]);
+};
+$('logBtn').onclick=function(){
+  var rows=logs.slice(-40).map(function(l){return '<li>'+l.m+'</li>';}).join('')||'<li>暂无日志</li>';
+  openOverlay('<h2>战斗日志</h2><ul>'+rows+'</ul>',[['关闭',closeOverlay,true]]);
+};
+$('discardBtn').onclick=function(){doDiscard(false);};
+$('playBtn').onclick=function(){requestPlay(false);};
+document.addEventListener('keydown',function(e){
+  if(e.code==='Space'){
+    var t=(e.target.tagName||'').toLowerCase();
+    if(t==='button'||t==='input')return;
+    e.preventDefault();togglePause();
+  }
+});
+
+/* ---------------- 测试钩子 ---------------- */
+window.__pokerTest={
+  CFG:POKER_CFG,evaluateHand:evaluateHand,computeScore:computeScore,
+  makeCard:makeCard,freshMod:freshMod,buildMod:buildMod,setupHero:setupHero,
+  G:function(){return G;}
+};
+
+/* ---------------- 启动 ---------------- */
+showStartScreen();
+</script>
+</body>
+</html>

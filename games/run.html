@@ -93,6 +93,10 @@
       box-shadow: 2px 2px 0 rgba(31,45,32,.25);
     }
     .lvl-tab.current { background: #9bca4b; }
+    .lvl-tab.locked {
+      background: #c6cbb9; color: #7b8470; cursor: not-allowed; opacity: .8;
+      box-shadow: 2px 2px 0 rgba(31,45,32,.12);
+    }
     @media (max-width: 768px) {
       .touch-run { display: flex; }
     }
@@ -184,7 +188,7 @@
         <span>跳跃：<span class="key">SPACE</span> / <span class="key">W</span>（短按小跳、长按大跳）</span>
         <span>加速跑：<span class="key">SHIFT</span>（耗体力）</span>
         <span>暂停：<span class="key">P</span> · 重开：<span class="key">R</span></span>
-        <span>奖牌：2800 铜牌 · 3000 银牌 · 3200 金牌</span>
+        <span>奖牌：通关第1关≥1500铜 · 第2关≥2200银 · 第3关≥3000金</span>
         <span>手机：使用屏幕按键</span>
       </div>
 
@@ -251,7 +255,7 @@
       iceSpeed: 6,
       iceScore: 100,
       speedCap: 100,
-      heartSpeed: 320,
+      heartSpeed: 315,
       heartJumpV: 940,
       heartStart: 200,
       rageAt: 0.5,
@@ -260,9 +264,9 @@
       winBonus: 500,
       timeLimit: 70,
       timeScore: 80,
-      goldScore: 3200,
-      silverScore: 3000,
-      bronzeScore: 2800
+      bronzeL1Score: 1500,
+      silverL2Score: 2200,
+      goldL3Score: 3000
     };
 
   /* ---------- 关卡管理（数据在 run-levels.js，可用地图编辑器可视化编辑） ---------- */
@@ -270,10 +274,33 @@
   var best = 0;
   var elH1 = document.querySelector('.run-head .page-title');
   function bestKey(n) { return 'run-best-' + n; }
+  /* ---------- 关卡解锁制：localStorage 记录已解锁到第几关（默认第1关） ---------- */
+  function getUnlocked() {
+    var u = parseInt(localStorage.getItem('run-unlocked') || '1', 10);
+    if (!(u >= 1 && u <= 3)) u = 1;
+    return u;
+  }
+  function setUnlocked(n) {
+    if (n > getUnlocked()) localStorage.setItem('run-unlocked', String(Math.min(3, n)));
+    refreshTabs();
+  }
+  function refreshTabs() {
+    var maxUn = getUnlocked();
+    document.querySelectorAll('#lvlTabs .lvl-tab').forEach(function (b) {
+      var n = parseInt(b.getAttribute('data-lvl'), 10);
+      var locked = n > maxUn;
+      b.classList.toggle('locked', locked);
+      b.disabled = locked;
+      if (locked) b.title = '先通关第' + (n - 1) + '关';
+      else b.removeAttribute('title');
+    });
+  }
   function initialLevel() {
     var q = parseInt(new URLSearchParams(location.search).get('lvl') || '0', 10);
-    if (q >= 1 && q <= 3) return q;
+    var maxUn = getUnlocked();
+    if (q >= 1 && q <= 3) return (q <= maxUn) ? q : maxUn;
     var s = parseInt(localStorage.getItem('run-level') || '1', 10);
+    if (s > maxUn) s = maxUn;
     return (s >= 1 && s <= 3) ? s : 1;
   }
   function loadLevel(n) {
@@ -289,6 +316,7 @@
     best = parseInt(localStorage.getItem(bestKey(n)) || localStorage.getItem('run-best') || '0', 10) || 0;
     localStorage.setItem('run-level', n);
     if (elH1) elH1.textContent = '张雪峰快跑 · ' + L.name;
+    refreshTabs();
     document.querySelectorAll('#lvlTabs .lvl-tab').forEach(function (b) {
       b.classList.toggle('current', parseInt(b.getAttribute('data-lvl'), 10) === n);
     });
@@ -307,6 +335,7 @@
     b.addEventListener('click', function () {
       var n = parseInt(b.getAttribute('data-lvl'), 10);
       if (n === curLevel) return;
+      if (b.disabled || b.classList.contains('locked')) return;
       loadLevel(n);
       resetToReady();
     });
@@ -666,23 +695,32 @@
       state = 'win';
       var remain = Math.round(Math.max(0, CFG.timeLimit - G.pt) * 10) / 10;
       var timeBonus = Math.round(remain * CFG.timeScore);
-      G.score += CFG.winBonus + timeBonus;
-      var newMedal = SiteMedals.unlock('run', {
-        bronze: G.score >= CFG.bronzeScore,
-        silver: G.score >= CFG.silverScore,
-        gold: G.score >= CFG.goldScore
-      });
+      var icePts = G.ice * CFG.iceScore;
+      /* 最终分 = 通关基础分 + 剩余秒数×时间系数 + 雪糕数量×雪糕系数（仅通关才计基础分） */
+      G.score = CFG.winBonus + timeBonus + icePts;
+
+      /* 奖牌与关卡绑定：第1关=铜牌 / 第2关=银牌 / 第3关=金牌，各自独立阈值 */
+      var medalKey, medalName, medalTh;
+      if (curLevel === 1)      { medalKey = 'bronze'; medalName = '铜牌'; medalTh = CFG.bronzeL1Score; }
+      else if (curLevel === 2) { medalKey = 'silver'; medalName = '银牌'; medalTh = CFG.silverL2Score; }
+      else                     { medalKey = 'gold';   medalName = '金牌'; medalTh = CFG.goldL3Score; }
+      var gotMedal = G.score >= medalTh;
+      var earn = {}; earn[medalKey] = gotMedal;
+      var newMedal = SiteMedals.unlock('run', earn);
+
+      /* 通关后解锁下一关（封顶第3关） */
+      if (curLevel < 3) setUnlocked(curLevel + 1);
+
       if (G.score > best) { best = G.score; localStorage.setItem(bestKey(curLevel), best); }
       elBest.textContent = best;
-      var medalTxt = G.score >= CFG.goldScore ? '金牌'
-        : (G.score >= CFG.silverScore ? '银牌'
-        : (G.score >= CFG.bronzeScore ? '铜牌' : '未得奖牌'));
+      var medalTxt = gotMedal ? medalName : ('未得' + medalName);
       elTitle.textContent = '追上杨幂了！';
       elText.innerHTML = '通关用时 ' + G.pt.toFixed(1) + ' 秒 · 巧乐兹 ' + G.ice + ' 个 · 剩余 ' + remain.toFixed(1) + ' 秒<br>' +
-        '雪糕 ' + G.ice + '×100=' + (G.ice * 100) +
+        '雪糕 ' + G.ice + '×' + CFG.iceScore + '=' + icePts +
         ' + 剩余 ' + remain.toFixed(1) + '×' + CFG.timeScore + '=' + timeBonus +
-        ' + 通关 ' + CFG.winBonus +
-        '<br>总分 <b>' + G.score + '</b> · ' + medalTxt;
+        ' + 通关基础分 ' + CFG.winBonus +
+        '<br>总分 <b>' + G.score + '</b> · ' + medalTxt +
+        (curLevel < 3 ? '<br>（已解锁第' + (curLevel + 1) + '关）' : '');
       elBtn.textContent = '再玩一次';
       if (newMedal) setTimeout(function () { showMedalDialog(newMedal, '张雪峰快跑'); }, 400);
     } else {
@@ -690,9 +728,9 @@
       elTitle.textContent = reason === 'pit' ? '掉进坑里了！'
         : (reason === 'time' ? '70 秒到了，心脏追上来了！'
         : (G.rage ? '被狂暴的心脏撕碎了！' : '被心脏抓住了！'));
-      elText.innerHTML = reason === 'pit' ? '身法失误，掉入深渊。'
+      elText.innerHTML = reason === 'pit' ? '张雪峰老师，我们记得您~'
         : (reason === 'time' ? '超时没到终点。跑快点、多吃巧乐兹、别撞箱子！'
-        : '跑快点！巧乐兹要多吃、别撞箱子，台子上也躲不住。') +
+        : '你跑不过我信不信！') +
         '<br>本次得分 <b>' + G.score + '</b> · 用时 ' + G.pt.toFixed(1) + ' 秒';
       elBtn.textContent = '再来一次';
     }
@@ -708,7 +746,7 @@
     ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
   }
   var COL = {
-    hair: '#1d1b1a', skin: '#e9bb91', skinD: '#d9a87e', glass: '#141414',
+    hair: '#1d1b1a', skin: '#e9bb91', skinD: '#d9a87e',
     suit: '#33425c', suitD: '#27334a', shirt: '#f2efe6', tie: '#c0392b',
     pants: '#2e3440', shoe: '#191c22'
   };
@@ -865,48 +903,70 @@
     ctx.restore();
   }
 
-  /* ---------- 张雪峰 ---------- */
+  /* ---------- 张雪峰（偏圆瘦脸 · 短黑发 · 不戴眼镜 · 偏壮身材） ---------- */
   function drawXuefeng(cx, footY, phase, spd, onGround, jumping) {
     var moving = Math.abs(spd) > 12;
-    var intensity = (Math.abs(spd) > CFG.walk + 30) ? 1 : 0.62;
-    var sw = moving ? Math.sin(phase) * intensity : 0;
-    var bob = onGround ? Math.abs(Math.sin(phase)) * (intensity > 0.9 ? 2.2 : 1.2) : 0;
+    var fast = Math.abs(spd) > CFG.walk + 30;
+    var ints = fast ? 1 : 0.6;
+    var s1 = moving ? Math.sin(phase) * ints : 0;          // 腿1摆幅 -1..1
+    var s2 = moving ? Math.sin(phase + Math.PI) * ints : 0;
+    var bob = (jumping || !onGround) ? 0 : Math.abs(Math.sin(phase)) * (fast ? 2.6 : 1.4);
     ctx.save();
     ctx.translate(Math.round(cx), Math.round(footY - bob));
     if (spd < -10) ctx.scale(-1, 1);
-    ctx.scale(1.35, 1.35);
+    ctx.scale(1.4, 1.4);
 
+    /* ====== 腿 ====== */
     if (jumping || !onGround) {
-      R(-6, -12, 5, 8, COL.pants); R(-7, -5, 7, 3, COL.shoe);
-      R(0, -15, 9, 5, COL.pants); R(6, -13, 4, 8, COL.pants);
-      R(5, -6, 8, 3, COL.shoe);
-      R(-10, -32, 4, 10, COL.suitD); R(-10, -23, 4, 4, COL.skin);
-      R(7, -40, 4, 9, COL.suit); R(8, -44, 4, 4, COL.skin);
+      /* 跳跃：双腿收起、一前一后弯曲 */
+      R(-4, -15, 6, 9, COL.pants);
+      R(1, -11, 7, 5, COL.pants);
+      R(6, -8, 8, 3.5, COL.shoe);
+      R(-11, -12, 6, 8, COL.pants);
+      R(-13, -8, 7, 3.5, COL.shoe);
     } else {
-      var lx = sw * 5, lx2 = -sw * 5;
-      R(-3.5 + lx2, -16, 5, 13, COL.pants);
-      R(-6 + lx2, -4, 8, 4, COL.shoe);
-      R(-1.5 + lx, -16, 5, 13, COL.pants);
-      R(-1 + lx, -4, 8, 4, COL.shoe);
-      R(-10 - sw * 4, -33, 4, 12, COL.suitD); R(-10 - sw * 4, -22, 4, 4, COL.skin);
-      R(6 + sw * 4, -33, 4, 12, COL.suit); R(6 + sw * 4, -22, 4, 4, COL.skin);
+      /* 跑步：两腿前后交替，前腿微抬 */
+      var lf = s1 * 6, lb = s2 * 6;
+      var liftF = Math.max(0, s1) * 4, liftB = Math.max(0, s2) * 4;
+      R(-3 + lb, -16 + liftB, 5.5, 13 - liftB, COL.pants);
+      R(-4.5 + lb, -4 - liftB, 8, 4, COL.shoe);
+      R(-3 + lf, -16 + liftF, 5.5, 13 - liftF, COL.pants);
+      R(-4.5 + lf, -4 - liftF, 8, 4, COL.shoe);
     }
 
-    R(-8, -34, 16, 19, COL.suit);
-    R(-8, -34, 4, 19, COL.suitD); R(4, -34, 4, 19, COL.suitD);
-    R(-3, -34, 6, 6, COL.shirt);
-    R(-2, -35, 4, 3, COL.tie); R(-1.4, -31, 2.8, 12, COL.tie);
-    R(-3, -36, 6, 3, COL.skinD);
-    R(-6.5, -48, 13, 14, COL.skin);
-    R(-8, -43, 1.6, 3.4, COL.skin);
-    R(-7, -50, 14, 5, COL.hair);
-    R(-7, -46, 2.5, 4, COL.hair); R(4.5, -46, 2.5, 4, COL.hair);
-    R(-4.5, -46, 9, 1.4, COL.hair);
-    R(-6, -44, 5.4, 4.2, COL.glass); R(-5, -43.2, 2.6, 1.7, '#e8f1f4'); R(-3.5, -43.2, 1.5, 1.7, COL.glass);
-    R(0.8, -44, 5.4, 4.2, COL.glass); R(1.8, -43.2, 2.6, 1.7, '#e8f1f4'); R(3.7, -43.2, 1.5, 1.7, COL.glass);
-    R(-0.8, -42.6, 1.8, 1.2, COL.glass);
-    R(5.6, -41.5, 1.5, 2.2, COL.skinD);
-    R(1.5, -37.4, 4, 1.3, '#a05f4d');
+    /* ====== 手臂（与腿反向摆动） ====== */
+    if (jumping || !onGround) {
+      /* 跳跃：双臂上抬维持平衡 */
+      R(6, -37, 4.5, 9, COL.suit); R(9, -32, 4, 4, COL.skin);
+      R(-11, -35, 4.5, 10, COL.suitD); R(-13, -29, 4, 4, COL.skin);
+    } else {
+      var aF = s2 * 5, aB = s1 * 5;
+      R(6 + aF, -36, 4.5, 11, COL.suit); R(7 + aF, -27, 4, 4, COL.skin);
+      R(-10 + aB, -36, 4.5, 11, COL.suitD); R(-11 + aB, -27, 4, 4, COL.skin);
+    }
+
+    /* ====== 躯干（偏壮西装） ====== */
+    R(-9, -39, 18, 22, COL.suit);
+    R(-9, -39, 4, 22, COL.suitD); R(5, -39, 4, 22, COL.suitD);
+    R(-2.5, -39, 5, 9, COL.shirt);
+    R(-1.5, -39, 3, 3, COL.tie); R(-1, -36, 2.4, 12, COL.tie);
+
+    /* ====== 头（偏圆瘦脸 / 短黑发 / 无眼镜） ====== */
+    R(-2.5, -41, 5, 4, COL.skin);              // 脖子
+    R(-6.5, -52, 14, 12, COL.skin);            // 圆脸主体
+    R(-8, -49, 2, 5, COL.skin);                // 左颊
+    R(6, -49, 2.5, 5, COL.skin);               // 右颊（朝向前）
+    R(-9.5, -49, 2, 3.5, COL.skinD);           // 耳朵
+    R(-7.5, -55, 16, 4, COL.hair);             // 短发顶
+    R(-7.5, -52, 2.5, 5, COL.hair);            // 左侧鬓发
+    R(6.5, -52, 2.5, 4, COL.hair);             // 右侧发
+    R(-3, -56.5, 9, 1.8, COL.hair);            // 头顶微蓬
+    R(-3.5, -49, 3.4, 1.5, COL.hair);          // 左眉
+    R(1.6, -49, 3.4, 1.5, COL.hair);           // 右眉
+    R(-2.8, -46.8, 2, 2.2, '#201613');         // 左眼
+    R(2.3, -46.8, 2, 2.2, '#201613');          // 右眼（无眼镜）
+    R(7, -45.5, 2, 2.6, COL.skinD);            // 鼻子
+    R(0.3, -42, 4.6, 1.8, '#a05f4d');          // 嘴（微张说话）
     ctx.restore();
   }
 
