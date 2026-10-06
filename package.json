@@ -1,0 +1,40 @@
+{
+  "name": "christs-world",
+  "version": "1.0.0",
+  "description": "CHRIST'S WORLD 游戏合集（Electron 桌面版）",
+  "main": "main.js",
+  "author": "Christ",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.christ.world",
+    "productName": "CHRIST'S WORLD",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "index.html",
+      "css/**/*",
+      "js/**/*",
+      "games/**/*",
+      "categories/**/*",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "portable": {
+      "artifactName": "CHRIST-WORLD.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3"
+  }
+}

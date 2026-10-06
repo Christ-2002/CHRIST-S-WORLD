@@ -19,3 +19,9 @@ tools/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# ===== Electron 打包 =====
+node_modules/
+dist/
+package-lock.json
+
