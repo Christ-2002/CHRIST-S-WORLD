@@ -85,6 +85,14 @@
     }
     .tr-btn:active, .tr-btn.held { background: var(--gb-light); transform: translate(2px,2px); box-shadow: 1px 1px 0 rgba(31,45,32,.25); }
     .tr-btn.wide { width: 84px; background: #f6d9d4; }
+    .lvl-tabs { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+    .lvl-tab {
+      font-family: 'Press Start 2P', monospace; font-size: 9px;
+      padding: 9px 10px; background: var(--paper); color: var(--ink);
+      border: 3px solid var(--ink); border-radius: 0; cursor: pointer;
+      box-shadow: 2px 2px 0 rgba(31,45,32,.25);
+    }
+    .lvl-tab.current { background: #9bca4b; }
     @media (max-width: 768px) {
       .touch-run { display: flex; }
     }
@@ -139,6 +147,11 @@
           <span class="speed-badge">走路不耗体力 · 跑步 / 跳跃消耗 · 巧乐兹回体力并永久微提速 · 长按跳更高</span>
         </div>
         <div class="hud-actions">
+          <span class="lvl-tabs" id="lvlTabs">
+            <button class="lvl-tab" type="button" data-lvl="1">第1关</button>
+            <button class="lvl-tab" type="button" data-lvl="2">第2关</button>
+            <button class="lvl-tab" type="button" data-lvl="3">第3关</button>
+          </span>
           <button class="pixel-btn" id="pauseBtn">暂停</button>
           <button class="pixel-btn secondary" id="restartBtn">重新开始</button>
         </div>
@@ -207,6 +220,7 @@
   </footer>
 
 <script src="../js/common.js"></script>
+<script src="run-levels.js"></script>
 <script>
 /* ============================================================
    张雪峰快跑 · 第一关（大空间 / 心脏狂暴版）
@@ -219,7 +233,8 @@
   var ctx = cv.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   var VW = 1280, VH = 470, GROUND_Y = 386;
-  var LEVEL_LEN = 21200, FINISH_X = 20820;
+  var LEVEL_LEN = 0, FINISH_X = 0;
+  var platforms = [], crates = [], floats = [], iceDefs = [];
 
   /* ---------- 可调数值（后台编辑器改这里） ---------- */
   var CFG = {
@@ -236,94 +251,71 @@
       iceSpeed: 6,
       iceScore: 100,
       speedCap: 100,
-      heartSpeed: 300,
+      heartSpeed: 320,
       heartJumpV: 940,
-      heartStart: 240,
+      heartStart: 200,
       rageAt: 0.5,
-      rageBoost: 0.45,
+      rageBoost: 0.8,
       startDelay: 3,
       winBonus: 500,
-      timeLimit: 70,        // 通关时限（秒）：剩余时间 = 70 - 已用时间
-      timeScore: 80,        // 剩余时间每秒折算分数
-      goldScore: 3200,      // 金牌分数线
-      silverScore: 3000,    // 银牌分数线
-      bronzeScore: 2800     // 铜牌分数线
+      timeLimit: 70,
+      timeScore: 80,
+      goldScore: 3200,
+      silverScore: 3000,
+      bronzeScore: 2800
     };
 
-  /* ---------- 关卡数据 ---------- */
-  var platforms = [
-    { x: 0,     w: 900 },
-    { x: 1040,  w: 1160 },  // 坑 900-1040 (140)
-    { x: 2360,  w: 1240 },  // 坑 2200-2360 (160)
-    { x: 3820,  w: 1280 },  // 坑 3600-3820 (220)
-    { x: 5260,  w: 1340 },  // 坑 5100-5260 (160)
-    { x: 6760,  w: 1440 },  // 坑 6600-6760 (160)
-    { x: 8500,  w: 1500 },  // 坑 8200-8500 (300，中间浮板)
-    { x: 10200, w: 1600 },  // 坑 10000-10200 (200)
-    { x: 12120, w: 1580 },  // 坑 11800-12120 (320，中间浮板)
-    { x: 13900, w: 1700 },  // 坑 13700-13900 (200)
-    { x: 15960, w: 1640 },  // 坑 15600-15960 (360，两块浮板)
-    { x: 17820, w: 1580 },  // 坑 17600-17820 (220)
-    { x: 19600, w: 1600 }   // 坑 19400-19600 (200)，终点在本段
-  ];
-  /* 木箱障碍（可跳过、可踩顶；心脏也会跳上） */
-  var crates = [
-    { x: 1350, w: 44, h: 44, y: GROUND_Y - 44 },
-    { x: 1700, w: 44, h: 58, y: GROUND_Y - 58 },
-    { x: 4250, w: 44, h: 44, y: GROUND_Y - 44 },
-    { x: 4380, w: 44, h: 44, y: GROUND_Y - 44 },
-    { x: 7100, w: 44, h: 44, y: GROUND_Y - 44 },
-    { x: 7240, w: 44, h: 58, y: GROUND_Y - 58 },
-    { x: 10800, w: 44, h: 58, y: GROUND_Y - 58 },
-    { x: 14400, w: 44, h: 44, y: GROUND_Y - 44 },
-    { x: 14540, w: 44, h: 44, y: GROUND_Y - 44 },
-    { x: 14680, w: 44, h: 58, y: GROUND_Y - 58 },
-    { x: 18500, w: 44, h: 58, y: GROUND_Y - 58 },
-    { x: 19000, w: 44, h: 44, y: GROUND_Y - 44 }
-  ];
-  /* 浮空木板（单向平台） */
-  var floats = [
-    /* 宽坑落脚点（必须） */
-    { x: 8300,  w: 170, y: GROUND_Y - 95 },
-    { x: 11920, w: 150, y: GROUND_Y - 100 },
-    { x: 15700, w: 130, y: GROUND_Y - 110 },
-    { x: 15850, w: 120, y: GROUND_Y - 95 },
-    /* 奖励 / 技巧高台 */
-    { x: 1500,  w: 150, y: GROUND_Y - 120 },
-    { x: 2900,  w: 140, y: GROUND_Y - 150 },
-    { x: 5600,  w: 150, y: GROUND_Y - 130 },
-    { x: 7450,  w: 140, y: GROUND_Y - 150 },
-    { x: 9100,  w: 160, y: GROUND_Y - 120 },
-    { x: 10900, w: 150, y: GROUND_Y - 140 },
-    { x: 12700, w: 150, y: GROUND_Y - 120 },
-    { x: 14900, w: 160, y: GROUND_Y - 150 },
-    { x: 16600, w: 150, y: GROUND_Y - 120 },
-    { x: 18200, w: 150, y: GROUND_Y - 130 },
-    { x: 19900, w: 160, y: GROUND_Y - 120 }
-  ];
-  /* 巧乐兹雪糕（15 个） */
-  var iceDefs = [
-    [ 420,  GROUND_Y - 30], [ 700,  GROUND_Y - 30],
-    [ 970,  GROUND_Y - 118],
-    [ 1575, GROUND_Y - 150],
-    [ 2280, GROUND_Y - 118],
-    [ 3100, GROUND_Y - 30],
-    [ 5350, GROUND_Y - 118],
-    [ 5900, GROUND_Y - 30],
-    [ 8385, GROUND_Y - 125],
-    [ 9400, GROUND_Y - 30],
-    [ 11995,GROUND_Y - 130],
-    [ 13200,GROUND_Y - 30],
-    [ 15905,GROUND_Y - 125],
-    [ 18275,GROUND_Y - 160],
-    [ 20300,GROUND_Y - 30]
-  ];
+  /* ---------- 关卡管理（数据在 run-levels.js，可用地图编辑器可视化编辑） ---------- */
+  var curLevel = 1;
+  var best = 0;
+  var elH1 = document.querySelector('.run-head .page-title');
+  function bestKey(n) { return 'run-best-' + n; }
+  function initialLevel() {
+    var q = parseInt(new URLSearchParams(location.search).get('lvl') || '0', 10);
+    if (q >= 1 && q <= 3) return q;
+    var s = parseInt(localStorage.getItem('run-level') || '1', 10);
+    return (s >= 1 && s <= 3) ? s : 1;
+  }
+  function loadLevel(n) {
+    var L = window.RUN_LEVELS && window.RUN_LEVELS[n];
+    if (!L) return;
+    curLevel = n;
+    LEVEL_LEN = L.len;
+    FINISH_X = L.finish;
+    platforms = L.platforms.map(function (p) { return { x: p.x, w: p.w }; });
+    crates = L.crates.map(function (c) { return { x: c.x, w: c.w, h: c.h, y: GROUND_Y - c.h }; });
+    floats = L.floats.map(function (f) { return { x: f.x, w: f.w, y: GROUND_Y - f.dy }; });
+    iceDefs = L.ice.map(function (i) { return [i.x, GROUND_Y - i.dy]; });
+    best = parseInt(localStorage.getItem(bestKey(n)) || localStorage.getItem('run-best') || '0', 10) || 0;
+    localStorage.setItem('run-level', n);
+    if (elH1) elH1.textContent = '张雪峰快跑 · ' + L.name;
+    document.querySelectorAll('#lvlTabs .lvl-tab').forEach(function (b) {
+      b.classList.toggle('current', parseInt(b.getAttribute('data-lvl'), 10) === n);
+    });
+    elBest.textContent = best;
+  }
+  function resetToReady() {
+    state = 'ready';
+    G = null;
+    elTitle.textContent = '张雪峰快跑';
+    elText.innerHTML = 'A/D 移动 · 空格跳跃（长按跳更高）· 按住 Shift 奔跑<br>心脏追到地图一半会狂暴加速，别停下！';
+    elBtn.textContent = '开始游戏';
+    elOverlay.style.display = 'grid';
+    elPause.textContent = '暂停';
+  }
+  document.querySelectorAll('#lvlTabs .lvl-tab').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var n = parseInt(b.getAttribute('data-lvl'), 10);
+      if (n === curLevel) return;
+      loadLevel(n);
+      resetToReady();
+    });
+  });
 
   /* ---------- 状态 ---------- */
   var keys = { left: false, right: false, run: false };
   var state = 'ready';
   var G = null;
-  var best = parseInt(localStorage.getItem('run-best') || '0', 10);
 
   var $ = function (id) { return document.getElementById(id); };
   var elScore = $('score'), elIce = $('iceCount'), elTime = $('timeVal'),
@@ -332,7 +324,7 @@
       elText = $('overlayText'), elBtn = $('overlayBtn'),
       elPause = $('pauseBtn'),
       dotH = $('dotHeart'), dotP = $('dotPlayer');
-  elBest.textContent = best;
+  loadLevel(initialLevel());
 
   function newGame() {
     G = {
@@ -458,9 +450,10 @@
   function update(dt) {
     G.t += dt;
     if (G.rageBanner > 0) G.rageBanner -= dt;
+    if (G.goShow > 0) G.goShow -= dt;
     if (state === 'countdown') {
       G.countdown -= dt;
-      if (G.countdown <= 0) { state = 'play'; G.goShow = 0.9; }
+      if (G.countdown <= 0) { state = 'play'; G.goShow = 1; }
     }
     if (state === 'play') {
       G.pt += dt;
@@ -679,7 +672,7 @@
         silver: G.score >= CFG.silverScore,
         gold: G.score >= CFG.goldScore
       });
-      if (G.score > best) { best = G.score; localStorage.setItem('run-best', best); }
+      if (G.score > best) { best = G.score; localStorage.setItem(bestKey(curLevel), best); }
       elBest.textContent = best;
       var medalTxt = G.score >= CFG.goldScore ? '金牌'
         : (G.score >= CFG.silverScore ? '银牌'
