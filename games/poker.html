@@ -21,7 +21,7 @@
 
   /* ============ 总布局：6列 × 2行 ============ */
   #screen{position:fixed; inset:0;
-    display:grid; grid-template-columns:repeat(6,1fr); grid-template-rows:1fr 1.12fr;
+    display:grid; grid-template-columns:repeat(6,1fr); grid-template-rows:0.92fr 1.22fr;
     gap:8px; padding:8px;}
   .box{background:transparent; border:none; border-radius:0; position:relative;
     box-shadow:none; overflow:visible;}
@@ -47,23 +47,27 @@
   #battleResult{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); right:auto; font-size:15px; font-weight:bold;
     background:#0008; border:2px solid var(--gold); border-radius:6px; padding:4px 10px; color:var(--gold); z-index:4;}
 
-  /* ============ AI 区（中心对称、略小） ============ */
-  #aiArea .boxbody{display:flex; flex-direction:column; gap:6px;}
-  .aiTop{display:flex; gap:10px; align-items:flex-start;}
-  .aiHidden{flex:1; display:flex; gap:6px; align-items:center; justify-content:center;
-    background:#0005; border-radius:6px; padding:8px; min-height:96px;}
-  .aiSkills{flex:1; background:#0005; border-radius:6px; padding:6px; display:flex; gap:6px;
+  /* ============ AI 区（紧凑排列） ============ */
+  #aiArea .boxbody{display:flex; flex-direction:column; gap:4px;}
+  .aiTop{display:flex; gap:8px; align-items:flex-start; flex:1; min-height:0;}
+  .aiHidden{flex:1; display:flex; gap:5px; align-items:center; justify-content:center;
+    background:#0005; border-radius:6px; padding:6px; min-height:92px;}
+  .aiSkills{flex:none; min-height:66px; background:#0005; border-radius:6px; padding:4px; display:flex; gap:4px;
     align-items:center; justify-content:center; flex-wrap:wrap; overflow:hidden;}
-  .aiSkills .miniUsed{width:46px; height:62px; border-radius:4px; border:2px solid var(--ink);
-    background:#241d3a; filter:grayscale(1) brightness(.6);}
+  .aiSkills .miniUsed,.miniSkillBack{width:38px; height:52px; border-radius:4px; border:2px solid var(--ink);
+    background:#241d3a; flex:none;}
+  .aiSkills .miniUsed canvas{width:100%;height:100%;display:block;}
+  .aiSkills .miniUsed{filter:grayscale(1) brightness(.6);}
+  .miniSkillBack{position:relative; background:repeating-linear-gradient(45deg,#3a255f 0 6px,#241d3a 6px 12px);}
+  /* AI 技能牌背面：不再显示「技」字 */
 
   /* ============ 玩家区 ============ */
   #pArea .boxbody{display:flex; gap:8px;}
-  .pLeft{flex:none; width:132px; display:flex; flex-direction:column; gap:6px;}
+  .pLeft{flex:none; width:138px; display:flex; flex-direction:column; gap:5px;}
   .pRight{flex:1; display:flex; flex-direction:column; gap:6px; min-width:0;}
-  .handZone{flex:1.05; background:#0005; border-radius:6px; padding:6px; display:flex; gap:8px;
+  .handZone{flex:1.08; background:#0005; border-radius:6px; padding:6px; display:flex; gap:6px;
     align-items:center; justify-content:center; min-height:0; position:relative;}
-  .skillZone{flex:1; background:#0005; border-radius:6px; padding:6px; display:flex; gap:8px;
+  .skillZone{flex:1; background:#0005; border-radius:6px; padding:6px; display:flex; gap:6px;
     align-items:center; justify-content:center; min-height:0; position:relative;}
   .zoneLab{position:absolute; font-size:10px; color:#7fa88a; top:4px; left:8px;}
   .usedStrip{flex:none; min-height:38px; background:#0006; border-radius:5px; padding:4px;
@@ -74,21 +78,23 @@
 
   /* ============ 牌堆 / 按钮区 ============ */
   #pileArea .boxbody{display:flex; flex-direction:column; gap:6px;}
-  .pileRow{flex:none; display:flex; gap:10px; justify-content:center;}
-  .pile{position:relative; width:80px; height:80px;}
-  .pile .pcap{position:absolute; inset:0;}
-  .pile .pcount{position:absolute; left:0; right:0; bottom:-3px; text-align:center;
-    font-size:12px; font-weight:bold; color:var(--gold); text-shadow:1px 1px 0 #000; z-index:5;}
-  .pile.small{width:66px; height:66px;}
-  .pileWrap{display:flex; flex-direction:column; align-items:center; gap:4px;}
-  .pileWrap .plab{font-size:10px; color:#9fb;}
+  .pileRow{flex:none; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; align-items:end;}
+  .pile{position:relative; width:46px; height:92px; margin:0 auto;}
+  .pile .pcap{position:absolute; inset:0; border-radius:5px; border:2px solid #14181d;}
+  .pile .pcount{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:6;
+    min-width:26px; padding:1px 7px; text-align:center; background:rgba(4,10,7,.68);
+    border:1px solid #000; border-radius:5px;
+    font-size:14px; font-weight:bold; color:var(--gold); text-shadow:1px 1px 0 #000;}
+  .pile.small{width:46px; height:92px;}
+  .pileWrap{display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0;}
+  .pileWrap .plab{font-size:9px; color:#9fb; text-align:center; line-height:1.2; min-height:22px;}
   .ctrlBtns{flex:1; display:grid; grid-template-columns:1fr 1fr; gap:6px; align-content:end;}
   .cbtn{background:var(--mid); color:#fff; border:2px solid var(--ink); border-radius:5px;
     padding:8px 4px; font-size:13px; font-weight:bold; box-shadow:2px 2px 0 #000;}
   .cbtn:active{transform:translate(1px,1px); box-shadow:1px 1px 0 #000;}
   .cbtn.red{background:var(--red);} .cbtn.gold{background:var(--gold); color:var(--ink);}
   .infoLine{flex:none; background:#0007; border:2px solid var(--ink); border-radius:5px;
-    padding:5px 8px; font-size:11px; line-height:1.6; color:#cfe8d4; text-align:center;}
+    padding:6px 8px; font-size:15px; line-height:1.5; color:#cfe8d4; text-align:center; font-weight:bold;}
   .infoLine b{color:var(--gold);}
 
   /* ============ 扑克牌 ============ */
@@ -110,12 +116,12 @@
   .pcard.clickable:hover{transform:translateY(-4px);}
   .pcard.sel{outline:4px solid var(--gold); outline-offset:1px; transform:translateY(-6px);}
   .pcard.target{outline:4px solid var(--blue); outline-offset:1px; transform:translateY(-4px);}
-  .pcard.dim{filter:grayscale(.8) brightness(.55);}
+  .pcard.dim{filter:grayscale(.85) brightness(.5); opacity:.55;}
   .pcard.bigpop{animation:bigpop .6s ease;}
   @keyframes bigpop{0%{transform:scale(1);}50%{transform:scale(1.22); box-shadow:0 0 20px var(--gold);}100%{transform:scale(1);}}
   /* 尺寸 */
-  .pcard.big{width:92px; height:128px;}
-  .pcard.big .cs{font-size:40px;}
+  .pcard.big{width:96px; height:134px;}
+  .pcard.big .cs{font-size:42px;}
   .pcard.mid{width:64px; height:92px;}
   .pcard.mid .cr{font-size:11px;} .pcard.mid .cs{font-size:26px;} .pcard.mid .cname{display:none;}
   .pcard.sm{width:54px; height:76px;}
@@ -124,7 +130,7 @@
   /* ============ 技能牌（无文字描述，名字在底） ============ */
   .scard{position:relative; flex:none; background:#211a38; color:var(--paper);
     border:2px solid var(--ink); border-radius:6px; box-shadow:2px 2px 0 #000;
-    user-select:none; overflow:hidden; cursor:pointer; width:92px; height:128px;}
+    user-select:none; overflow:hidden; cursor:pointer; width:94px; height:130px;}
   .scard .sart{position:absolute; top:6px; left:6px; right:6px; bottom:24px;
     background:#000; border:2px solid #000; border-radius:4px; overflow:hidden;}
   .scard .sart canvas{width:100%; height:100%; display:block;}
@@ -133,6 +139,7 @@
   .scard:hover{transform:translateY(-4px);}
   .scard.used{filter:grayscale(1) brightness(.5); cursor:not-allowed;}
   .scard.ready{outline:3px solid var(--gold); outline-offset:1px;}
+  .scard.sel{outline:4px solid var(--gold); outline-offset:1px; transform:translateY(-6px);}
   .scard.sm{width:54px; height:76px;}
   .scard.sm .sart{bottom:16px;} .scard.sm .snm{font-size:9px;}
 
@@ -145,14 +152,22 @@
   .hcard .hhearts{padding:2px 4px 5px; display:flex; justify-content:center; gap:2px; flex-wrap:wrap;}
   .hcard .hh{width:13px; height:12px;}
   .hcard.poison{box-shadow:0 0 0 2px #4aff6a, 3px 3px 0 #000;}
-  .hcard.shake{animation:hshake .5s ease;}
-  @keyframes hshake{0%,100%{transform:translate(0);}20%{transform:translate(-5px,2px);}
-    40%{transform:translate(5px,-2px);}60%{transform:translate(-4px,-1px);}80%{transform:translate(4px,1px);}}
-  .slash{position:absolute; z-index:8; pointer-events:none; width:70%; height:14%;
-    background:linear-gradient(90deg,transparent,#ff3a2a 30%,#ffd0c0 50%,#ff3a2a 70%,transparent);
-    transform:rotate(-38deg); animation:slashin .45s ease; box-shadow:0 0 8px #ff5040;}
-  @keyframes slashin{0%{opacity:0; transform:rotate(-38deg) scale(2);}
-    40%{opacity:1; transform:rotate(-38deg) scale(1);}100%{opacity:0; transform:rotate(-38deg) scale(1);}}
+  .hcard.hurt{animation:hhurt 1s ease;}
+  @keyframes hhurt{0%,100%{transform:translate(0);}15%{transform:translate(-6px,2px);}
+    30%{transform:translate(6px,-2px);}45%{transform:translate(-5px,-1px);}
+    60%{transform:translate(5px,2px);}75%{transform:translate(-3px,0);}}
+  .hcard.hurt::after{content:''; position:absolute; inset:0; z-index:5; pointer-events:none;
+    background:rgba(255,80,70,.28); animation:hurtTint 1s ease;}
+  @keyframes hurtTint{0%,100%{opacity:0;}20%,70%{opacity:1;}}
+  .claw{position:absolute; inset:0; z-index:8; pointer-events:none;}
+  .claw i{position:absolute; left:7%; width:88%; height:10%;
+    background:linear-gradient(90deg,transparent,#ff3a2a 28%,#ffd0c0 50%,#ff3a2a 72%,transparent);
+    transform:rotate(-38deg); box-shadow:0 0 8px #ff5040; animation:clawin 1s ease;}
+  .claw i:nth-child(1){top:22%;} .claw i:nth-child(2){top:45%; animation-delay:.08s;}
+  .claw i:nth-child(3){top:68%; animation-delay:.16s;}
+  @keyframes clawin{0%{opacity:0; transform:rotate(-38deg) translateX(-90%) scaleX(.45);}
+    35%{opacity:1; transform:rotate(-38deg) translateX(0) scaleX(1);}
+    75%,100%{opacity:0; transform:rotate(-38deg) translateX(12%) scaleX(1);}}
   .hcard.big{width:104px;} .hcard.big .hart{height:96px;}
   .hcard.mid{width:86px;} .hcard.mid .hart{height:78px;}
 
@@ -190,7 +205,7 @@
   .pickCard .hhearts{display:flex; justify-content:center; gap:2px; margin-top:4px;}
   .pickCard .pn{font-weight:bold; font-size:13px; margin-top:5px;}
   /* 牌型表 */
-  .handTable{display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px;}
+  .handTable{display:grid; grid-template-columns:0.55fr 1.1fr 0.8fr 1.6fr; gap:6px; margin-top:8px;}
   .handTable .hd{background:var(--panel2); padding:7px; font-size:12px; border:1px solid var(--ink); border-radius:5px;}
   .handTable .hd b{color:var(--gold); font-size:13px;}
   .handTable .hd .eg{color:#9fb; font-size:11px;}
@@ -237,12 +252,12 @@
         <div id="pHeroZone"></div>
         <button class="cbtn gold" id="discardBtn" style="display:none;">换 牌</button>
         <button class="cbtn" id="playBtn" style="display:none;">出 牌</button>
-        <div class="usedStrip" id="usedStrip"><span class="uLab">本局已用</span></div>
+        <button class="cbtn" id="sortBtn">排 序</button>
+        <button class="cbtn red" id="discardSkillBtn" style="display:none;">丢 弃</button>
+        <div class="usedStrip" id="usedStrip"><span class="uLab">技能牌 · 本局已用</span></div>
       </div>
       <div class="pRight">
-        <span class="zoneLab">我的手牌（点击选中）</span>
         <div class="handZone" id="handZone"></div>
-        <span class="zoneLab" style="top:53%;">技能牌</span>
         <div class="skillZone" id="skillZone"></div>
       </div>
     </div>
@@ -251,20 +266,18 @@
   <div class="box" id="pileArea">
     <div class="boxbody">
       <div class="pileRow">
-        <div class="pileWrap"><div class="pile" id="pilePokerDraw"></div><span class="plab">扑克·抽牌库</span></div>
-        <div class="pileWrap"><div class="pile" id="pilePokerDisc"></div><span class="plab">扑克·弃牌库</span></div>
-      </div>
-      <div class="pileRow">
-        <div class="pileWrap"><div class="pile small" id="pileSkDraw"></div><span class="plab">技能·抽牌库</span></div>
-        <div class="pileWrap"><div class="pile small" id="pileSkDisc"></div><span class="plab">技能·弃牌库</span></div>
+        <div class="pileWrap"><div class="pile" id="pilePokerDraw"></div><span class="plab">扑克抽牌库</span></div>
+        <div class="pileWrap"><div class="pile" id="pilePokerDisc"></div><span class="plab">扑克弃牌库</span></div>
+        <div class="pileWrap"><div class="pile small" id="pileSkDraw"></div><span class="plab">技能抽牌库</span></div>
+        <div class="pileWrap"><div class="pile small" id="pileSkDisc"></div><span class="plab">技能弃牌库</span></div>
       </div>
       <div class="infoLine" id="infoLine">—</div>
       <div class="ctrlBtns">
         <button class="cbtn red" id="surrBtn">投降/重开</button>
         <button class="cbtn" id="pauseBtn">暂停</button>
-        <button class="cbtn" id="helpBtn">玩法</button>
-        <button class="cbtn" id="handBtn">牌型</button>
-        <button class="cbtn" id="logBtn">日志</button>
+        <button class="cbtn" id="helpBtn">玩法说明</button>
+        <button class="cbtn" id="handBtn">牌型计分</button>
+        <button class="cbtn" id="logBtn">游戏日志</button>
       </div>
     </div>
   </div>
@@ -280,7 +293,7 @@
 ===================================================================== */
 var POKER_CFG = {
       time: {
-        discard: 30,
+        discard: 15,
         skill: 60
       },
       startCards: 5,
@@ -370,7 +383,7 @@ var POKER_CFG = {
           baseBonus: 10
         },
         daedalus: {
-          count: 2,
+          count: 1,
           ptsMult: 1.3
         },
         aegis: {
@@ -382,14 +395,14 @@ var POKER_CFG = {
         },
         phase: {
           count: 1,
-          ptsMult: 2
+          ptsMult: 1.5
         },
         drum: {
-          count: 2,
+          count: 1,
           totalBonus: 15
         },
         heart: {
-          count: 2,
+          count: 1,
           totalMult: 1.2
         },
         shiva: {
@@ -407,7 +420,7 @@ var POKER_CFG = {
           backfire: 0.5
         },
         headdress: {
-          count: 2,
+          count: 1,
           heal: 0.5
         },
         deso: {
@@ -442,7 +455,7 @@ var POKER_CFG = {
           perCard: 2
         },
         lifepotion: {
-          count: 2,
+          count: 1,
           rounds: 2,
           heal: 0.5
         },
@@ -450,6 +463,13 @@ var POKER_CFG = {
           count: 2,
           pick: 2,
           plus: 3
+        },
+        magicStick: {
+          count: 1
+        },
+        veil: {
+          count: 2,
+          ptsAdd: 15
         }
       },
       hands: {
@@ -462,8 +482,12 @@ var POKER_CFG = {
         fullHouse: 230,
         four: 305,
         straightFlush: 380,
-        royalFlush: 500
+        royalFlush: 500,
+        fiveKind: 540,
+        fiveKindFlush: 620
       },
+      /* AI 强度：数值越大 AI 越强，具体决策参数由 aiProfile() 换算
+         简单 0 / 普通 0.4 / 困难 1.6，可在后台编辑器里直接调 */
       ai: {
         easy: 0,
         normal: 0.4,
@@ -476,8 +500,8 @@ var POKER_CFG = {
 var SUITS = ['♠','♥','♦','♣'];
 var SUIT_BLACK = {'♠':1,'♣':1};
 var SUIT_RED = {'♥':1,'♦':1};
-var HAND_NAMES = ['高牌','一对','两对','三条','顺子','同花','葫芦','四条','同花顺','皇家同花顺'];
-var HAND_KEYS  = ['high','pair','twoPair','three','straight','flush','fullHouse','four','straightFlush','royalFlush'];
+var HAND_NAMES = ['高牌','一对','两对','三条','顺子','同花','葫芦','四条','同花顺','皇家同花顺','五张','五张同花'];
+var HAND_KEYS  = ['high','pair','twoPair','three','straight','flush','fullHouse','four','straightFlush','royalFlush','fiveKind','fiveKindFlush'];
 var C = POKER_CFG;
 function $(id){return document.getElementById(id);}
 function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
@@ -512,7 +536,8 @@ function evaluateHand(cards){
     for(var i=1;i<5;i++){ if(sorted[i]!==sorted[i-1]+1){isStraight=false;break;} }
     var wheel=(sorted[0]===2&&sorted[1]===3&&sorted[2]===4&&sorted[3]===5&&sorted[4]===14);
     if(wheel) isStraight=true;
-    if(isStraight&&isFlush){
+    if(groups[0]===5){ level=isFlush?11:10; useAll(); rankKey=[ranksAll[0]]; }
+    else if(isStraight&&isFlush){
       if(ranks[0]===14&&ranks[1]===13){ level=9; useAll(); rankKey=[14]; }
       else { level=8; useAll(); rankKey=wheel?[5]:ranks.slice(0,1); }
     } else if(groups[0]===4){ level=7;
@@ -781,7 +806,17 @@ var SKILL_ART = {
     '................','..krk...........','..krrrk.........','..krryrrk.......',
     '..krryyrrk......','...kryyyrrk.....','....kyyyrk......','.....kyyk.......',
     '....koook.......','...koooook......','..koooooook.....','.kooo.ooook.....',
-    'koo.....ooook...','kk.......kkkk...','................','................']}
+    'koo.....ooook...','kk.......kkkk...','................','................']},
+  magicStick:{pal:{p:'#b56ce0',w:'#e8d8ff',k:'#000',y:'#f0b429'},rows:[
+    '................','......kk........','.....kwwk.......','.....kwpwk......',
+    '....kwpwpk......','....kppppk......','.....kpwpk......','.....kpppk......',
+    '....kppppk......','...kppwwppk.....','..kppwwwwppk....','.kppwwwwwwppk...',
+    '..kppwwwwppk....','...kppwwppk.....','................','................']},
+  veil:{pal:{b:'#3a6acf',c:'#8fd8ff',k:'#000',w:'#e8f8ff',p:'#b56ce0'},rows:[
+    '................','....kkkkkk......','...kwwwwwwk.....','..kwccccccwk....',
+    '.kwcbbbbbbcwk...','.kcbbpppbbcbk...','kcbbpppppbbcbk..','kcbbppwwwpbbcbk.',
+    'kcbbpppppbbcbk..','.kcbbpppbbcbk...','.kwcbbbbbbcwk...','..kwccccccwk....',
+    '...kwwwwwwk.....','....kkkkkk......','................','................']}
 };
 
 /* ---------------- 定义 ---------------- */
@@ -808,13 +843,13 @@ var SKILL_DEFS={
   daedalus:  {name:'代达罗斯之殇',tag:'点数相乘',desc:'本局结算有效牌点 ×1.3。'},
   aegis:     {name:'不朽之守护', tag:'防御',    desc:'本局若败，免除全部扣血。'},
   bloodstone:{name:'血精石',     tag:'持续',    desc:'本局若胜，下一回合开局额外获得 1 张技能牌。'},
-  phase:     {name:'相位鞋',     tag:'条件相乘',desc:'牌型为对子 / 高牌时，有效牌点 ×2。'},
+  phase:     {name:'相位鞋',     tag:'条件相乘',desc:'牌型为对子 / 高牌时，有效牌点 ×1.5。'},
   drum:      {name:'韧鼓',       tag:'条件加总',desc:'最大牌型为两对时，最终总分 +15。'},
   heart:     {name:'龙心',       tag:'总分相乘',desc:'本回合最终总分 ×1.2。'},
   shiva:     {name:'西瓦之守护', tag:'条件加总',desc:'最大牌型为三条及以上时，最终总分 +12。'},
   ring:      {name:'王者之戒',   tag:'持续',    desc:'下一小局开局获得一次额外的换牌机会。'},
   armlet:    {name:'食尸鬼王臂章',tag:'加基础分',desc:'本局牌型基础分 +15；但若本局败北，额外扣 0.5 血。'},
-  headdress: {name:'回复头巾',   tag:'回复',    desc:'本局结算后回复 0.5 血，不超过血量上限。'},
+  headdress: {name:'回复头巾',   tag:'回复',    desc:'本局结算后，下一回合开始回复 0.5 血，不超过血量上限。'},
   deso:      {name:'暗灭',       tag:'永久强化',desc:'本局结算后若你胜利，永久增加 5 点牌型基础分。'},
   potion:    {name:'净化药水',   tag:'换扑克',  desc:'自动弃掉手中点数最小的 1 张牌，从抽牌库补 1 张。'},
   bkb:       {name:'黑皇杖',     tag:'压制',    desc:'使对方本回合使用的技能牌全部失效。'},
@@ -824,7 +859,9 @@ var SKILL_DEFS={
   bfury:     {name:'狂战斧',     tag:'加点数',  desc:'结算时，有效牌中点数最大的一张，其点数额外重复计算一次。'},
   circlet:   {name:'头环',       tag:'加点数',  desc:'本回合所有打出的有效牌各 +2 点有效牌点数。'},
   lifepotion:{name:'生命药水',   tag:'持续回复',desc:'接下来两回合，每回合开始时回复 0.5 血。'},
-  meteor:    {name:'陨星锤',     tag:'改扑克',  desc:'选择任意 2 张扑克牌，点数各 +3。'}
+  meteor:    {name:'陨星锤',     tag:'改扑克',  desc:'选择任意 2 张扑克牌，点数各 +3。'},
+  magicStick:{name:'魔棒',       tag:'改花色',  desc:'本回合方片与红桃视为同一种花色，黑桃和梅花视为同一种花色。'},
+  veil:      {name:'纷争面纱',   tag:'条件加点',desc:'若结算时你的牌型等级低于对方，有效牌点数总和 +15。'}
 };
 var TARGETED={midas:1,spadeWish:1,forceStaff:1,manta:1,meteor:1};
 
@@ -856,15 +893,16 @@ function newPlayer(name,isAI){
     hand:[],played:[],playedRes:null,
     skDraw:[],skDiscard:[],skHand:[],usedSkills:[],
     pendingMod:null,poison:0,bloodstonePending:0,critUsed:false,
-    extraSwap:0,salveTurns:0,permBase:0,armletPending:false,healsTotal:0};
+    extraSwap:0,salveTurns:0,permBase:0,armletPending:false,healsTotal:0,headdressPending:0};
 }
 function freshGame(diffKey){
-  G={diff:diffKey||'normal',agg:C.ai[diffKey]||C.ai.normal,
+  var agg0=(diffKey&&C.ai[diffKey]!==undefined)?C.ai[diffKey]:C.ai.normal;
+  G={diff:diffKey||'normal',agg:agg0,aiP:aiProfile(agg0),
     pokerDraw:[],pokerDiscard:[],
     p:newPlayer('你',false),ai:newPlayer('AI',true),
     phase:'hero',timer:null,timeLeft:0,
     paused:false,over:false,round:0,busy:false,
-    discardSel:[],handPicks:{}};
+    discardSel:[],handPicks:{},sortMode:0,skillPicks:{},skillDiscardMode:false};
 }
 
 /* ---------------- 牌库 ---------------- */
@@ -905,11 +943,16 @@ function toDiscard(card){G.pokerDiscard.push(makeCard(card.origSuit,card.origRan
 var HEART_ROWS=['.XX.XX.','XXXXXXX','XXXXXXX','.XXXXX.','..XXX..','...X...'];
 function drawHeart(canvas,st){
   var ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
-  for(var y=0;y<HEART_ROWS.length;y++)for(var x=0;x<HEART_ROWS[y].length;x++){
-    if(HEART_ROWS[y][x]==='.')continue;
-    var fill=st==='full'?'#e23d3d':st==='half'?(x<3?'#e23d3d':'#5a2222'):'#5a2222';
-    ctx.fillStyle=fill;var sx=canvas.width/7,sy=canvas.height/HEART_ROWS.length;
-    ctx.fillRect(Math.floor(x*sx),Math.floor(y*sy),Math.ceil(sx),Math.ceil(sy));
+  function pixels(color){
+    ctx.fillStyle=color;
+    var sx=canvas.width/7,sy=canvas.height/HEART_ROWS.length;
+    for(var y=0;y<HEART_ROWS.length;y++)for(var x=0;x<HEART_ROWS[y].length;x++){
+      if(HEART_ROWS[y][x]!=='.')ctx.fillRect(Math.floor(x*sx),Math.floor(y*sy),Math.ceil(sx),Math.ceil(sy));
+    }
+  }
+  if(st==='full')pixels('#e23d3d');
+  else{pixels('#5a2222');
+    if(st==='half'){ctx.save();ctx.beginPath();ctx.rect(0,0,canvas.width/2,canvas.height);ctx.clip();pixels('#e23d3d');ctx.restore();}
   }
 }
 function heartsHTML(hp,maxHp,w,h){
@@ -940,7 +983,7 @@ function pcardHTML(card,o){
 }
 function scardHTML(sk,o){
   o=o||{};
-  var cls=['scard'];if(o.sm)cls.push('sm');if(o.used)cls.push('used');
+  var cls=['scard'];if(o.sm)cls.push('sm');if(o.used)cls.push('used');if(o.sel)cls.push('sel');
   return '<div class="'+cls.join(' ')+'"><div class="sart"><canvas width="80" height="80"></canvas></div>'+
     '<div class="snm">'+SKILL_DEFS[sk.key].name+'</div></div>';
 }
@@ -968,7 +1011,7 @@ var tipEl=$('tip'),tipTimer=null;
 function bindTip(el,title,tag,text){
   el.addEventListener('mouseenter',function(){
     clearTimeout(tipTimer);
-    tipTimer=setTimeout(function(){showTip(el,title,tag,text);},500);});
+    tipTimer=setTimeout(function(){showTip(el,title,tag,text);},100);});
   el.addEventListener('mouseleave',function(){clearTimeout(tipTimer);tipEl.style.display='none';});
 }
 function showTip(anchor,title,tag,text){
@@ -1020,6 +1063,12 @@ function renderHeroes(){
     az.innerHTML=hcardHTML(G.ai,'mid');
     PIX.draw(az.querySelector('canvas'),PORTRAITS[G.ai.hero].rows,PORTRAITS[G.ai.hero].pal);
     paintHearts(az);
+    var ad=HERO_DEFS.filter(function(h){return h.key===G.ai.hero;})[0];
+    bindTip(az.querySelector('.hcard'),ad.name,'英雄被动',ad.pass);
+  }
+  if(G.p.hero){
+    var pd=HERO_DEFS.filter(function(h){return h.key===G.p.hero;})[0];
+    bindTip(pz.querySelector('.hcard'),pd.name,'英雄被动',pd.pass);
   }
 }
 function renderPlayerHand(){
@@ -1031,7 +1080,7 @@ function renderPlayerHand(){
     var el=z.lastChild;
     el.onclick=function(){onHandClick(i);};
     bindTip(el,SUIT_CN[c.suit]+rankLabel(c.rank),'扑克牌',
-      G.phase==='discard'?'点击选中以换牌。':'点击高光：作为技能目标，或作为最终打出的牌。');
+      G.phase==='discard'?'点击选中以换牌。':'点击高光：作为技能目标牌。');
   });
 }
 function renderPlayerSkills(){
@@ -1039,9 +1088,13 @@ function renderPlayerSkills(){
   var click=G.phase==='skill'&&!G.paused&&!G.busy;
   G.p.skHand.forEach(function(sk){
     var full=G.p.usedSkills.length>=C.maxSkillsPerRound;
-    z.insertAdjacentHTML('beforeend',scardHTML(sk,{used:full}));
+    var selected=G.skillDiscardMode&&G.skillPicks[sk.uid];
+    z.insertAdjacentHTML('beforeend',scardHTML(sk,{used:full&&!selected,sel:selected}));
     var el=z.lastChild;
-    el.onclick=function(){if(click)onSkillClick(sk);};
+    el.onclick=function(){
+      if(G.skillDiscardMode)toggleSkillDiscard(sk);
+      else if(click)onSkillClick(sk);
+    };
     var cv=el.querySelector('canvas');paintArt(cv,sk.key);
     var d=SKILL_DEFS[sk.key];bindTip(el,d.name,d.tag,d.desc);
   });
@@ -1053,7 +1106,7 @@ function renderAIHidden(){
 function renderAISkillMini(){
   var z=$('aiSkillMini');z.innerHTML='';
   G.ai.skHand.forEach(function(){
-    z.insertAdjacentHTML('beforeend',pcardHTML(null,{back:true,size:'sm'}));});
+    z.insertAdjacentHTML('beforeend','<div class="miniSkillBack"></div>');});
   G.ai.usedSkills.forEach(function(k){
     var d=document.createElement('div');d.className='miniUsed';
     d.innerHTML='<canvas width="46" height="62"></canvas>';z.appendChild(d);
@@ -1061,7 +1114,7 @@ function renderAISkillMini(){
   });
 }
 function renderUsedStrip(){
-  var z=$('usedStrip');z.innerHTML='<span class="uLab">本局已用 '+G.p.usedSkills.length+'/'+C.maxSkillsPerRound+'</span>';
+  var z=$('usedStrip');z.innerHTML='<span class="uLab">技能牌 · 本局已用 '+G.p.usedSkills.length+'/'+C.maxSkillsPerRound+'</span>';
   G.p.usedSkills.forEach(function(k){
     var d=document.createElement('div');d.className='miniUsed';
     d.innerHTML='<canvas width="26" height="32"></canvas>';z.appendChild(d);
@@ -1070,11 +1123,18 @@ function renderUsedStrip(){
 }
 function renderPile(elId,n,bg){
   var el=$(elId);el.innerHTML='';
-  for(var i=Math.min(n,4)-1;i>=0;i--){
-    var d=document.createElement('div');d.className='pcap';
-    d.style.background=bg;d.style.outline='2px solid #14181d';d.style.borderRadius='5px';
-    d.style.transform='translate('+(-i*2)+'px,'+(-i*2.5)+'px)';
-    el.appendChild(d);
+  if(n>0){
+    /* 数量越多摞得越厚：每 4 张一层，最多 7 层 */
+    var layers=clamp(Math.ceil(n/4),1,7);
+    for(var k=0;k<layers;k++){
+      var d=document.createElement('div');d.className='pcap';
+      var off=(layers-1-k)*3;
+      d.style.left=(-off)+'px';d.style.top=(-off)+'px';
+      d.style.right=off+'px';d.style.bottom=off+'px';
+      d.style.background=bg;d.style.outline='2px solid #14181d';
+      if(off>0)d.style.filter='brightness(.7)';
+      el.appendChild(d);
+    }
   }
   var c=document.createElement('div');c.className='pcount';c.textContent=n;el.appendChild(c);
 }
@@ -1083,6 +1143,41 @@ function renderPiles(){
   renderPile('pilePokerDisc',G.pokerDiscard.length,'#f3ecd8');
   renderPile('pileSkDraw',G.p.skDraw.length,'#241d3a');
   renderPile('pileSkDisc',G.p.skDiscard.length,'#332a4a');
+}
+function suitSortValue(suit){
+  var order={'♠':0,'♥':1,'♣':2,'♦':3};
+  return Object.prototype.hasOwnProperty.call(order,suit)?order[suit]:9;
+}
+function sortPlayerHand(){
+  if(!G||!G.p||!G.p.hand)return;
+  G.p.hand.sort(function(a,b){
+    if(G.sortMode===1){
+      var ss=suitSortValue(a.suit)-suitSortValue(b.suit);
+      if(ss)return ss;
+      return b.rank-a.rank;
+    }
+    var rr=b.rank-a.rank;
+    if(rr)return rr;
+    return suitSortValue(a.suit)-suitSortValue(b.suit);
+  });
+}
+function toggleSkillDiscard(sk){
+  if(G.phase!=='skill'||G.busy||G.paused)return;
+  if(G.skillPicks[sk.uid])delete G.skillPicks[sk.uid];else G.skillPicks[sk.uid]=1;
+  SFX.discard();renderPlayerSkills();
+}
+function confirmDiscardSkills(){
+  if(G.phase!=='skill'||G.busy||G.paused)return;
+  if(!G.skillDiscardMode){
+    G.skillDiscardMode=true;G.skillPicks={};renderAll();toast('点击要丢弃的技能牌，再点确认丢弃');return;
+  }
+  var ids=Object.keys(G.skillPicks);
+  if(ids.length===0){G.skillDiscardMode=false;G.skillPicks={};renderAll();toast('已取消丢弃');return;}
+  var kept=[];
+  G.p.skHand.forEach(function(sk){
+    if(G.skillPicks[sk.uid])G.p.skDiscard.push(sk);else kept.push(sk);
+  });
+  G.p.skHand=kept;G.skillPicks={};G.skillDiscardMode=false;SFX.discard();renderAll();
 }
 function phaseName(){
   return G.phase==='discard'?'换牌阶段':G.phase==='skill'?'技能 / 出牌阶段':
@@ -1096,7 +1191,11 @@ function renderInfo(){
 function renderButtons(){
   $('discardBtn').style.display=G.phase==='discard'?'':'none';
   $('playBtn').style.display=G.phase==='skill'?'':'none';
+  $('sortBtn').style.display=(G.phase==='discard'||G.phase==='skill')?'':'none';
+  $('discardSkillBtn').style.display=G.phase==='skill'?'':'none';
+  $('discardSkillBtn').textContent=G.skillDiscardMode?'确认丢弃':'丢 弃';
   $('discardBtn').textContent=G.p.extraSwap>0?'再次换牌':'换 牌';
+  $('sortBtn').textContent=G.sortMode===0?'排序：点数':'排序：花色';
 }
 function renderAll(){
   renderHeroes();renderPlayerHand();renderPlayerSkills();
@@ -1118,8 +1217,9 @@ function stopTimer(){if(G&&G.timer){clearInterval(G.timer);G.timer=null;}}
 /* ---------------- 回合开始 ---------------- */
 function startRound(){
   G.round++;
-  G.discardSel=[];G.handPicks={};
+  G.discardSel=[];G.handPicks={};G.skillPicks={};G.skillDiscardMode=false;
   [G.p,G.ai].forEach(function(w){
+    if(w.headdressPending>0){w.hp=Math.min(w.maxHp,w.hp+C.skills.headdress.heal);w.headdressPending--;}
     if(w.salveTurns>0){w.hp=Math.min(w.maxHp,w.hp+C.skills.lifepotion.heal);w.salveTurns--;}
   });
   if(G.round===1){
@@ -1132,6 +1232,7 @@ function startRound(){
   }
   dealAnimated(G.p,function(){
     dealAnimated(G.ai,function(){
+      sortPlayerHand();
       G.phase='discard';G.discardSel=[];G.handPicks={};G.busy=false;
       renderAll();
       startTimer(C.time.discard,function(){doDiscard(true);});
@@ -1207,7 +1308,7 @@ function swapAnimated(w,sel,cb){
     removed.forEach(function(o){var i=w.hand.indexOf(o.c);w.hand.splice(i,1);toDiscard(o.c);});
     var n=removed.length,arrived=0;
     (function drawNext(){
-      if(arrived>=n){cb();return;}
+      if(arrived>=n){if(!w.isAI)sortPlayerHand();cb();return;}
       var nc=drawOne(w);w.hand.push(nc);renderAll();
       var z=w.isAI?$('aiHiddenRow'):$('handZone');
       var t=z.children[z.children.length-1];t.style.visibility='hidden';
@@ -1217,7 +1318,7 @@ function swapAnimated(w,sel,cb){
   }
 }
 function enterSkill(){
-  G.phase='skill';G.handPicks={};G.busy=false;renderAll();
+  G.phase='skill';G.handPicks={};G.skillPicks={};G.skillDiscardMode=false;G.busy=false;renderAll();
   startTimer(C.time.skill,function(){requestPlay(true);});
   setTimeout(aiSkillPlan,500);
 }
@@ -1243,21 +1344,24 @@ function consumeSkill(w,sk){
   var i=w.skHand.indexOf(sk);if(i>=0){w.skHand.splice(i,1);w.skDiscard.push(sk);}
   w.usedSkills.push(sk.key);
   w.pendingMod=w.pendingMod||freshMod();
+  G.skillDiscardMode=false;G.skillPicks={};
+  if(!w.isAI)sortPlayerHand();
   SFX.skill();flash('#7ec850');G.handPicks={};renderAll();
 }
-function applyTargeted(w,key,idxs){
-  var cfg=C.skills[key];
-  if(key==='midas')idxs.forEach(function(i){w.hand[i].rank=cfg.toRank;});
-  else if(key==='spadeWish')idxs.forEach(function(i){w.hand[i].suit='♠';});
-  else if(key==='forceStaff')idxs.forEach(function(i){w.hand[i].rank=Math.min(14,w.hand[i].rank+cfg.plus);});
-  else if(key==='meteor')idxs.forEach(function(i){w.hand[i].rank=Math.min(14,w.hand[i].rank+cfg.plus);});
+/* 改牌类技能的真实规则；AI 推演调用的是同一份，保证和真人规则一致 */
+function mutateHand(hand,key,idxs,cfg){
+  if(key==='midas')idxs.forEach(function(i){hand[i].rank=cfg.toRank;});
+  else if(key==='spadeWish')idxs.forEach(function(i){hand[i].suit='♠';});
+  else if(key==='forceStaff')idxs.forEach(function(i){hand[i].rank=Math.min(14,hand[i].rank+cfg.plus);});
+  else if(key==='meteor')idxs.forEach(function(i){hand[i].rank=Math.min(14,hand[i].rank+cfg.plus);});
   else if(key==='manta'){
-    var rr=w.hand[idxs[0]].rank;
-    var others=w.hand.map(function(c,i){return {c:c,i:i};})
+    var rr=hand[idxs[0]].rank;
+    var others=hand.map(function(c,i){return {c:c,i:i};})
       .filter(function(o){return o.i!==idxs[0];}).sort(function(a,b){return a.c.rank-b.c.rank;});
     if(others[0])others[0].c.rank=rr;
   }
 }
+function applyTargeted(w,key,idxs){mutateHand(w.hand,key,idxs,C.skills[key]);}
 function applyInstant(w,key,cfg){
   var m=w.pendingMod=w.pendingMod||freshMod();
   switch(key){
@@ -1296,15 +1400,17 @@ function applyInstant(w,key,cfg){
     case 'bfury':m.flags.bfury=true;break;
     case 'circlet':m.flags.circlet=true;break;
     case 'lifepotion':w.salveTurns=cfg.rounds;break;
+    case 'magicStick':m.flags.magicStick=true;break;
+    case 'veil':m.flags.veil=true;break;
   }
 }
 
 /* ---------------- 出牌 ---------------- */
 function requestPlay(auto){
   if(G.phase!=='skill'||G.busy)return;
-  var idxs=Object.keys(G.handPicks).map(Number);
-  if(!auto&&idxs.length===0){toast('请先高光要打出的牌，再点「出牌」');return;}
-  if(auto&&idxs.length===0)for(var t=0;t<G.p.hand.length;t++)idxs.push(t);
+  var idxs=[];
+  for(var pi=0;pi<G.p.hand.length;pi++)idxs.push(pi);
+  G.skillDiscardMode=false;G.skillPicks={};
   G.busy=true;stopTimer();
   // 先记录所有起点
   var pz=$('handZone'),az=$('aiHiddenRow');
@@ -1345,130 +1451,232 @@ function renderBattleFaces(){
 }
 
 /* ---------------- AI ---------------- */
-function aiDiscard(){
-  var w=G.ai,agg=G.agg;
-  var res=evaluateHand(w.hand),swap=[];
-  w.hand.forEach(function(c,i){
-    if(res.usedIdx.indexOf(i)>=0)return;
-    var keep=clamp(.25+c.rank/14*.45,0,1)*(1.35-agg);
-    if(rnd()>keep&&(c.rank<12||agg>=1.3))swap.push(i);
-  });
-  if(agg>.85){
-    var suits={};w.hand.forEach(function(c,i){(suits[c.suit]=suits[c.suit]||[]).push(i);});
-    Object.keys(suits).forEach(function(s){if(suits[s].length===4)
-      swap=w.hand.map(function(c,i){return i;}).filter(function(i){return w.hand[i].suit!==s;});});
+/* ================= 新 AI：先推演、再决策 =================
+   和真人拿到一样的信息：只看自己的手牌、技能牌、双方血量。
+   难度由 CFG.ai 的强度值换算成 aiProfile()，越强越会换牌、越会挑技能、失误越少。 */
+function aiProfile(agg){
+  /* 三档基准（难度值 0 / 0.4 / 1.6），中间值线性插值，
+     后台编辑器里调的就是 CFG.ai 那三个数字 */
+  var LV=[
+    {k:0,   thr:150,samples:1, noise:0.85,maxSkill:1,iq:0.00},
+    {k:0.4, thr:42, samples:6, noise:0.22,maxSkill:2,iq:0.44},
+    {k:1.6, thr:18, samples:11,noise:0.06,maxSkill:3,iq:0.88}
+  ];
+  var lo=LV[0],hi=LV[2];
+  if(agg<=LV[0].k){lo=hi=LV[0];}
+  else if(agg>=LV[2].k){lo=hi=LV[2];}
+  else for(var i=0;i<2;i++)if(agg>=LV[i].k&&agg<=LV[i+1].k){lo=LV[i];hi=LV[i+1];break;}
+  var t=(hi.k===lo.k)?0:(agg-lo.k)/(hi.k-lo.k);
+  function mix(key){return lo[key]+(hi[key]-lo[key])*t;}
+  return {a:clamp(agg,0,3)/1.6,
+    thr:mix('thr'),                                    // 技能收益门槛(分)：越高越少用技能
+    samples:Math.max(1,Math.round(mix('samples'))),    // 换牌推演抽样次数：越多越会换
+    noise:mix('noise'),                                // 换牌失误率
+    maxSkill:Math.max(1,Math.round(mix('maxSkill'))),  // 每回合最多用几张技能
+    iq:mix('iq')};                                     // 挑目标牌 / 挑英雄的精度
+}
+
+/* ---------- 推演用快照：只动拷贝，不影响真实牌局 ---------- */
+function cpCard(c){return {suit:c.suit,rank:c.rank,origSuit:c.origSuit,origRank:c.origRank,uid:c.uid};}
+function cpHand(h){return h.map(cpCard);}
+function cpMod(m){
+  var r=freshMod();
+  if(!m)return r;
+  r.baseAdd=m.baseAdd;r.baseMult=m.baseMult;r.ptsAdd=m.ptsAdd;r.ptsMult=m.ptsMult;
+  r.totalAdd=m.totalAdd;r.totalMult=m.totalMult;
+  Object.keys(m.flags||{}).forEach(function(k){r.flags[k]=m.flags[k];});
+  return r;
+}
+function snapState(w){
+  return {hand:cpHand(w.hand),skHand:w.skHand.slice(),skDiscard:w.skDiscard.slice(),skDraw:w.skDraw.slice(),
+    pendingMod:cpMod(w.pendingMod),extraSwap:w.extraSwap,salveTurns:w.salveTurns,
+    armletPending:w.armletPending,bloodstonePending:w.bloodstonePending,headdressPending:w.headdressPending,
+    pokerDraw:G.pokerDraw.slice(),pokerDiscard:G.pokerDiscard.slice()};
+}
+function loadState(w,s){
+  w.hand=cpHand(s.hand);w.skHand=s.skHand.slice();w.skDiscard=s.skDiscard.slice();w.skDraw=s.skDraw.slice();
+  w.pendingMod=cpMod(s.pendingMod);w.extraSwap=s.extraSwap;w.salveTurns=s.salveTurns;
+  w.armletPending=s.armletPending;w.bloodstonePending=s.bloodstonePending;w.headdressPending=s.headdressPending;
+  G.pokerDraw=s.pokerDraw.slice();G.pokerDiscard=s.pokerDiscard.slice();
+}
+function modForScore(w,res,oppRes){
+  var keep=w.pendingMod;
+  w.pendingMod=cpMod(keep);
+  var m=buildMod(w,res,false,oppRes);
+  w.pendingMod=keep;
+  return m;
+}
+/* 拿一份手牌算出最终得分（不落地） */
+function scoreOfHand(w,hand,oppRes){
+  var sh=w.hand,sp=w.played;
+  w.hand=hand;w.played=hand;
+  var res=evaluateHand(hand);
+  var sc=computeScore(res,modForScore(w,res,oppRes));
+  w.hand=sh;w.played=sp;
+  return sc;
+}
+/* 把技能效果套在快照上，用的是和真人完全相同的规则 */
+function simUseSkill(w,sk){
+  var key=sk.key,cfg=C.skills[key];
+  if(TARGETED[key])applyTargeted(w,key,aiTargets(w,key,cfg));
+  else applyInstant(w,key,cfg);
+  var i=w.skHand.indexOf(sk);if(i>=0)w.skHand.splice(i,1);
+}
+
+/* ---------- 换牌：枚举保留哪几张，抽样算期望分 ---------- */
+function bitsOf(x){var c=0;while(x){c+=x&1;x>>=1;}return c;}
+function randomDraw(k){
+  var pool=G.pokerDraw.slice();
+  if(pool.length<k)pool=pool.concat(G.pokerDiscard.slice());
+  if(pool.length<k)return null;
+  var out=[];
+  for(var i=0;i<k;i++){
+    var j=Math.floor(rnd()*(pool.length-i));
+    out.push(pool[j]);
+    pool[j]=pool[pool.length-1-i];
   }
+  return out;
+}
+function keepEV(w,mask,samples){
+  var kept=[],k=0;
+  w.hand.forEach(function(c,i){if(mask>>i&1)kept.push(c);else k++;});
+  if(k===0)return scoreOfHand(w,cpHand(kept));
+  var sum=0,got=0;
+  for(var s=0;s<samples;s++){
+    var drew=randomDraw(k);
+    if(!drew)break;
+    sum+=scoreOfHand(w,cpHand(kept).concat(drew.map(cpCard)));
+    got++;
+  }
+  return got?sum/got:scoreOfHand(w,cpHand(kept));
+}
+function aiDiscard(){
+  var w=G.ai,p=G.aiP||aiProfile(G.agg||0),n=w.hand.length;
+  if(n<1)return;
+  var total=1<<n,bestMask=0,bestEV=-1e9;
+  for(var mask=0;mask<total;mask++){
+    var ev=keepEV(w,mask,p.samples);
+    if(ev>bestEV){bestEV=ev;bestMask=mask;}
+  }
+  /* 难度自带的失误率：保留张数不变，但故意挑错牌 */
+  if(p.noise>0&&rnd()<p.noise){
+    var same=[];
+    for(var m2=0;m2<total;m2++)if(bitsOf(m2)===bitsOf(bestMask))same.push(m2);
+    bestMask=same[Math.floor(rnd()*same.length)];
+  }
+  var swap=[];
+  for(var i=0;i<n;i++)if(!(bestMask>>i&1))swap.push(i);
   swap.sort(function(a,b){return b-a;});
   swap.forEach(function(i){var c=w.hand.splice(i,1)[0];toDiscard(c);});
-  for(var k=0;k<swap.length;k++)w.hand.push(drawOne(w));
+  for(var d=0;d<swap.length;d++)w.hand.push(drawOne(w));
 }
-function skillValue(sk,w){
-  var res=evaluateHand(w.hand),key=sk.key;
+
+/* ---------- 技能：先推演收益，再结合血量局势决定 ---------- */
+/* 改牌类技能挑目标：枚举组合，取投影得分最高的那组 */
+function aiTargets(w,key,cfg){
+  var pickN=(key==='midas'||key==='manta')?1:(cfg.pick||2);
+  var n=w.hand.length,combos=[];
+  if(n<=0)return [];
+  (function rec(start,acc){
+    if(acc.length===pickN){combos.push(acc.slice());return;}
+    for(var i=start;i<n;i++){acc.push(i);rec(i+1,acc);acc.pop();}
+  })(0,[]);
+  if(!combos.length)return [];
+  var best=combos[0],bs=-1e9;
+  combos.forEach(function(combo){
+    var copies=cpHand(w.hand);
+    mutateHand(copies,key,combo,cfg);
+    var sc=scoreOfHand(w,copies);
+    if(sc>bs){bs=sc;best=combo;}
+  });
+  return best;
+}
+/* 弱 AI 用“够用就行”的选牌法，不枚举最优 */
+function naiveTargets(w,key,cfg){
+  if(!w.hand.length)return [];
+  if(key==='midas'){var c0=w.hand.slice().sort(function(a,b){return a.rank-b.rank;})[0];return [w.hand.indexOf(c0)];}
+  if(key==='manta'){var c1=w.hand.slice().sort(function(a,b){return b.rank-a.rank;})[0];return [w.hand.indexOf(c1)];}
+  return w.hand.slice().sort(function(a,b){return a.rank-b.rank;}).slice(0,cfg.pick||2)
+    .map(function(c){return w.hand.indexOf(c);});
+}
+function chooseTargets(w,key,cfg){
+  return (G.aiP&&G.aiP.iq>=0.6)?aiTargets(w,key,cfg):naiveTargets(w,key,cfg);
+}
+/* 保命 / 资源类技能折算成分值，和牌面收益同量纲比较 */
+function skillSituation(w,key){
+  var missing=w.maxHp-w.hp;
   switch(key){
-    case 'midas':var l=w.hand.slice().sort(function(a,b){return a.rank-b.rank;})[0];
-      return l?(14-l.rank)/12*3:1;
-    case 'spadeWish':return 2;
-    case 'conjure':return 1.6;
-    case 'refresh':return 1.2;
-    case 'nether':return w.hand.some(function(c){return c.rank<=5})?2.2:.6;
-    case 'forceStaff':return 2.2;
-    case 'mechasm':return 2;
-    case 'daedalus':return 2.4;
-    case 'aegis':return w.hp<=2?2.8:.8;
-    case 'bloodstone':return 1.6;
-    case 'phase':return (res.key==='pair'||res.key==='high')?2.6:.7;
-    case 'drum':return res.key==='twoPair'?2.4:.7;
-    case 'heart':return 2.2;
-    case 'shiva':return res.level>=3?2.3:.7;
-    case 'ring':return 1.3;
-    case 'armlet':return 2.1;
-    case 'headdress':return w.hp<w.maxHp?1.8:.5;
-    case 'deso':return 2.2;
-    case 'potion':return 2;
-    case 'bkb':return 1.8;
-    case 'butterfly':return 1.7;
-    case 'manta':return 2;
-    case 'dagon':return (res.key==='pair'||res.key==='twoPair')?2.5:1.8;
-    case 'bfury':return res.usedIdx.length>=2?2:1.4;
-    case 'circlet':return 1.9;
-    case 'lifepotion':return w.hp<w.maxHp?1.7:.4;
-    case 'meteor':return 2.2;
+    case 'aegis':      return w.hp<=2?150:(w.hp<=3?70:25);
+    case 'bkb':        return 45;
+    case 'headdress':  return missing>0?45:10;
+    case 'lifepotion': return missing>=1?55:(missing>0?25:8);
+    case 'ring':       return 30;
+    case 'bloodstone': return 35;
+    case 'deso':       return 28;
+    case 'conjure':    return 26;
+    case 'refresh':    return 12;
+    default:           return 0;
   }
-  return 1;
+}
+function aiSkillValue(w,sk,plan){
+  var st=snapState(w);
+  plan.forEach(function(p){simUseSkill(w,p);});
+  var before=scoreOfHand(w,cpHand(w.hand));
+  simUseSkill(w,sk);
+  var after=scoreOfHand(w,cpHand(w.hand));
+  loadState(w,st);
+  return (after-before)+skillSituation(w,sk.key);
 }
 var aiPlanVer=0;
 function aiSkillPlan(){
   if(G.phase!=='skill'||G.over)return;
-  var ver=++aiPlanVer,w=G.ai,plan=[];
-  (function decide(){
-    var best=null,bs=-1;
+  var ver=++aiPlanVer,w=G.ai,p=G.aiP||aiProfile(G.agg||0),plan=[],gain=0;
+  var opp=(w===G.ai)?G.p:G.ai;
+  /* 血量落后就拼一点，领先就稳一手 */
+  var thr=p.thr*(w.hp<=opp.hp-1.5?0.6:(w.hp>=opp.hp+1.5?1.35:1));
+  var limit=Math.min(p.maxSkill,C.maxSkillsPerRound);
+  for(var step0=0;step0<limit;step0++){
+    var best=null,bv=-1e9;
     w.skHand.forEach(function(sk){
       if(plan.indexOf(sk)>=0)return;
-      var v=skillValue(sk,w);if(v>bs){bs=v;best=sk;}
+      var v=aiSkillValue(w,sk,plan);
+      if(v>bv){bv=v;best=sk;}
     });
-    var threshold=2.1-G.agg*1.6; // 简单≈1.6 普通≈1.1 困难≈0.7
-    if(!best||bs<threshold)return;
-    if(plan.length>=C.maxSkillsPerRound)return;
-    plan.push(best);decide();
-  })();
+    if(!best||bv<thr)break;
+    plan.push(best);gain+=bv;
+  }
+  if(plan.length)addLog('AI 分析：准备 '+plan.map(function(sk){return SKILL_DEFS[sk.key].name;}).join(' + ')+
+    '（预计收益 '+Math.round(gain)+' 分）');
   var step=0;
   setTimeout(function next(){
     if(ver!==aiPlanVer)return;
     if(G.paused){setTimeout(next,300);return;}
-      if(G.phase!=='skill'||G.over)return;
-      if(step>=plan.length||w.usedSkills.length>=C.maxSkillsPerRound)return;
-      var sk=plan[step++];
-      if(sk&&w.skHand.indexOf(sk)>=0)aiUseSkill(w,sk);
-      setTimeout(next,650);
+    if(G.phase!=='skill'||G.over)return;
+    if(step>=plan.length||w.usedSkills.length>=C.maxSkillsPerRound)return;
+    var sk=plan[step++];
+    if(sk&&w.skHand.indexOf(sk)>=0)aiUseSkill(w,sk);
+    setTimeout(next,650);
   },200);
-}
-function bestTargets(w,key,cfg){
-  var pickN=(key==='midas'||key==='manta')?1:cfg.pick;
-  var all=w.hand.map(function(c,i){return i;}),combos=[];
-  (function rec(start,acc){if(acc.length===pickN){combos.push(acc.slice());return;}
-    for(var i=start;i<all.length;i++){acc.push(i);rec(i+1,acc);acc.pop();}})(0,[]);
-  var best=combos[0]||[],bs=-1;
-  combos.forEach(function(combo){
-    var copies=w.hand.map(function(c){return {rank:c.rank,suit:c.suit,origRank:c.origRank,origSuit:c.origSuit};});
-    combo.forEach(function(i){
-      if(key==='midas')copies[i].rank=14;
-      else if(key==='spadeWish')copies[i].suit='s';
-      else if(key==='forceStaff')copies[i].rank=Math.min(14,copies[i].rank+cfg.plus1);
-      else if(key==='meteor')copies[i].rank=Math.min(14,copies[i].rank+cfg.plus3);
-      else if(key==='manta'){var r=w.hand.slice().sort(function(a,b){return b.rank-a.rank;})[0];copies[i].rank=r.rank;}
-    });
-    var r2=evaluateHand(copies),sh=w.hand,sp=w.played,sr=w.playedRes;
-    w.hand=copies;w.played=copies;w.playedRes=r2;
-    var sc=computeScore(r2,buildMod(w,r2,false));
-    w.hand=sh;w.played=sp;w.playedRes=sr;
-    if(sc>bs){bs=sc;best=combo;}
-  });
-  return best;
 }
 function aiUseSkill(w,sk){
   if(!sk||!sk.key)return;
   var key=sk.key,cfg=C.skills[key];
   w.pendingMod=w.pendingMod||freshMod();
-  if(TARGETED[key]){
-    var idxs=[];
-    if(G.agg>=1.3){idxs=bestTargets(w,key,cfg);}
-    else if(key==='midas'){var c=w.hand.slice().sort(function(a,b){return a.rank-b.rank;})[0];
-      idxs=[w.hand.indexOf(c)];}
-    else if(key==='spadeWish'||key==='forceStaff'||key==='meteor'){
-      idxs=w.hand.slice().sort(function(a,b){return a.rank-b.rank})
-        .slice(0,cfg.pick).map(function(c){return w.hand.indexOf(c);});
-    } else if(key==='manta'){var r=w.hand.slice().sort(function(a,b){return b.rank-a.rank;})[0];
-      idxs=[w.hand.indexOf(r)];}
-    applyTargeted(w,key,idxs);
-  } else {
-    applyInstant(w,key,cfg);
-  }
+  if(TARGETED[key])applyTargeted(w,key,chooseTargets(w,key,cfg));
+  else applyInstant(w,key,cfg);
   var i=w.skHand.indexOf(sk);if(i>=0){w.skHand.splice(i,1);w.skDiscard.push(sk);}
   w.usedSkills.push(key);SFX.skill();renderAll();
 }
 
 /* ---------------- 亮牌结算 ---------------- */
-function buildMod(w,res,skipSkills){
+function scoredCards(w,skipSkills){
+  return w.played.map(function(c){
+    var copy={suit:c.suit,rank:c.rank,origSuit:c.origSuit,origRank:c.origRank,uid:c.uid};
+    if(!skipSkills&&w.pendingMod&&w.pendingMod.flags.magicStick)copy.suit=SUIT_RED[c.suit]?'R':'B';
+    return copy;
+  });
+}
+function buildMod(w,res,skipSkills,oppRes){
   var m=w.pendingMod?w.pendingMod:freshMod();
   if(!skipSkills){
     if(m.flags.phase&&(res.key==='pair'||res.key==='high'))m.ptsMult*=C.skills.phase.ptsMult;
@@ -1477,6 +1685,7 @@ function buildMod(w,res,skipSkills){
     if(m.flags.dagon)m.ptsAdd+=(res.key==='pair'||res.key==='twoPair')?
       C.skills.dagon.ptsAddMulti:C.skills.dagon.ptsAdd;
     if(m.flags.circlet)m.ptsAdd+=C.skills.circlet.perCard*res.usedIdx.length;
+    if(m.flags.veil&&oppRes&&res.level<oppRes.level)m.ptsAdd+=C.skills.veil.ptsAdd;
     if(m.flags.bfury){
       var mx=0;res.usedIdx.forEach(function(i){mx=Math.max(mx,w.played[i].rank);});m.ptsAdd+=mx;
     }
@@ -1491,16 +1700,24 @@ function buildMod(w,res,skipSkills){
 }
 function resolveReveal(){
   var p=G.p,ai=G.ai;
-  var pRes=evaluateHand(p.played),aiRes=evaluateHand(ai.played);
-  p.playedRes=pRes;ai.playedRes=aiRes;
   var pSkip=!!(ai.pendingMod&&ai.pendingMod.flags.bkb);
   var aiSkip=!!(p.pendingMod&&p.pendingMod.flags.bkb);
-  var pMod=buildMod(p,pRes,pSkip),aiMod=buildMod(ai,aiRes,aiSkip);
+  var pScoreCards=scoredCards(p,pSkip),aiScoreCards=scoredCards(ai,aiSkip);
+  var pRes=evaluateHand(pScoreCards),aiRes=evaluateHand(aiScoreCards);
+  p.playedRes=pRes;ai.playedRes=aiRes;
+  var pMod=buildMod(p,pRes,pSkip,aiRes),aiMod=buildMod(ai,aiRes,aiSkip,pRes);
   var pScore=computeScore(pRes,pMod),aiScore=computeScore(aiRes,aiMod);
-  // 翻明 AI
-  var ab=$('aiBattleCards');ab.innerHTML='';
-  ai.played.forEach(function(c){ab.insertAdjacentHTML('beforeend',pcardHTML(c,{size:'mid'}));});
-  dimInvalid('pBattleCards',pRes);dimInvalid('aiBattleCards',aiRes);
+  /* 不再把无效牌抽走：五张牌都留在对战区，参与计分的保持原样，
+     没参与计分的变暗，一眼看出哪些牌有效、哪些白出 */
+  function revealRow(rowId,w,res){
+    var z=$(rowId);z.innerHTML='';
+    w.played.forEach(function(c,i){
+      var bad=res.usedIdx.indexOf(i)<0;
+      z.insertAdjacentHTML('beforeend',pcardHTML(c,{size:'mid',dim:bad}));
+    });
+  }
+  revealRow('pBattleCards',p,pRes);
+  revealRow('aiBattleCards',ai,aiRes);
   $('pBattleScore').textContent=pScore;$('aiBattleScore').textContent=aiScore;
   SFX.reveal();
   if(pRes.level>=7)$('pBattleCards').querySelectorAll('.pcard').forEach(function(el){el.classList.add('bigpop');});
@@ -1515,46 +1732,50 @@ function resolveReveal(){
     else if(ai.hero==='chaosKnight'&&rnd()<C.heroes.chaosKnight.chaos){winner=ai;loser=p;}
   }
   var br=$('battleResult');br.style.display='block';
+  function queueHeaddress(w){
+    if(w.pendingMod&&w.pendingMod.flags.headdress)w.headdressPending+=C.skills.headdress.heal;
+  }
   if(!winner){br.textContent='平局，双方不扣血';br.style.background='#0008';br.style.color='#cfe8d2';
-    renderAll();afterRound();return;}
+    queueHeaddress(p);queueHeaddress(ai);renderAll();afterRound();return;}
   br.textContent=winner===p?'你 赢 得 本 局':'AI 赢 得 本 局';
   br.style.color=winner===p?'#8fe08a':'#ff9a8a';
 
-  var dmg=1;
+  var baseDmg=1;
   var f=loser.pendingMod?loser.pendingMod.flags:null;
-  if(f&&f.aegis){dmg=0;toast((loser===p?'你':'AI')+' 的不朽之守护免伤');}
-  if(dmg>0&&loser.hero==='deathKnight'&&rnd()<C.heroes.deathKnight.pact)dmg=C.heroes.deathKnight.pactDmg;
-  if(loser.armletPending)dmg+=C.skills.armlet.backfire;
-  if(dmg>0&&loser.poison>=C.heroes.viper.toxThreshold){
-    dmg+=C.heroes.viper.toxDmg;loser.poison=0;poisonFX();}
-  loser.hp=Math.round((loser.hp-dmg)*100)/100;
-  if(dmg>0)hurtFX(loser);
-
-  if(winner.hero==='phantomAssassin'&&!winner.critUsed&&rnd()<C.heroes.phantomAssassin.crit&&loser.hp>0){
-    loser.hp-=C.heroes.phantomAssassin.critDmg;winner.critUsed=true;hurtFX(loser);}
-  if(winner.hero==='viper')loser.poison+=C.heroes.viper.layersPerWin;
-  if(winner.hero==='treant'&&winner.healsTotal<C.heroes.treant.maxHeals&&winner.hp<winner.maxHp){
-    winner.hp=Math.min(winner.maxHp,winner.hp+C.heroes.treant.heal);
-    winner.healsTotal=Math.round((winner.healsTotal+C.heroes.treant.heal)*100)/100;
-  }
-  if(loser.hero==='antiMage'&&loser.skHand.length<skillCap(loser)){
-    for(var a=0;a<C.heroes.antiMage.skillOnLoss&&loser.skHand.length<skillCap(loser);a++)
-      loser.skHand.push(drawSkill(loser));
-  }
-  if(winner.pendingMod&&winner.pendingMod.flags.bloodstone)
-    winner.bloodstonePending+=C.skills.bloodstone.extraSkill;
-  if(winner.pendingMod&&winner.pendingMod.flags.headdress)
-    winner.hp=Math.min(winner.maxHp,winner.hp+C.skills.headdress.heal);
-  if(winner.pendingMod&&winner.pendingMod.flags.deso)
-    winner.permBase+=C.skills.deso.permaBase;
-
+  if(f&&f.aegis){baseDmg=0;toast((loser===p?'你':'AI')+' 的不朽之守护免伤');}
+  if(baseDmg>0&&loser.hero==='deathKnight'&&rnd()<C.heroes.deathKnight.pact)baseDmg=C.heroes.deathKnight.pactDmg;
+  if(loser.armletPending)baseDmg+=C.skills.armlet.backfire;
+  if(baseDmg>0&&loser.poison>=C.heroes.viper.toxThreshold){
+    baseDmg+=C.heroes.viper.toxDmg;loser.poison=0;poisonFX();}
   renderAll();
-  if(loser.hp<=0){endGame(winner===p);return;}
-  afterRound();
-}
-function dimInvalid(rowId,res){
-  Array.prototype.forEach.call($(rowId).children,function(el,i){
-    if(res.usedIdx.indexOf(i)<0)el.classList.add('dim');});
+  function animateDamage(w,dmg,cb){hurtFX(w,function(){
+    w.hp=Math.round((w.hp-dmg)*100)/100;renderAll();if(cb)cb();
+  });}
+  function finishWinnerEffects(){
+    if(winner.hero==='viper')loser.poison+=C.heroes.viper.layersPerWin;
+    if(winner.hero==='treant'&&winner.healsTotal<C.heroes.treant.maxHeals&&winner.hp<winner.maxHp){
+      winner.hp=Math.min(winner.maxHp,winner.hp+C.heroes.treant.heal);
+      winner.healsTotal=Math.round((winner.healsTotal+C.heroes.treant.heal)*100)/100;
+    }
+    if(loser.hero==='antiMage'&&loser.skHand.length<skillCap(loser)){
+      for(var a=0;a<C.heroes.antiMage.skillOnLoss&&loser.skHand.length<skillCap(loser);a++)
+        loser.skHand.push(drawSkill(loser));
+    }
+    queueHeaddress(winner);queueHeaddress(loser);
+    if(winner.pendingMod&&winner.pendingMod.flags.bloodstone)
+      winner.bloodstonePending+=C.skills.bloodstone.extraSkill;
+    if(winner.pendingMod&&winner.pendingMod.flags.deso)
+      winner.permBase+=C.skills.deso.permaBase;
+    renderAll();
+    if(loser.hp<=0)endGame(winner===p);else afterRound();
+  }
+  function checkAfterBaseDamage(){
+    if(loser.hp<=0){endGame(winner===p);return;}
+    if(baseDmg>0&&winner.hero==='phantomAssassin'&&!winner.critUsed&&rnd()<C.heroes.phantomAssassin.crit&&loser.hp>0){
+      animateDamage(loser,C.heroes.phantomAssassin.critDmg,function(){winner.critUsed=true;finishWinnerEffects();});
+    }else finishWinnerEffects();
+  }
+  if(baseDmg>0)animateDamage(loser,baseDmg,checkAfterBaseDamage);else checkAfterBaseDamage();
 }
 function afterRound(){
   G.busy=true;
@@ -1565,7 +1786,7 @@ function afterRound(){
     $('pBattleScore').textContent='-';$('aiBattleScore').textContent='-';
     $('battleResult').style.display='none';
     G.busy=false;startRound();
-  },2600);
+  },4600);
 }
 
 /* ---------------- 结束 ---------------- */
@@ -1597,16 +1818,17 @@ function flash(color){
   var f=$('flash');f.style.transition='none';f.style.background=color;f.style.opacity=.4;
   setTimeout(function(){f.style.transition='opacity .5s';f.style.opacity=0;},30);
 }
-function hurtFX(w){
+function hurtFX(w,cb){
   SFX.hurt();
   var card=(w===G.p?$('pHeroZone'):$('aiHeroZone')).querySelector('.hcard');
   if(card){
-    card.classList.remove('shake');void card.offsetWidth;card.classList.add('shake');
-    var s=document.createElement('div');s.className='slash';
-    s.style.top='42%';card.appendChild(s);
-    setTimeout(function(){s.remove();},500);
-  }
-  flash('#e2503d');
+    card.classList.remove('hurt');void card.offsetWidth;card.classList.add('hurt');
+    var old=card.querySelector('.claw');if(old)old.remove();
+    var claw=document.createElement('div');claw.className='claw';
+    claw.innerHTML='<i></i><i></i><i></i>';card.appendChild(claw);
+    setTimeout(function(){card.classList.remove('hurt');claw.remove();if(cb)cb();},1000);
+  }else setTimeout(function(){if(cb)cb();},1000);
+  /* 掉血不再全屏闪红：保留英雄卡抖动 + 爪痕的局部反馈 */
 }
 function poisonFX(){
   for(var i=0;i<14;i++){
@@ -1641,10 +1863,10 @@ function closeOverlay(){if(overlayOpen){overlayOpen.remove();overlayOpen=null;}}
 function helpHTML(){
   return '<h2>玩法说明</h2><ul>'+
   '<li>双方各选一名英雄，英雄自带血量与被动技能。</li>'+
-  '<li>每回合：发 5 张暗牌 → 免费换牌（30 秒）→ 使用技能 / 出牌（60 秒，每回合最多 3 张技能）→ 同时亮牌比大小。</li>'+
+  '<li>每回合：发 5 张暗牌 → 免费换牌（15 秒）→ 使用技能 / 出牌（60 秒，每回合最多 3 张技能）→ 同时亮牌比大小。</li>'+
   '<li>最终得分 =（牌型基础分 + 基础加减）× 基础相乘 +（有效牌点 + 点数加减）× 点数相乘，再做总分加减与相乘。</li>'+
   '<li>得分低的一方扣血，平局不扣血；先把对方血打空者获胜。</li>'+
-  '<li>出牌时可只打出部分手牌：高光要出的牌再点出牌，未选的牌进弃牌堆、不参与结算；亮牌后无效牌会变暗。</li>'+
+  '<li>点击出牌时五张手牌全部交出；只有参与牌型计分的牌进入对战区，其余牌直接进入扑克弃牌库。</li>'+
   '<li>改扑克牌的技能：先高光目标扑克牌，再点技能牌；直接生效的技能点一下立即生效。</li>'+
   '<li>牌库抽空会自动把弃牌堆洗回；技能改变的花色点数仅限本回合。</li>'+
   '<li>按空格键可随时暂停。</li></ul>';
@@ -1652,16 +1874,18 @@ function helpHTML(){
 var EXAMPLES={
   high:'A♠',pair:'K♥ K♦',twoPair:'A♠ A♥ 8♦ 8♣',three:'Q♠ Q♥ Q♦',
   straight:'5♠ 6♥ 7♦ 8♣ 9♠',flush:'五张全部 ♥',fullHouse:'10 三张 + 6 一对',
-  four:'9♠ 9♥ 9♦ 9♣',straightFlush:'4♠ 5♠ 6♠ 7♠ 8♠',royalFlush:'10 J Q K A 同花色'
+  four:'9♠ 9♥ 9♦ 9♣',straightFlush:'4♠ 5♠ 6♠ 7♠ 8♠',royalFlush:'10 J Q K A 同花色',
+  fiveKind:'5 张点数相同，花色不全相同',fiveKindFlush:'5 张点数与花色都相同'
 };
 function handTableHTML(){
   var rows='';
-  for(var i=9;i>=0;i--){var k=HAND_KEYS[i];
-    rows+='<div class="hd"><b>'+HAND_NAMES[i]+'</b></div>'+
+  for(var i=HAND_KEYS.length-1;i>=0;i--){var k=HAND_KEYS[i];
+    rows+='<div class="hd">'+(i+1)+'</div>'+
+      '<div class="hd"><b>'+HAND_NAMES[i]+'</b></div>'+
       '<div class="hd">'+C.hands[k]+' 分</div>'+
       '<div class="hd"><span class="eg">'+EXAMPLES[k]+'</span></div>';}
-  return '<h2>牌型与计分</h2><p>计分顺序：先加减、后相乘；只有有效计分牌计点，其余牌变暗。</p>'+
-  '<div class="handTable"><div class="hd"><b>牌型</b></div><div class="hd"><b>基础分</b></div><div class="hd"><b>牌型实例</b></div>'+
+  return '<h2>牌型计分</h2><p>计分顺序：先加减、后相乘；只有有效计分牌进入对战区，其余牌进入弃牌库。</p>'+
+  '<div class="handTable"><div class="hd"><b>等级</b></div><div class="hd"><b>牌型</b></div><div class="hd"><b>基础分</b></div><div class="hd"><b>牌型实例</b></div>'+
   rows+'</div>';
 }
 
@@ -1702,6 +1926,14 @@ function showStartScreen(){
 function random4(){
   var k=HERO_DEFS.map(function(h){return h.key;});shuffle(k);return k.slice(0,4);
 }
+/* 英雄强度表：AI 选人时用，越强的档位越会挑（弱档位随机选） */
+var HERO_POWER={deathKnight:7,juggernaut:7.5,viper:7.2,phantomAssassin:6.6,antiMage:6.2,
+  archMage:6.8,treant:7.4,chaosKnight:6,lich:6.6,bloodMage:6.4};
+function aiPickHero(pool){
+  var p=G.aiP||aiProfile(G.agg||0);
+  if(rnd()>p.iq)return pick(pool);
+  return pool.slice().sort(function(a,b){return HERO_POWER[b]-HERO_POWER[a];})[0];
+}
 var playerPool=null,aiPool=null,pickedPlayer=null;
 function startHeroPick(){
   playerPool=random4();aiPool=random4();pickedPlayer=null;
@@ -1727,7 +1959,7 @@ function startHeroPick(){
 }
 function confirmHeroPick(){
   if(!pickedPlayer){toast('请先点选一名英雄');return;}
-  var aiPick=pick(aiPool);
+  var aiPick=aiPickHero(aiPool);
   setupHero(G.p,pickedPlayer);setupHero(G.ai,aiPick);
   G.pokerDraw=buildPokerDeck();
   G.p.skDraw=buildSkillDeck();G.ai.skDraw=buildSkillDeck();
@@ -1746,10 +1978,12 @@ $('surrBtn').onclick=function(){
 };
 $('logBtn').onclick=function(){
   var rows=logs.slice(-40).map(function(l){return '<li>'+l.m+'</li>';}).join('')||'<li>暂无日志</li>';
-  openOverlay('<h2>战斗日志</h2><ul>'+rows+'</ul>',[['关闭',closeOverlay,true]]);
+  openOverlay('<h2>游戏日志</h2><ul>'+rows+'</ul>',[['关闭',closeOverlay,true]]);
 };
 $('discardBtn').onclick=function(){doDiscard(false);};
 $('playBtn').onclick=function(){requestPlay(false);};
+$('sortBtn').onclick=function(){G.sortMode=G.sortMode===0?1:0;sortPlayerHand();SFX.discard();renderAll();};
+$('discardSkillBtn').onclick=confirmDiscardSkills;
 document.addEventListener('keydown',function(e){
   if(e.code==='Space'){
     var t=(e.target.tagName||'').toLowerCase();
