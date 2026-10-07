@@ -73,7 +73,7 @@
     align-items:center; justify-content:center; min-height:0; position:relative;}
   .zoneLab{position:absolute; font-size:10px; color:#7fa88a; top:4px; left:8px;}
   .usedStrip{flex:none; min-height:38px; background:#0006; border-radius:5px; padding:4px;
-    display:flex; gap:5px; align-items:center; overflow:hidden;}
+    display:flex; gap:5px; align-items:center; align-content:center; flex-wrap:wrap; overflow:hidden;}
   .usedStrip .uLab{font-size:10px; color:var(--gold); flex:none;}
   .usedStrip .miniUsed{width:26px; height:32px; border-radius:3px; border:1.5px solid var(--ink);
     background:#241d3a; flex:none; overflow:hidden;}
@@ -418,7 +418,7 @@ var POKER_CFG = {
         },
         armlet: {
           count: 2,
-          baseBonus: 15,
+          baseBonus: 20,
           backfire: 0.5
         },
         headdress: {
@@ -824,7 +824,7 @@ var SKILL_ART = {
 /* ---------------- 定义 ---------------- */
 var HERO_DEFS=[
   {key:'deathKnight',    name:'死亡骑士', pass:'死亡契约：败局后 50% 概率只扣 0.5 血'},
-  {key:'phantomAssassin',name:'幻影刺客', pass:'恩赐解脱：胜局 20% 暴击，对方额扣 1 血（每局限 1 次）'},
+  {key:'phantomAssassin',name:'幻影刺客', pass:'恩赐解脱：每小局获胜时 20% 暴击，对方额外扣 1 血（每小局最多 1 次，整场不限次数）'},
   {key:'antiMage',       name:'敌法师',   pass:'法力汲取：每输 1 局立即获得 1 张随机技能牌'},
   {key:'archMage',       name:'大法师',   pass:'辉煌光环：初始技能手牌 4 张，上限 6'},
   {key:'treant',         name:'树精卫士', pass:'自然恢复：每胜 1 局立即回 0.5 血，整场最多回 3 点'},
@@ -850,11 +850,11 @@ var SKILL_DEFS={
   heart:     {name:'龙心',       tag:'总分相乘',desc:'本回合最终总分 ×1.2。'},
   shiva:     {name:'西瓦之守护', tag:'条件加总',desc:'最大牌型为三条及以上时，最终总分 +12。'},
   ring:      {name:'王者之戒',   tag:'持续',    desc:'下一小局开局获得一次额外的换牌机会。'},
-  armlet:    {name:'食尸鬼王臂章',tag:'加基础分',desc:'本局牌型基础分 +15；但若本局败北，额外扣 0.5 血。'},
+  armlet:    {name:'食尸鬼王臂章',tag:'加基础分',desc:'本局结算时牌型基础分额外 +20；但若本局败北，额外扣 0.5 血。'},
   headdress: {name:'回复头巾',   tag:'回复',    desc:'本局结算后，下一回合开始回复 0.5 血，不超过血量上限。'},
   deso:      {name:'暗灭',       tag:'永久强化',desc:'本局结算后若你胜利，永久增加 5 点牌型基础分。'},
   potion:    {name:'净化药水',   tag:'换扑克',  desc:'自动弃掉手中点数最小的 1 张牌，从抽牌库补 1 张。'},
-  bkb:       {name:'黑皇杖',     tag:'压制',    desc:'使对方本回合使用的技能牌全部失效。'},
+  bkb:       {name:'黑皇杖',     tag:'压制',    desc:'使对方本回合使用的所有与分数变化相关的技能牌全部失效（改牌、加点、相乘等一律作废）。'},
   butterfly: {name:'蝴蝶',       tag:'概率相乘',desc:'结算时 50% 概率，最终总分 ×1.15。'},
   manta:     {name:'幻影斧',     tag:'改扑克',  desc:'选择 1 张扑克牌，将手中点数最小的牌变为与其点数相同，花色不变。'},
   dagon:     {name:'达贡之神力', tag:'加点数',  desc:'结算有效牌点 +6；牌型为对子 / 两对时提升至 +12。'},
@@ -904,7 +904,7 @@ function freshGame(diffKey){
     p:newPlayer('你',false),ai:newPlayer('AI',true),
     phase:'hero',timer:null,timeLeft:0,
     paused:false,over:false,round:0,busy:false,
-    discardSel:[],handPicks:{},sortMode:0,skillPicks:{},skillDiscardMode:false};
+    discardSel:[],handPicks:{},sortMode:0,skillPicks:{},skillDiscardMode:false,swapUsed:false};
 }
 
 /* ---------------- 牌库 ---------------- */
@@ -1123,6 +1123,20 @@ function renderUsedStrip(){
     d.innerHTML='<canvas width="26" height="32"></canvas>';z.appendChild(d);
     paintArt(d.querySelector('canvas'),k,true);
   });
+  /* 永久生效类的效果挂在已用区后面（暗灭等），鼠标移上去看当前累计加成 */
+  permEffects(G.p).forEach(function(e){
+    var d=document.createElement('div');d.className='miniUsed';
+    d.innerHTML='<canvas width="26" height="32"></canvas>';z.appendChild(d);
+    paintArt(d.querySelector('canvas'),e.art);
+    bindTip(d,e.name,'永久效果',e.text);
+    var s=document.createElement('span');s.className='uLab';s.textContent=e.short;z.appendChild(s);
+  });
+}
+function permEffects(w){
+  var list=[];
+  if(w.permBase>0)list.push({art:'deso',name:'暗灭',short:'+'+w.permBase,
+    text:'每胜 1 小局永久 +5 点牌型基础分，目前已累计 +'+w.permBase+' 点（所有回合都生效）。'});
+  return list;
 }
 function renderPile(elId,n,bg){
   var el=$(elId);el.innerHTML='';
@@ -1231,7 +1245,7 @@ function renderButtons(){
   $('sortBtn').style.display=(G.phase==='discard'||G.phase==='skill')?'':'none';
   $('discardSkillBtn').style.display=G.phase==='skill'?'':'none';
   $('discardSkillBtn').textContent=G.skillDiscardMode?'确认丢弃':'丢 弃';
-  $('discardBtn').textContent=G.p.extraSwap>0?'再次换牌':'换 牌';
+  $('discardBtn').textContent=(G.p.extraSwap>0&&G.swapUsed)?'再次换牌':'换牌';
   $('sortBtn').textContent=G.sortMode===0?'排序：点数':'排序：花色';
 }
 function renderAll(){
@@ -1254,7 +1268,7 @@ function stopTimer(){if(G&&G.timer){clearInterval(G.timer);G.timer=null;}}
 /* ---------------- 回合开始 ---------------- */
 function startRound(){
   G.round++;
-  G.discardSel=[];G.handPicks={};G.skillPicks={};G.skillDiscardMode=false;
+  G.discardSel=[];G.handPicks={};G.skillPicks={};G.skillDiscardMode=false;G.swapUsed=false;
   [G.p,G.ai].forEach(function(w){
     if(w.headdressPending>0){w.hp=Math.min(w.maxHp,w.hp+C.skills.headdress.heal);w.headdressPending--;}
     if(w.salveTurns>0){w.hp=Math.min(w.maxHp,w.hp+C.skills.lifepotion.heal);w.salveTurns--;}
@@ -1320,6 +1334,7 @@ function doDiscard(timeout){
   var sel=G.discardSel.slice().sort(function(a,b){return b-a;});
   swapAnimated(G.p,sel,function(){
     G.discardSel=[];
+    G.swapUsed=true;                 // 第一次换牌用掉了，按钮改成「再次换牌」
     // AI 换牌（含王者戒额外一次）
     aiDiscard();
     if(G.ai.extraSwap>0){G.ai.extraSwap--;aiDiscard();}
@@ -1359,6 +1374,11 @@ function swapAnimated(w,sel,cb){
   }
 }
 function enterSkill(){
+  /* 记录本回合技能使用前的牌面，黑皇杖压制时用来还原「改牌类」技能的效果 */
+  [G.p,G.ai].forEach(function(w){
+    w.skillSnap={};
+    w.hand.forEach(function(c){w.skillSnap[c.uid]={rank:c.rank,suit:c.suit};});
+  });
   G.phase='skill';G.handPicks={};G.skillPicks={};G.skillDiscardMode=false;G.busy=false;renderAll();
   startTimer(C.time.skill,function(){requestPlay(true);});
   setTimeout(aiSkillPlan,500);
@@ -1739,6 +1759,13 @@ function scoredCards(w,skipSkills){
     return copy;
   });
 }
+/* 黑皇杖压制：把「改牌类」技能改过的点数/花色还原回本回合技能阶段开始时的样子 */
+function undoSkillCards(w){
+  if(!w.skillSnap)return;
+  function back(c){var o=w.skillSnap[c.uid];if(o){c.rank=o.rank;c.suit=o.suit;}}
+  w.hand.forEach(back);
+  w.played.forEach(back);
+}
 function buildMod(w,res,skipSkills,oppRes){
   var m=w.pendingMod?w.pendingMod:freshMod();
   if(!skipSkills){
@@ -1765,6 +1792,9 @@ function resolveReveal(){
   var p=G.p,ai=G.ai;
   var pSkip=!!(ai.pendingMod&&ai.pendingMod.flags.bkb);
   var aiSkip=!!(p.pendingMod&&p.pendingMod.flags.bkb);
+  /* 黑皇杖：被压制的一方，本回合被技能改过点数/花色的牌也一并还原 */
+  if(pSkip)undoSkillCards(p);
+  if(aiSkip)undoSkillCards(ai);
   var pScoreCards=scoredCards(p,pSkip),aiScoreCards=scoredCards(ai,aiSkip);
   var pRes=evaluateHand(pScoreCards),aiRes=evaluateHand(aiScoreCards);
   p.playedRes=pRes;ai.playedRes=aiRes;
@@ -1786,6 +1816,11 @@ function resolveReveal(){
   if(pRes.level>=7)$('pBattleCards').querySelectorAll('.pcard').forEach(function(el){el.classList.add('bigpop');});
   if(aiRes.level>=7)$('aiBattleCards').querySelectorAll('.pcard').forEach(function(el){el.classList.add('bigpop');});
   addLog('你：'+pRes.name+' '+pScore+' ｜ AI：'+aiRes.name+' '+aiScore);
+  if(pSkip||aiSkip){
+    var bkMsg=(pSkip&&aiSkip)?'双方都用黑皇杖：两边技能牌全部失效'
+      :(pSkip?'黑皇杖压制：你本回合的技能牌全部失效':'黑皇杖压制：AI 本回合的技能牌全部失效');
+    toast(bkMsg);addLog(bkMsg);
+  }
 
   var winner=null,loser=null;
   if(pScore>aiScore){winner=p;loser=ai;}
@@ -2059,6 +2094,7 @@ document.addEventListener('keydown',function(e){
 window.__pokerTest={
   CFG:POKER_CFG,evaluateHand:evaluateHand,computeScore:computeScore,
   makeCard:makeCard,freshMod:freshMod,buildMod:buildMod,setupHero:setupHero,
+  renderAll:function(){renderAll();},
   G:function(){return G;}
 };
 
