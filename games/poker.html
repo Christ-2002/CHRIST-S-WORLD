@@ -48,12 +48,15 @@
     background:#0008; border:2px solid var(--gold); border-radius:6px; padding:4px 10px; color:var(--gold); z-index:4;}
 
   /* ============ AI 区（紧凑排列） ============ */
-  #aiArea .boxbody{display:flex; flex-direction:column; gap:4px;}
-  .aiTop{display:flex; gap:8px; align-items:flex-start; flex:1; min-height:0;}
-  .aiHidden{flex:1; display:flex; gap:5px; align-items:center; justify-content:center;
-    background:#0005; border-radius:6px; padding:6px; min-height:92px;}
-  .aiSkills{flex:none; min-height:66px; background:#0005; border-radius:6px; padding:4px; display:flex; gap:4px;
-    align-items:center; justify-content:center; flex-wrap:wrap; overflow:hidden;}
+  /* AI 区：英雄 + 暗牌 + 技能牌横向排开，面板撑满整格，不留大片空白 */
+  #aiArea .boxbody{display:flex; flex-direction:row; gap:10px; align-items:stretch;}
+  #aiHeroZone{display:flex; align-items:center;}
+  .aiTop{display:flex; gap:8px; align-items:stretch; flex:1 1 auto; min-width:0; min-height:0;}
+  .aiHidden{flex:1 1 auto; display:flex; gap:5px; align-items:center; justify-content:center;
+    background:#0005; border-radius:6px; padding:10px; min-height:0;}
+  .aiSkills{flex:0 1 auto; min-width:0; max-width:36%; background:#0005; border-radius:6px; padding:8px;
+    display:flex; gap:5px; align-items:center; justify-content:center; align-content:center;
+    flex-wrap:wrap; overflow:hidden;}
   .aiSkills .miniUsed,.miniSkillBack{width:38px; height:52px; border-radius:4px; border:2px solid var(--ink);
     background:#241d3a; flex:none;}
   .aiSkills .miniUsed canvas{width:100%;height:100%;display:block;}
@@ -79,7 +82,7 @@
   /* ============ 牌堆 / 按钮区 ============ */
   #pileArea .boxbody{display:flex; flex-direction:column; gap:6px;}
   .pileRow{flex:none; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; align-items:end;}
-  .pile{position:relative; width:46px; height:92px; margin:0 auto;}
+  .pile{position:relative; width:46px; height:92px; margin:20px auto 0;}
   .pile .pcap{position:absolute; inset:0; border-radius:5px; border:2px solid #14181d;}
   .pile .pcount{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:6;
     min-width:26px; padding:1px 7px; text-align:center; background:rgba(4,10,7,.68);
@@ -1124,15 +1127,15 @@ function renderUsedStrip(){
 function renderPile(elId,n,bg){
   var el=$(elId);el.innerHTML='';
   if(n>0){
-    /* 数量越多摞得越厚：每 4 张一层，最多 7 层 */
-    var layers=clamp(Math.ceil(n/4),1,7);
+    /* 平放在桌上的牌堆：每 8 张一层、最多 6 层，越靠下的牌往上露 4px */
+    var layers=clamp(Math.ceil(n/8),1,6);
     for(var k=0;k<layers;k++){
       var d=document.createElement('div');d.className='pcap';
-      var off=(layers-1-k)*3;
-      d.style.left=(-off)+'px';d.style.top=(-off)+'px';
-      d.style.right=off+'px';d.style.bottom=off+'px';
-      d.style.background=bg;d.style.outline='2px solid #14181d';
-      if(off>0)d.style.filter='brightness(.7)';
+      var back=layers-1-k;
+      d.style.transform='translateY('+(-back*4)+'px)';
+      d.style.background=bg;
+      if(back>0){d.style.border='0';d.style.outline='1px solid #0c1114';d.style.filter='brightness(.9)';}
+      else d.style.outline='2px solid #14181d';
       el.appendChild(d);
     }
   }
