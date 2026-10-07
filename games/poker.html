@@ -80,7 +80,7 @@
   .handZone{flex:1.08; background:#0005; border-radius:6px; padding:6px; display:flex; gap:6px;
     align-items:center; justify-content:center; min-height:0; position:relative;}
   .skillZone{flex:1; background:#0005; border-radius:6px; padding:6px; display:flex; gap:6px;
-    align-items:center; justify-content:center; min-height:0; position:relative;}
+    align-items:center; justify-content:center; align-content:center; flex-wrap:wrap; min-height:0; position:relative;}
   .zoneLab{position:absolute; font-size:10px; color:#7fa88a; top:4px; left:8px;}
   .usedStrip{flex:none; min-height:38px; background:#0006; border-radius:5px; padding:4px;
     display:flex; gap:5px; align-items:center; align-content:center; flex-wrap:wrap; overflow:hidden;}
@@ -384,7 +384,7 @@ var POKER_CFG = {
         },
         nether: {
           count: 2,
-          maxRank: 5
+          maxRank: 6
         },
         forceStaff: {
           count: 2,
@@ -420,7 +420,7 @@ var POKER_CFG = {
           totalMult: 1.2
         },
         shiva: {
-          count: 2,
+          count: 1,
           minLevel: 3,
           totalBonus: 12
         },
@@ -453,16 +453,16 @@ var POKER_CFG = {
           totalMult: 1.15
         },
         manta: {
-          count: 2,
+          count: 1,
           pick: 1
         },
         dagon: {
-          count: 2,
+          count: 1,
           ptsAdd: 6,
           ptsAddMulti: 12
         },
         bfury: {
-          count: 2
+          count: 1
         },
         circlet: {
           count: 2,
@@ -474,8 +474,8 @@ var POKER_CFG = {
           heal: 0.5
         },
         meteor: {
-          count: 2,
-          pick: 2,
+          count: 1,
+          pick: 1,
           plus: 3
         },
         magicStick: {
@@ -858,7 +858,7 @@ var SKILL_DEFS={
   spadeWish: {name:'黑桃祈愿',   tag:'改扑克',  desc:'选择 1～2 张扑克牌，将其花色变为黑桃。'},
   conjure:   {name:'无中生有',   tag:'抽技能',  desc:'使用后立即从技能牌库抽 2 张技能牌。'},
   refresh:   {name:'刷新球',     tag:'换技能',  desc:'弃掉全部技能牌，重新抽取相同数量（含自身）。'},
-  nether:    {name:'净魂之刃',   tag:'换扑克',  desc:'自动弃掉手中所有点数 ≤5 的牌，并补相同数量新牌。'},
+  nether:    {name:'净魂之刃',   tag:'换扑克',  desc:'自动弃掉手中所有点数 ≤6 的牌，并补相同数量新牌。'},
   forceStaff:{name:'原力法杖',   tag:'改扑克',  desc:'选择 1～2 张扑克牌，各自点数 +1。'},
   mechasm:   {name:'梅肯斯姆',   tag:'加基础分',desc:'本局结算牌型基础分 +10。'},
   daedalus:  {name:'代达罗斯之殇',tag:'点数相乘',desc:'本局结算有效牌点 ×1.3。'},
@@ -880,7 +880,7 @@ var SKILL_DEFS={
   bfury:     {name:'狂战斧',     tag:'加点数',  desc:'结算时，有效牌中点数最大的一张，其点数额外重复计算一次。'},
   circlet:   {name:'头环',       tag:'加点数',  desc:'本回合所有打出的有效牌各 +2 点有效牌点数。'},
   lifepotion:{name:'生命药水',   tag:'持续回复',desc:'接下来两回合，每回合开始时回复 0.5 血。'},
-  meteor:    {name:'陨星锤',     tag:'改扑克',  desc:'选择任意 2 张扑克牌，点数各 +3。'},
+  meteor:    {name:'陨星锤',     tag:'改扑克',  desc:'选择手中 1 张扑克牌，点数 +3。'},
   magicStick:{name:'魔棒',       tag:'改花色',  desc:'本回合方片与红桃视为同一种花色，黑桃和梅花视为同一种花色。'},
   veil:      {name:'纷争面纱',   tag:'条件加点',desc:'若结算时你的牌型等级低于对方，有效牌点数总和 +15。'}
 };
@@ -1446,7 +1446,8 @@ function applyInstant(w,key,cfg){
   var m=w.pendingMod=w.pendingMod||freshMod();
   switch(key){
     case 'conjure':
-      for(var d=0;d<cfg.draw;d++)if(w.skHand.length<skillCap(w)){var c0=drawSkill(w);if(c0)w.skHand.push(c0);}
+      /* 无中生有：一定抽满 2 张。手牌上限只限制每回合的自动补充，不挡这张牌的效果 */
+      for(var d=0;d<cfg.draw;d++){var c0=drawSkill(w);if(c0)w.skHand.push(c0);}
       break;
     case 'refresh':{
       var n=w.skHand.length;
