@@ -349,7 +349,7 @@ var POKER_CFG = {
         },
         bloodMage: {
           hp: 4,
-          skipMaxRank: 3
+          skipMaxRank: 4
         }
       },
       skills: {
@@ -831,8 +831,8 @@ var HERO_DEFS=[
   {key:'juggernaut',     name:'剑圣',     pass:'剑舞：高牌 / 一对 / 三条结算时，有效牌点 +8'},
   {key:'viper',          name:'毒龙',     pass:'毒性叠加：每胜 1 局对方叠 1 层毒，累计 3 层后下次败局额扣 1 血'},
   {key:'chaosKnight',    name:'混沌骑士', pass:'混沌一击：双方牌型等级完全相同时，60% 判己方胜'},
-  {key:'lich',           name:'巫妖',     pass:'霜冻护甲：牌型为高牌 / 一对 / 两对时，50% 得 10 点额外基础分'},
-  {key:'bloodMage',      name:'血魔法师', pass:'烈焰筛选：初始发牌与免费换牌抽不到 2、3 点'}
+  {key:'lich',           name:'巫妖',     pass:'霜冻护甲：牌型为高牌 / 一对 / 三条时，50% 得 10 点额外基础分'},
+  {key:'bloodMage',      name:'血魔法师', pass:'烈焰筛选：初始发牌与免费换牌抽不到 2、3、4 点'}
 ];
 var SKILL_DEFS={
   midas:     {name:'迈达斯之手', tag:'改扑克',  desc:'选择 1 张扑克牌，将其点数变为 A，花色不变。'},
@@ -1080,6 +1080,7 @@ function renderPlayerHand(){
     var sel=G.phase==='discard'?G.discardSel.indexOf(i)>=0:!!G.handPicks[i];
     z.insertAdjacentHTML('beforeend',pcardHTML(c,{clickable:click,sel:sel}));
     var el=z.lastChild;
+    el.dataset.uid=c.uid;
     el.onclick=function(){onHandClick(i);};
     bindTip(el,SUIT_CN[c.suit]+rankLabel(c.rank),'扑克牌',
       G.phase==='discard'?'点击选中以换牌。':'点击高光：作为技能目标牌，出牌时只打出高光的牌。');
@@ -1163,6 +1164,40 @@ function sortPlayerHand(){
     return suitSortValue(a.suit)-suitSortValue(b.suit);
   });
 }
+/* ---------- 排序动画：用 FLIP 让每张牌从旧位置滑到新位置，看得清怎么变整齐的 ---------- */
+function handRects(){
+  var z=$('handZone'),m={};
+  for(var i=0;i<z.children.length;i++){
+    var el=z.children[i];
+    if(el.dataset&&el.dataset.uid)m[el.dataset.uid]=rectOf(el);
+  }
+  return m;
+}
+function flipHand(before){
+  if(!before)return;
+  var z=$('handZone');
+  for(var i=0;i<z.children.length;i++){
+    var el=z.children[i];
+    var o=(el.dataset&&el.dataset.uid)?before[el.dataset.uid]:null;
+    if(!o)continue;
+    var n=rectOf(el),dx=Math.round(o.x-n.x),dy=Math.round(o.y-n.y);
+    if(Math.abs(dx)<2&&Math.abs(dy)<2)continue;
+    var cs=getComputedStyle(el).transform;
+    var rest=(cs&&cs!=='none')?(' '+cs):'';
+    el.style.transition='none';el.style.zIndex='6';
+    el.style.transform='translate('+dx+'px,'+dy+'px)'+rest;
+    void el.offsetWidth;
+    el.style.transition='transform .42s cubic-bezier(.2,.75,.3,1)';
+    el.style.transform='';
+    (function(e){setTimeout(function(){e.style.transition='';e.style.zIndex='';},470);})(el);
+  }
+}
+function sortHandAnimated(){
+  var before=handRects();
+  sortPlayerHand();
+  renderAll();
+  flipHand(before);
+}
 function toggleSkillDiscard(sk){
   if(G.phase!=='skill'||G.busy||G.paused)return;
   if(G.skillPicks[sk.uid])delete G.skillPicks[sk.uid];else G.skillPicks[sk.uid]=1;
@@ -1234,9 +1269,8 @@ function startRound(){
   }
   dealAnimated(G.p,function(){
     dealAnimated(G.ai,function(){
-      sortPlayerHand();
       G.phase='discard';G.discardSel=[];G.handPicks={};G.busy=false;
-      renderAll();
+      sortHandAnimated();
       startTimer(C.time.discard,function(){doDiscard(true);});
     });
   });
@@ -1250,14 +1284,16 @@ function refillSkills(w){
   for(var j=0;j<C.skillRefillPerRound&&w.skHand.length<cap;j++){var r0=drawSkill(w);if(r0)w.skHand.push(r0);}
 }
 function dealAnimated(w,cb){
-  w.hand=[];w.played=[];w.playedRes=null;w.usedSkills=[];w.armletPending=false;w.critUsed=false;w.critUsed=false;
+  /* 手牌保留：只补到 5 张（打出的牌在结算后才离手） */
+  w.played=[];w.playedRes=null;w.usedSkills=[];w.armletPending=false;w.critUsed=false;
   w.pendingMod=freshMod();
   var dest=w.isAI?$('aiHiddenRow'):$('handZone');
   var src=$('pilePokerDraw');
   renderAll();
+  var need=Math.max(0,C.startCards-w.hand.length);
   var i=0;
   (function next(){
-    if(i>=C.startCards){cb();return;}
+    if(i>=need){cb();return;}
     var card=drawOne(w);w.hand.push(card);renderAll();
     var kids=dest.children;var target=kids[kids.length-1];
     target.style.visibility='hidden';
@@ -1310,7 +1346,10 @@ function swapAnimated(w,sel,cb){
     removed.forEach(function(o){var i=w.hand.indexOf(o.c);w.hand.splice(i,1);toDiscard(o.c);});
     var n=removed.length,arrived=0;
     (function drawNext(){
-      if(arrived>=n){if(!w.isAI)sortPlayerHand();cb();return;}
+      if(arrived>=n){
+        if(!w.isAI){var b=handRects();sortPlayerHand();renderAll();flipHand(b);}
+        cb();return;
+      }
       var nc=drawOne(w);w.hand.push(nc);renderAll();
       var z=w.isAI?$('aiHiddenRow'):$('handZone');
       var t=z.children[z.children.length-1];t.style.visibility='hidden';
@@ -1347,8 +1386,8 @@ function consumeSkill(w,sk){
   w.usedSkills.push(sk.key);
   w.pendingMod=w.pendingMod||freshMod();
   G.skillDiscardMode=false;G.skillPicks={};
-  if(!w.isAI)sortPlayerHand();
-  SFX.skill();flash('#7ec850');G.handPicks={};renderAll();
+  SFX.skill();flash('#7ec850');G.handPicks={};
+  if(!w.isAI)sortHandAnimated();else renderAll();
 }
 /* 改牌类技能的真实规则；AI 推演调用的是同一份，保证和真人规则一致 */
 function mutateHand(hand,key,idxs,cfg){
@@ -1410,10 +1449,10 @@ function applyInstant(w,key,cfg){
 /* ---------------- 出牌 ---------------- */
 function requestPlay(auto){
   if(G.phase!=='skill'||G.busy)return;
-  /* 只打出高光选中的牌；没选中的直接进弃牌堆 */
+  /* 只打出高光选中的牌；没选中的留在手牌区，下一回合只补到 5 张 */
   var idxs=Object.keys(G.handPicks).map(Number);
   if(idxs.length===0){
-    if(!auto){toast('先点选要打出的扑克牌（没选中的会进弃牌堆）');return;}
+    if(!auto){toast('先点选要打出的扑克牌（没选中的留在手里，下回合接着用）');return;}
     idxs=G.p.hand.map(function(_,i){return i;});   // 超时兜底：全部打出
   }
   G.skillDiscardMode=false;G.skillPicks={};
@@ -1424,19 +1463,19 @@ function requestPlay(auto){
   for(var i=0;i<pz.children.length;i++)pRects.push(rectOf(pz.children[i]));
   for(var j=0;j<az.children.length;j++)aRects.push(rectOf(az.children[j]));
   var keep=idxs.slice().sort(function(a,b){return a-b;});
-  var dropIdx=pRects.map(function(_,i){return i;}).filter(function(i){return keep.indexOf(i)<0;});
-  var disc=$('pilePokerDisc');
-  dropIdx.forEach(function(i){pz.children[i].style.visibility='hidden';
-    flyTo(pRects[i],rectOf(disc),backGhost(pRects[i].w,pRects[i].h),350);});
+  var before=handRects();
+  keep.forEach(function(i){if(pz.children[i])pz.children[i].style.visibility='hidden';});
   setTimeout(function(){
-    // 先取出要打出的牌（splice 前，避免索引错位）
-    var playedCards=keep.slice().sort(function(a,b){return a-b;})
-      .map(function(i){return G.p.hand[i];});
-    // 未选进弃牌堆
-    dropIdx.sort(function(a,b){return b-a;}).forEach(function(i){
-      toDiscard(G.p.hand[i]);G.p.hand.splice(i,1);});
+    // 打出的牌离开手牌；没打出的留在手牌区，下回合只补到 5 张
+    var playedCards=keep.map(function(i){return G.p.hand[i];});
+    var remain=[];
+    G.p.hand.forEach(function(c,i){if(keep.indexOf(i)<0)remain.push(c);});
     G.p.played=playedCards;
-    G.ai.played=G.ai.hand.slice();G.ai.hand=[];G.p.hand=[];
+    G.p.hand=remain;
+    var aiPlay=aiChoosePlay(G.ai);
+    var aiKeep=[];
+    G.ai.hand.forEach(function(c,i){if(aiPlay.cards.indexOf(c)>=0)aiKeep.push(i);});
+    G.ai.played=aiPlay.cards;G.ai.hand=aiPlay.rest;
     renderBattleFaces();
     var pb=$('pBattleCards'),ab=$('aiBattleCards');
     var n=0,total=G.p.played.length+G.ai.played.length;
@@ -1444,9 +1483,10 @@ function requestPlay(auto){
     G.p.played.forEach(function(c,k){
       flyTo(pRects[keep[k]],rectOf(pb.children[k]),backGhost(pRects[keep[k]].w,pRects[keep[k]].h),360,tick);});
     G.ai.played.forEach(function(c,k){
-      flyTo(aRects[k],rectOf(ab.children[k]),backGhost(aRects[k].w,aRects[k].h),360,tick);});
+      var s=aRects[aiKeep[k]]||aRects[0];
+      flyTo(s,rectOf(ab.children[k]),backGhost(s.w,s.h),360,tick);});
     if(total===0)finish();
-    function finish(){G.phase='reveal';renderAll();setTimeout(resolveReveal,400);}
+    function finish(){G.phase='reveal';renderAll();flipHand(before);setTimeout(resolveReveal,400);}
   },380);
 }
 function renderBattleFaces(){
@@ -1555,6 +1595,23 @@ function keepEV(w,mask,samples){
     got++;
   }
   return got?sum/got:scoreOfHand(w,cpHand(kept));
+}
+/* AI 出牌：在当前得分和「留牌下回合能长成什么」之间做取舍，其余牌留在手里 */
+function aiChoosePlay(w){
+  var n=w.hand.length;
+  if(n<=0)return {cards:[],rest:[]};
+  var total=1<<n,bestMask=total-1,bestVal=-1e9;
+  var freshEV=keepEV(w,0,3);
+  for(var mask=1;mask<total;mask++){
+    var pick=[],restMask=0;
+    for(var i=0;i<n;i++){ if(mask>>i&1)pick.push(w.hand[i]); else restMask|=(1<<i); }
+    var val=scoreOfHand(w,pick.map(cpCard))+0.01*pick.length;
+    if(restMask)val+=0.5*(keepEV(w,restMask,3)-freshEV);   // 留牌的未来价值（相对全换）
+    if(val>bestVal){bestVal=val;bestMask=mask;}
+  }
+  var cards=[],rest=[];
+  for(var j=0;j<n;j++){ if(bestMask>>j&1)cards.push(w.hand[j]); else rest.push(w.hand[j]); }
+  return {cards:cards,rest:rest};
 }
 function aiDiscard(){
   var w=G.ai,p=G.aiP||aiProfile(G.agg||0),n=w.hand.length;
@@ -1699,7 +1756,7 @@ function buildMod(w,res,skipSkills,oppRes){
   }
   if(w.hero==='juggernaut'&&(res.key==='high'||res.key==='pair'||res.key==='three'))
     m.ptsAdd+=C.heroes.juggernaut.lowBonus;
-  if(w.hero==='lich'&&(res.key==='high'||res.key==='pair'||res.key==='twoPair')
+  if(w.hero==='lich'&&(res.key==='high'||res.key==='pair'||res.key==='three')
      &&rnd()<C.heroes.lich.frost)m.baseAdd+=C.heroes.lich.frostBonus;
   m.permaBase=w.permBase;
   return m;
@@ -1872,7 +1929,7 @@ function helpHTML(){
   '<li>每回合：发 5 张暗牌 → 免费换牌（30 秒）→ 使用技能 / 出牌（60 秒，每回合最多 3 张技能）→ 同时亮牌比大小。</li>'+
   '<li>最终得分 =（牌型基础分 + 基础加减）× 基础相乘 +（有效牌点 + 点数加减）× 点数相乘，再做总分加减与相乘。</li>'+
   '<li>得分低的一方扣血，平局不扣血；先把对方血打空者获胜。</li>'+
-  '<li>出牌时只打出你点选高光的牌，没选中的牌直接进入扑克弃牌库；打出的牌里只有参与牌型计分的会算分。</li>'+
+  '<li>出牌时只打出你点选高光的牌，没选中的牌留在手牌区，下一回合发牌只补到 5 张；打出的牌里只有参与牌型计分的会算分。</li>'+
   '<li>改扑克牌的技能：先高光目标扑克牌，再点技能牌；直接生效的技能点一下立即生效。</li>'+
   '<li>牌库抽空会自动把弃牌堆洗回；技能改变的花色点数仅限本回合。</li>'+
   '<li>按空格键可随时暂停。</li></ul>';
@@ -1988,7 +2045,7 @@ $('logBtn').onclick=function(){
 };
 $('discardBtn').onclick=function(){doDiscard(false);};
 $('playBtn').onclick=function(){requestPlay(false);};
-$('sortBtn').onclick=function(){G.sortMode=G.sortMode===0?1:0;sortPlayerHand();SFX.discard();renderAll();};
+$('sortBtn').onclick=function(){if(!G||G.paused||G.busy)return;G.sortMode=G.sortMode===0?1:0;SFX.discard();sortHandAnimated();};
 $('discardSkillBtn').onclick=confirmDiscardSkills;
 document.addEventListener('keydown',function(e){
   if(e.code==='Space'){
