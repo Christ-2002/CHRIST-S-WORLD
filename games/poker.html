@@ -44,6 +44,16 @@
     text-align:center; padding:6px 2px;}
   .scoreTag .lab{font-size:10px; color:#9fb; display:block;}
   .scoreTag .val{font-size:22px; font-weight:900; color:var(--gold);}
+  /* 结算公式：基础分 / 有效牌点 / 技能加成 用不同颜色区分 */
+  .fml{flex:none; width:200px; background:#0007; border:2px solid var(--ink); border-radius:6px;
+    padding:4px 6px; font-size:11px; line-height:1.5; display:none;}
+  .fml .fk{display:block; font-size:10px; color:#9fb;}
+  .fml .fb{color:#8fd0ff;}
+  .fml .fp{color:#d8a6ff;}
+  .fml .fs{color:var(--gold);}
+  .fml .fm{color:#ff9a5a;}
+  .fml .feq{color:#8fe08a; font-weight:bold;}
+  .fml .fcut{color:#ff8a8a; font-style:normal; font-size:10px;}
   #battleResult{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); right:auto; font-size:15px; font-weight:bold;
     background:#0008; border:2px solid var(--gold); border-radius:6px; padding:4px 10px; color:var(--gold); z-index:4;}
 
@@ -232,8 +242,10 @@
     <div id="battleResult" style="display:none;"></div>
     <div class="boxbody" style="padding:4px;">
       <div class="battleSide"><span class="zoneLab bLab">AI 出牌区</span><div class="battleCards" id="aiBattleCards"></div>
+        <div class="fml" id="aiFormula"></div>
         <div class="scoreTag"><span class="lab">AI 总分</span><span class="val" id="aiBattleScore">-</span></div></div>
       <div class="battleSide"><span class="zoneLab bLab">你的出牌区</span><div class="battleCards" id="pBattleCards"></div>
+        <div class="fml" id="pFormula"></div>
         <div class="scoreTag"><span class="lab">你的总分</span><span class="val" id="pBattleScore">-</span></div></div>
     </div>
   </div>
@@ -596,7 +608,8 @@ function evaluateHand(cards){
 
 /* ---------------- 计分（纯函数） ----------------
    mod = {baseAdd,baseMult,ptsAdd,ptsMult,totalAdd,totalMult,permaBase} */
-function computeScore(handRes, mod){
+/* 返回总分 + 每一步明细（结算公式显示用） */
+function scoreParts(handRes, mod){
   mod=mod||{};
   var baseAdd=mod.baseAdd||0, baseMult=mod.baseMult||1;
   var ptsAdd=mod.ptsAdd||0, ptsMult=mod.ptsMult||1;
@@ -604,7 +617,13 @@ function computeScore(handRes, mod){
   var base=C.hands[handRes.key]+permaBase;
   var sub=(base+baseAdd)*baseMult + (handRes.points+ptsAdd)*ptsMult;
   var final=(sub+totalAdd)*totalMult;
-  return Math.round(final*100)/100;
+  return {base:C.hands[handRes.key], perm:permaBase, baseAdd:baseAdd, baseMult:baseMult,
+    baseSum:(base+baseAdd)*baseMult, pts:handRes.points, ptsAdd:ptsAdd, ptsMult:ptsMult,
+    ptsSum:(handRes.points+ptsAdd)*ptsMult, totalAdd:totalAdd, totalMult:totalMult,
+    final:Math.round(final*100)/100, parts:mod.parts||[]};
+}
+function computeScore(handRes, mod){
+  return scoreParts(handRes, mod).final;
 }
 /* ---------------- 像素头像（16×16 字符画） ---------------- */
 var PIX = {
@@ -1443,8 +1462,9 @@ function applyInstant(w,key,cfg){
       var s=w.hand.slice().sort(function(a,b){return a.rank-b.rank;})[0];
       if(s){var i=w.hand.indexOf(s);w.hand.splice(i,1);toDiscard(s);w.hand.push(drawOne(w));}
       break;}
-    case 'mechasm':m.baseAdd+=cfg.baseBonus;break;
-    case 'armlet':m.baseAdd+=cfg.baseBonus;w.armletPending=true;break;
+    /* 基础分类技能改成打标记，结算时才生效（这样黑皇杖才能压制得住） */
+    case 'mechasm':m.flags.mechasm=true;break;
+    case 'armlet':m.flags.armlet=true;w.armletPending=true;break;
     case 'daedalus':m.ptsMult*=cfg.ptsMult;break;
     case 'aegis':m.flags.aegis=true;break;
     case 'bloodstone':m.flags.bloodstone=true;break;
@@ -1768,25 +1788,65 @@ function undoSkillCards(w){
 }
 function buildMod(w,res,skipSkills,oppRes){
   var m=w.pendingMod?w.pendingMod:freshMod();
+  m.parts=[];                                    // 本局每一笔分数变化，结算公式要用
+  function addP(name,field,v){if(!v)return;m[field]+=v;m.parts.push({n:name,f:field,v:v,k:'add'});}
+  function mulP(name,field,v){if(!v||v===1)return;m[field]*=v;m.parts.push({n:name,f:field,v:v,k:'mul'});}
   if(!skipSkills){
-    if(m.flags.phase&&(res.key==='pair'||res.key==='high'))m.ptsMult*=C.skills.phase.ptsMult;
-    if(m.flags.drum&&res.key==='twoPair')m.totalAdd+=C.skills.drum.totalBonus;
-    if(m.flags.shiva&&res.level>=C.skills.shiva.minLevel)m.totalAdd+=C.skills.shiva.totalBonus;
-    if(m.flags.dagon)m.ptsAdd+=(res.key==='pair'||res.key==='twoPair')?
-      C.skills.dagon.ptsAddMulti:C.skills.dagon.ptsAdd;
-    if(m.flags.circlet)m.ptsAdd+=C.skills.circlet.perCard*res.usedIdx.length;
-    if(m.flags.veil&&oppRes&&res.level<oppRes.level)m.ptsAdd+=C.skills.veil.ptsAdd;
+    if(m.flags.mechasm)addP(SKILL_DEFS.mechasm.name,'baseAdd',C.skills.mechasm.baseBonus);
+    if(m.flags.armlet)addP(SKILL_DEFS.armlet.name,'baseAdd',C.skills.armlet.baseBonus);
+    if(m.flags.phase&&(res.key==='pair'||res.key==='high'))mulP(SKILL_DEFS.phase.name,'ptsMult',C.skills.phase.ptsMult);
+    if(m.flags.drum&&res.key==='twoPair')addP(SKILL_DEFS.drum.name,'totalAdd',C.skills.drum.totalBonus);
+    if(m.flags.shiva&&res.level>=C.skills.shiva.minLevel)addP(SKILL_DEFS.shiva.name,'totalAdd',C.skills.shiva.totalBonus);
+    if(m.flags.dagon)addP(SKILL_DEFS.dagon.name,'ptsAdd',(res.key==='pair'||res.key==='twoPair')?
+      C.skills.dagon.ptsAddMulti:C.skills.dagon.ptsAdd);
+    if(m.flags.circlet)addP(SKILL_DEFS.circlet.name,'ptsAdd',C.skills.circlet.perCard*res.usedIdx.length);
+    if(m.flags.veil&&oppRes&&res.level<oppRes.level)addP(SKILL_DEFS.veil.name,'ptsAdd',C.skills.veil.ptsAdd);
     if(m.flags.bfury){
-      var mx=0;res.usedIdx.forEach(function(i){mx=Math.max(mx,w.played[i].rank);});m.ptsAdd+=mx;
+      var mx=0;res.usedIdx.forEach(function(i){mx=Math.max(mx,w.played[i].rank);});
+      addP(SKILL_DEFS.bfury.name,'ptsAdd',mx);
     }
-    if(m.flags.butterfly&&rnd()<C.skills.butterfly.chance)m.totalMult*=C.skills.butterfly.totalMult;
+    if(m.flags.butterfly&&rnd()<C.skills.butterfly.chance)mulP(SKILL_DEFS.butterfly.name,'totalMult',C.skills.butterfly.totalMult);
   }
   if(w.hero==='juggernaut'&&(res.key==='high'||res.key==='pair'||res.key==='three'))
-    m.ptsAdd+=C.heroes.juggernaut.lowBonus;
+    addP('剑舞(剑圣被动)','ptsAdd',C.heroes.juggernaut.lowBonus);
   if(w.hero==='lich'&&(res.key==='high'||res.key==='pair'||res.key==='three')
-     &&rnd()<C.heroes.lich.frost)m.baseAdd+=C.heroes.lich.frostBonus;
+     &&rnd()<C.heroes.lich.frost)addP('霜冻护甲(巫妖被动)','baseAdd',C.heroes.lich.frostBonus);
   m.permaBase=w.permBase;
   return m;
+}
+/* 结算公式面板：把「总分怎么来的」摊开，技能/被动带来的变化单独用金色标出 */
+function showFormula(elId,res,mod,skipped){
+  var z=$(elId);
+  if(!z)return;
+  var f=scoreParts(res,mod);
+  var r=function(v){return Math.round(v*100)/100;};
+  var h='<span class="fk">'+res.name+(skipped?' <i class="fcut">技能被黑皇杖压制</i>':'')+'</span>';
+  h+='<div><span class="fb">基础 '+r(f.base)+'</span>';
+  if(f.perm)h+='<span class="fs">+'+r(f.perm)+'</span>';
+  if(f.baseAdd)h+='<span class="fs">+'+r(f.baseAdd)+'</span>';
+  if(f.baseMult!==1)h+='<span class="fm">×'+f.baseMult+'</span>';
+  h+='</div>';
+  h+='<div><span class="fp">牌点 '+r(f.pts)+'</span>';
+  if(f.ptsAdd)h+='<span class="fs">+'+r(f.ptsAdd)+'</span>';
+  if(f.ptsMult!==1)h+='<span class="fm">×'+f.ptsMult+'</span>';
+  h+='</div>';
+  h+='<div>';
+  if(f.totalAdd)h+='<span class="fs">+'+r(f.totalAdd)+'</span> ';
+  if(f.totalMult!==1)h+='<span class="fm">×'+f.totalMult+'</span> ';
+  h+='<span class="feq">= '+r(f.final)+'</span></div>';
+  z.innerHTML=h;
+  z.style.display='block';
+  /* 鼠标移上去看每一张技能牌各加了多少 */
+  var FN={baseAdd:'基础分',baseMult:'基础分相乘',ptsAdd:'有效牌点',ptsMult:'牌点相乘',
+          totalAdd:'总分加减',totalMult:'总分相乘'};
+  var det=['牌型 '+res.name+'：基础 '+f.base+' 分 ＋ 有效牌点 '+f.pts];
+  f.parts.forEach(function(p){
+    det.push(p.n+'：'+(p.k==='mul'?('×'+p.v):('+'+p.v))+'（'+(FN[p.f]||p.f)+'）');
+  });
+  if(!f.parts.length)det.push('本局没用技能牌');
+  if(f.perm)det.push('暗灭：永久基础分 +'+f.perm);
+  det.push('计算顺序：（基础+基础加减）×基础相乘 ＋（牌点+牌点加减）×牌点相乘 ＋总分加减，最后 ×总分相乘');
+  bindTip(z,'总分 '+r(f.final),res.name,det.join('<br>'));
 }
 function resolveReveal(){
   var p=G.p,ai=G.ai;
@@ -1811,6 +1871,8 @@ function resolveReveal(){
   }
   revealRow('pBattleCards',p,pRes);
   revealRow('aiBattleCards',ai,aiRes);
+  showFormula('pFormula',pRes,pMod,pSkip);
+  showFormula('aiFormula',aiRes,aiMod,aiSkip);
   $('pBattleScore').textContent=pScore;$('aiBattleScore').textContent=aiScore;
   SFX.reveal();
   if(pRes.level>=7)$('pBattleCards').querySelectorAll('.pcard').forEach(function(el){el.classList.add('bigpop');});
@@ -1882,6 +1944,7 @@ function afterRound(){
     G.p.played.forEach(toDiscard);G.ai.played.forEach(toDiscard);
     $('pBattleCards').innerHTML='';$('aiBattleCards').innerHTML='';
     $('pBattleScore').textContent='-';$('aiBattleScore').textContent='-';
+    $('pFormula').style.display='none';$('aiFormula').style.display='none';
     $('battleResult').style.display='none';
     G.busy=false;startRound();
   },4600);
