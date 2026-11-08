@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>票清 · 个人发票检验平台</title>
+  <meta name="description" content="面向个人与小微团队的发票合规初筛工具：票面识别、税号校验、金额勾稽、重复查验与统计分析。">
+  <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/base.css?v=18">
+  <link rel="stylesheet" href="assets/css/components.css?v=18">
+  <link rel="stylesheet" href="assets/css/verify.css?v=18">
+  <link rel="stylesheet" href="assets/css/pages.css?v=18">
+  <link rel="stylesheet" href="assets/css/formal.css?v=18">
+  <link rel="stylesheet" href="assets/css/responsive.css?v=18">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#/dashboard" aria-label="票清首页">
+        <span class="brand-mark">
+          <svg viewBox="0 0 48 48" aria-hidden="true">
+            <rect x="1" y="1" width="46" height="46" rx="10" fill="#0F5F4C"/>
+            <path d="M15 14.5h13.5L35 21v13.5a2 2 0 0 1-2 2H15a2 2 0 0 1-2-2V16.5a2 2 0 0 1 2-2Z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/>
+            <path d="M28 14.5V21h6.5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/>
+            <path d="m19 28 3.2 3.2 6.2-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <strong>票清</strong>
+          <span>发票合规管理</span>
+        </span>
+      </a>
+
+      <a class="sidebar-cta" href="#/verify">
+        <svg class="icon"><use href="#i-plus"/></svg>
+        <span>新建发票查验</span>
+        <kbd>N</kbd>
+      </a>
+
+      <nav class="nav" aria-label="主导航">
+        <div class="nav-label">工作区</div>
+        <a class="nav-item" href="#/dashboard" data-route="dashboard">
+          <svg class="icon"><use href="#i-grid"/></svg><span>工作台</span>
+        </a>
+        <a class="nav-item" href="#/verify" data-route="verify">
+          <svg class="icon"><use href="#i-scan"/></svg><span>发票查验</span>
+          <span class="nav-kbd">N</span>
+        </a>
+        <a class="nav-item" href="#/ledger" data-route="ledger">
+          <svg class="icon"><use href="#i-list"/></svg><span>发票台账</span>
+          <span class="nav-badge" id="navLedgerCount">0</span>
+        </a>
+        <a class="nav-item" href="#/risk" data-route="risk">
+          <svg class="icon"><use href="#i-shield-alert"/></svg><span>风险中心</span>
+          <span class="nav-badge nav-badge-danger" id="navRiskCount" hidden>0</span>
+        </a>
+        <a class="nav-item" href="#/analytics" data-route="analytics">
+          <svg class="icon"><use href="#i-chart"/></svg><span>统计分析</span>
+        </a>
+        <div class="nav-label nav-label-gap">系统</div>
+        <a class="nav-item" href="#/settings" data-route="settings">
+          <svg class="icon"><use href="#i-settings"/></svg><span>设置与数据</span>
+        </a>
+        <button class="nav-item nav-item-button" id="helpNavBtn" type="button">
+          <svg class="icon"><use href="#i-help"/></svg><span>使用说明</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <a class="workspace-card" href="#/settings" aria-label="默认报销主体设置">
+          <span class="workspace-card-head">
+            <span class="workspace-label">默认报销主体</span>
+            <span class="workspace-state"><span class="live-dot"></span>本地</span>
+          </span>
+          <strong class="workspace-name" id="sidebarBuyerName">青禾数字科技（上海）有限公司</strong>
+          <span class="workspace-tax" id="sidebarBuyerTaxId">91310000MA1H8N6P44</span>
+          <span class="workspace-meta">
+            <span id="sidebarDataCount">18 张发票</span>
+            <span>数据仅存本机</span>
+          </span>
+        </a>
+        <div class="sidebar-user">
+          <span class="avatar avatar-sm"><svg class="icon"><use href="#i-user"/></svg></span>
+          <span class="sidebar-user-text">
+            <strong>个人工作台</strong>
+            <span>本地账户 · 数据不上传</span>
+          </span>
+          <button class="icon-btn icon-btn-xs" id="helpBtn" title="使用说明" aria-label="使用说明">
+            <svg class="icon"><use href="#i-help"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+    <div class="sidebar-scrim" id="sidebarScrim" hidden></div>
+
+    <div class="main-shell">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menuBtn" aria-label="打开菜单">
+          <svg class="icon"><use href="#i-menu"/></svg>
+        </button>
+        <div class="topbar-title">
+          <span class="topbar-brand">票清</span>
+          <div class="crumb">个人工作台 <span>/</span> <span id="crumbCurrent">工作台</span></div>
+          <h1 id="pageTitle">工作台</h1>
+        </div>
+        <div class="topbar-actions">
+          <span class="mode-chip" title="所有数据仅保存在本机浏览器">
+            <span class="mode-dot"></span><span>本地模式</span>
+          </span>
+          <button class="search-trigger" id="globalSearchBtn" type="button" aria-label="全局搜索">
+            <svg class="icon"><use href="#i-search"/></svg>
+            <span>搜索发票、销售方</span>
+            <kbd>Ctrl K</kbd>
+          </button>
+          <button class="icon-btn icon-btn-bell" id="notificationBtn" type="button" aria-label="风险提醒">
+            <svg class="icon"><use href="#i-bell"/></svg>
+            <span class="notify-dot" id="notifyDot" hidden></span>
+          </button>
+          <a class="btn btn-primary btn-sm top-new" href="#/verify">
+            <svg class="icon"><use href="#i-plus"/></svg><span>新建查验</span>
+          </a>
+          <span class="avatar" title="个人工作台"><svg class="icon"><use href="#i-user"/></svg></span>
+        </div>
+      </header>
+
+      <main id="app" class="app-main" tabindex="-1">
+        <div class="page-loading">
+          <span class="spinner"></span>
+          <p>正在整理你的发票数据…</p>
+        </div>
+      </main>
+
+      <footer class="app-footer">
+        <span class="footer-status"><span class="live-dot"></span>本地运行正常</span>
+        <span class="footer-dot"></span>
+        <span>票清 InvoiceCare · 发票合规管理平台</span>
+        <span class="footer-dot"></span>
+        <span>本地规则校验，不替代税务机关官方查验</span>
+        <span class="footer-version">v1.0.0</span>
+      </footer>
+    </div>
+  </div>
+
+  <div class="popover" id="notificationPopover" hidden>
+    <div class="popover-head">
+      <strong>风险提醒</strong>
+      <a href="#/risk" class="text-link">查看全部</a>
+    </div>
+    <div class="popover-body" id="notificationBody"></div>
+  </div>
+
+  <div id="overlayRoot"></div>
+  <div id="modalRoot" class="modal-root"></div>
+  <div id="drawerRoot" class="drawer-root"></div>
+  <div id="toastRoot" class="toast-root" aria-live="polite" aria-atomic="false"></div>
+  <div id="printRoot" class="print-root"></div>
+
+  <input type="file" id="imageInput" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf" hidden>
+  <input type="file" id="importInput" accept="application/json,.json" hidden>
+
+  <svg class="svg-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M3 12h18"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></symbol>
+    <symbol id="i-shield-alert" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.7 8.9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1 1 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1Z"/><path d="M12 8v4M12 16h.01"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.12-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.16.63.7 1.1 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.6 2.6 0 0 1 5.1.7c0 1.7-2.5 2.1-2.5 3.8"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10.3 21a2 2 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.2 4.2L19 7"/></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.2 12.2 2.6 2.6 5.2-5.4"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 2.2 18a2 2 0 0 0 1.7 3h16.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 15-4.5-4.5L6 21"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6M8 14h8M8 18h5"/></symbol>
+    <symbol id="i-file-down" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/><path d="M12 12v5M9.5 14.5 12 17l2.5-2.5"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM21 14v.01M14 21v.01M21 21v.01M18 21v.01M21 18v.01"/></symbol>
+    <symbol id="i-wand" viewBox="0 0 24 24"><path d="m4 20 9-9M14.5 4.5 16 3l1.5 1.5L19 3l.5 1.5L21 5l-1.5 1L21 7.5 19.5 8 19 9.5 17.5 8 16 9.5 14.5 8 13 9.5 12 8l1.5-1.5Z"/><path d="m9 6 .7 1.8L11.5 8.5l-1.8.7L9 11l-.7-1.8-1.8-.7 1.8-.7Z"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/></symbol>
+    <symbol id="i-upload-cloud" viewBox="0 0 24 24"><path d="M16 17h3a4 4 0 0 0 .6-8 6 6 0 0 0-11.5-1A4.5 4.5 0 0 0 8 17h1"/><path d="M12 21v-9M9 15l3-3 3 3"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/><path d="m18.5 2.5 3 3L11 16l-4 1 1-4Z"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M4 12h16M14 6l6 6-6 6"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M20 12H4M10 6l-6 6 6 6"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-8 8"/><path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/></symbol>
+    <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7" rx="1"/></symbol>
+    <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></symbol>
+    <symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.7 8.9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1 1 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1Z"/><path d="m8.5 12 2.3 2.3 4.7-4.8"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 8h.01M15 8h.01M9 12h.01M15 12h.01M9 16h.01M15 16h.01M10 21v-2h4v2"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2Z"/><path d="M9 8h6M9 12h6"/></symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16 15h.01"/></symbol>
+    <symbol id="i-percent" viewBox="0 0 24 24"><path d="m19 5-14 14"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M7 3v6h9V3M7 21v-7h10v7"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z"/><path d="M19 15.5 19.7 17l1.5.7-1.5.7L19 20l-.7-1.6-1.5-.7 1.5-.7Z"/></symbol>
+    <symbol id="i-trending-up" viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+    <symbol id="i-trending-down" viewBox="0 0 24 24"><path d="m3 7 6 6 4-4 8 8"/><path d="M15 17h6v-6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></symbol>
+  </svg>
+
+  <script src="assets/js/vendor/jsQR.js"></script>
+  <script src="assets/js/core.js?v=18"></script>
+  <script src="assets/js/store.js?v=18"></script>
+  <script src="assets/js/charts.js?v=18"></script>
+  <script src="assets/js/ui.js?v=18"></script>
+  <script src="assets/js/verify.js?v=18"></script>
+  <script src="assets/js/views-dashboard.js?v=18"></script>
+  <script src="assets/js/views-ledger.js?v=18"></script>
+  <script src="assets/js/views-analytics.js?v=18"></script>
+  <script src="assets/js/app.js?v=18"></script>
+</body>
+</html>

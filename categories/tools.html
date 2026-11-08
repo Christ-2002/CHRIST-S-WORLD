@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CQ的网站</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='2' fill='%232f5d3a'/%3E%3Crect x='4.2' y='6.6' width='1.5' height='3.4' fill='%239bca4b'/%3E%3Crect x='3.2' y='7.6' width='3.5' height='1.4' fill='%239bca4b'/%3E%3Ccircle cx='10.6' cy='8' r='0.85' fill='%23e2503d'/%3E%3Ccircle cx='12.2' cy='9.8' r='0.85' fill='%23f0b429'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- ================= 顶部导航 ================= -->
+  <header class="topnav">
+    <div class="container topnav-inner">
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        <span>CHRIST'S WORLD</span>
+      </a>
+      <nav class="nav-links">
+        <a class="nav-link" href="../index.html">首页</a>
+        <a class="nav-link" href="games.html">游戏</a>
+        <a class="nav-link current" href="tools.html">小工具</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ================= 页头 ================= -->
+  <div class="container page-head">
+    <div>
+      <a class="back-link" href="../index.html">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 8H3M7 4L3 8l4 4"/></svg>
+        返回首页
+      </a>
+      <h1 class="page-title" style="margin-top:16px;">实用小工具</h1>
+      <p class="page-sub">把日常会用到的功能收在一起，打开就能用。</p>
+    </div>
+  </div>
+
+  <!-- ================= 工具列表 ================= -->
+  <section class="section" style="padding-top:18px;">
+    <div class="container">
+      <div class="card-grid">
+
+        <!-- 工具 1：发票查验（可打开） -->
+        <a class="pixel-card" href="../apps/invoicecare/index.html">
+          <div class="card-cover invoice">
+            <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+              <!-- 票据主体 -->
+              <path d="M3 1.6h10v12.2l-1.25-.9-1.25.9-1.25-.9-1.25.9-1.25-.9-1.25.9-1.25-.9-1.25.9z" fill="#fbfcf4" stroke="#1f2d20" stroke-width="0.8"/>
+              <!-- 票面文字线条 -->
+              <rect x="5" y="4" width="6" height="0.7" fill="#1f2d20"/>
+              <rect x="5" y="6" width="6" height="0.7" fill="#1f2d20"/>
+              <rect x="5" y="8" width="3.6" height="0.7" fill="#1f2d20"/>
+              <!-- 校验通过徽标 -->
+              <circle cx="11.8" cy="11.6" r="3.1" fill="#9bca4b" stroke="#1f2d20" stroke-width="0.8"/>
+              <path d="M10.4 11.6l.95 1 1.8-2" fill="none" stroke="#1f2d20" stroke-width="1.1" stroke-linecap="square"/>
+            </svg>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">01 · 发票查验</h3>
+            <p class="card-text">本地发票合规初筛：票面识别、税号校验、金额勾稽、重复查验与台账统计。</p>
+            <div class="card-meta">
+              <span class="badge">可打开</span>
+              <span class="card-go">OPEN &gt;</span>
+            </div>
+          </div>
+        </a>
+
+        <!-- 更多工具占位 -->
+        <div class="pixel-card locked" aria-disabled="true">
+          <div class="card-cover">
+            <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+              <rect x="7" y="3" width="2" height="10" fill="#1f2d20"/>
+              <rect x="3" y="7" width="10" height="2" fill="#1f2d20"/>
+            </svg>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">更多工具</h3>
+            <div class="card-meta">
+              <span class="lock-note">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
+                持续添加中
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 页脚 ================= -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-brand">
+        <span class="brand-mark" style="width:22px;height:22px;box-shadow:none;">
+          <svg viewBox="0 0 16 16" fill="none">
+            <rect x="4.2" y="6.2" width="1.5" height="3.6" fill="#9bca4b"/>
+            <rect x="3.1" y="7.25" width="3.7" height="1.5" fill="#9bca4b"/>
+            <circle cx="10.4" cy="7.8" r="0.9" fill="#e2503d"/>
+            <circle cx="12.3" cy="9.8" r="0.9" fill="#f0b429"/>
+          </svg>
+        </span>
+        CHRIST'S WORLD
+      </span>
+    </div>
+  </footer>
+
+  <script src="../js/common.js"></script>
+</body>
+</html>
